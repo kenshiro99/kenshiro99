@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexgen System Center — Premium Login</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="config.js"></script>
+
+    <style>
+        :root {
+            --lux-gold: #bf953f;
+            --lux-navy: #0f172a;
+            --lux-blue: #3b82f6;
+        }
+
+        body {
+            background: #020617;
+            font-family: 'Prompt', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-h-screen: 100vh;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Animated Premium Background */
+        .bg-wrap {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.4) saturate(0.8);
+            transform: scale(1.1);
+            animation: slowPan 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes slowPan {
+            from { transform: scale(1.1) translateX(-2%); }
+            to { transform: scale(1.1) translateX(2%); }
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(2, 6, 23, 0.95) 100%);
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(191, 149, 63, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 25px;
+            margin: 0 auto 25px;
+            padding: 3px;
+            background: linear-gradient(135deg, var(--lux-gold), #fde047);
+            box-shadow: 0 15px 30px rgba(191, 149, 63, 0.3);
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 22px;
+            object-fit: cover;
+            border: 2px solid rgba(15, 23, 42, 0.8);
+        }
+
+        /* Input Styling */
+        .lux-input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .lux-input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            background: rgba(2, 6, 23, 0.5) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 20px;
+            color: white !important;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .lux-input:focus {
+            border-color: var(--lux-gold) !important;
+            background: rgba(2, 6, 23, 0.8) !important;
+            box-shadow: 0 0 20px rgba(191, 149, 63, 0.1);
+        }
+
+        .lux-input-group i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            transition: 0.3s;
+        }
+
+        .lux-input:focus+i {
+            color: var(--lux-gold);
+        }
+
+        /* Button Styling */
+        .lux-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #bf953f 0%, #aa8433 100%);
+            border-radius: 20px;
+            color: #020617;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: 1px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            box-shadow: 0 10px 25px rgba(191, 149, 63, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .lux-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(191, 149, 63, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .lux-btn:active {
+            transform: translateY(0);
+        }
+
+        .lux-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: #475569;
+            margin-top: 30px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-wrap">
+        <img src="nexgen_security_login_bg_1776931823991.png" class="bg-image">
+        <div class="bg-overlay"></div>
+    </div>
+
+    <div class="glass-card text-center">
+        <div class="brand-logo">
+            <img src="logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=NX&background=bf953f&color=000'">
+        </div>
+        
+        <div class="mb-10">
+            <h1 class="text-3xl font-extrabold text-white tracking-tighter uppercase mb-1">NEXGEN</h1>
+            <p class="text-[10px] text-amber-500 font-black tracking-[5px] uppercase">System Center</p>
+        </div>
+
+        <div id="errorBox" class="error-msg">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span id="errorText"></span>
+        </div>
+
+        <form onsubmit="event.preventDefault(); handleLogin();">
+            <div class="lux-input-group">
+                <input type="text" id="u" class="lux-input" placeholder="รหัสพนักงาน (Employee ID)" required>
+                <i class="fas fa-user-shield"></i>
+            </div>
+
+            <div class="lux-input-group">
+                <input type="password" id="p" class="lux-input" placeholder="รหัสผ่าน (Password)" required>
+                <i class="fas fa-lock"></i>
+            </div>
+
+            <button type="submit" id="loginBtn" class="lux-btn">
+                <span>เข้าสู่ระบบ</span>
+                <i class="fas fa-chevron-right text-[12px]"></i>
+            </button>
+        </form>
+
+        <p class="footer-text uppercase">Security Management Platform V2.0</p>
+    </div>
+
+    <script>
+        async function handleLogin() {
+            const user = document.getElementById('u').value.trim();
+            const pass = document.getElementById('p').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const errorBox = document.getElementById('errorBox');
+            const errorText = document.getElementById('errorText');
+
+            // Reset UI
+            errorBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>กำลังตรวจสอบ...</span>';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('staff')
+                    .select('emp_id, name, level, status, password')
+                    .eq('emp_id', user)
+                    .eq('password', pass);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const profile = data[0];
+                    
+                    if (profile.status !== 'เปิด') {
+                        showError("บัญชีของคุณถูกระงับการใช้งาน");
+                        resetBtn(btn);
+                        return;
+                    }
+
+                    if (profile.level === 'Admin' || profile.level === 'Supervisor') {
+                        // Success Transition
+                        btn.innerHTML = '<i class="fas fa-check"></i> <span>สำเร็จ! กำลังเข้าสู่ระบบ...</span>';
+                        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                        
+                        sessionStorage.setItem('isLoggedIn', 'true');
+                        sessionStorage.setItem('userName', profile.name);
+                        sessionStorage.setItem('userLevel', profile.level);
+                        
+                        setTimeout(() => {
+                            window.location.href = 'dashboard 10.html';
+                        }, 800);
+                    } else {
+                        showError("สิทธิ์การใช้งานของคุณไม่เพียงพอ");
+                        resetBtn(btn);
+                    }
+                } else {
+                    showError("รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง");
+                    resetBtn(btn);
+                }
+            } catch (err) {
+                console.error(err);
+                showError("การเชื่อมต่อฐานข้อมูลล้มเหลว");
+                resetBtn(btn);
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            const errorText = document.getElementById('errorText');
+            errorText.innerText = msg;
+            errorBox.style.display = 'block';
+        }
+
+        function resetBtn(btn) {
+            btn.innerHTML = '<span>เข้าสู่ระบบ</span> <i class="fas fa-chevron-right text-[12px]"></i>';
+            btn.disabled = false;
+        }
+    </script>
+</body>
+
+</html>

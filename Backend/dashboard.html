@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexgen System Center</title>
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
+
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #0f172a;
+            --accent: #f59e0b;
+            --sidebar-w: 260px;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Sarabun', sans-serif;
+            color: #f8fafc;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar & Layout --- */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #020617;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #1e293b;
+            z-index: 50;
+            transition: transform 0.3s ease;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-w);
+            padding: 30px 40px;
+            height: 100vh;
+            overflow: hidden;
+            transition: 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-header {
+            padding: 20px 24px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .menu-item {
+            padding: 10px 20px;
+            margin: 4px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #94a3b8;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(30, 41, 59, 0.5);
+            color: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: var(--accent);
+            font-weight: bold;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .menu-item.active i {
+            filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
+        }
+
+        .data-card {
+            background: var(--card);
+            border-radius: 24px;
+            border: 1px solid #1e293b;
+            padding: 24px;
+        }
+
+        .view {
+            display: none;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Components --- */
+        input,
+        select {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: white !important;
+            outline: none;
+        }
+
+        .suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 999;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #cbd5e1;
+            transition: all 0.2s;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: #1e293b;
+            color: var(--accent);
+            padding-left: 16px;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* --- Mobile --- */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 70px 16px 16px 16px;
+            }
+        }
+
+        /* --- Sub-menu styles --- */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: rgba(15, 23, 42, 0.5);
+            margin: 0 16px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .submenu.open {
+            max-height: 300px;
+            margin-bottom: 8px;
+        }
+
+        .submenu-item {
+            padding: 8px 16px 8px 48px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #64748b;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .submenu-item:hover,
+        .submenu-item.active {
+            color: var(--accent);
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .menu-item.has-submenu .arrow {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 10px;
+        }
+
+        .menu-item.has-submenu.open .arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Sticky Header -->
+    <div
+        class="md:hidden fixed top-0 left-0 w-full bg-[#020617] border-b border-slate-800 z-40 flex justify-between items-center p-3 px-4 shadow-md">
+        <div class="flex items-center gap-3">
+            <img src="logo-1.jpg"
+                onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=f59e0b&color=fff'"
+                class="w-10 h-10 rounded-full border-2 border-amber-500 object-cover">
+            <div class="flex flex-col">
+                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXGEN</span>
+                <span class="text-[8px] text-amber-500 font-bold tracking-[2px] uppercase">System Center</span>
+            </div>
+        </div>
+        <button onclick="toggleSidebar()"
+            class="text-white text-xl w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] border border-slate-800">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar flex flex-col">
+        <div class="pt-6 pb-2 text-center">
+            <img src="logo-1.jpg"
+                class="w-16 h-16 mx-auto rounded-full border-2 border-amber-500 mb-3 shadow-lg object-cover">
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">NEXGEN</h2>
+            <p class="text-[10px] text-amber-500 font-bold tracking-[3px]">SYSTEM CENTER</p>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto mt-4 pb-6">
+            <div class="menu-header">Overview</div>
+            <div class="menu-item active" onclick="switchTab('dashboard', this)">
+                <i class="fas fa-home"></i> แดชบอร์ด
+            </div>
+
+            <div class="menu-header">Reporting</div>
+            <div class="menu-item" onclick="switchTab('edit-report', this)">
+                <i class="fas fa-edit"></i> แก้ไขรายงาน
+            </div>
+            <div class="menu-item" onclick="switchTab('travel-report', this)">
+                <i class="fas fa-car"></i> รายงานการเดินทาง
+            </div>
+            <div class="menu-item" onclick="switchTab('check-in', this)">
+                <i class="fas fa-users"></i> รายงานการเข้า/ออก
+            </div>
+
+            <div class="menu-item has-submenu" id="workReportMenu" onclick="toggleSubMenu('workSubmenu', this)">
+                <i class="fas fa-clipboard-check"></i> รายงานการทำงาน
+                <i class="fas fa-chevron-down arrow"></i>
+            </div>
+            <div id="workSubmenu" class="submenu">
+                <div class="submenu-item" onclick="switchTab('report-site', this)">
+                    <i class="fas fa-search-location"></i> รายงานเข้าตรวจหน่วยงาน
+                </div>
+                <div class="submenu-item" onclick="window.open('OP05.html', '_blank')">
+                    <i class="fas fa-handshake"></i> รายงานพบผู้ว่าจ้าง (OP05)
+                </div>
+                <div class="submenu-item" onclick="switchTab('report-rollcall', this)">
+                    <i class="fas fa-align-left"></i> รายงานการรวมแถว
+                </div>
+                <div class="submenu-item" onclick="switchTab('report-training', this)">
+                    <i class="fas fa-chalkboard-teacher"></i> รายงานอบรมประจำเดือน
+                </div>
+                <div class="submenu-item" onclick="switchTab('report-guard', this)">
+                    <i class="fas fa-user-shield"></i> รายงานเข้า/ออก รปภ.
+                </div>
+            </div>
+
+            <div class="menu-header">Administration</div>
+            <div class="menu-item" onclick="switchTab('staff', this)">
+                <i class="fas fa-user-cog"></i> จัดการพนักงาน
+            </div>
+            <div class="menu-item" onclick="switchTab('units', this)">
+                <i class="fas fa-building"></i> จัดการหน่วยงาน
+            </div>
+        </nav>
+
+        <div class="p-8">
+            <button onclick="logout()"
+                class="w-full py-2 border border-slate-800 rounded-lg text-xs text-slate-500 hover:text-red-400 font-bold tracking-widest">LOGOUT</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- --- Dashboard Section --- -->
+        <section id="tab-dashboard" class="view active">
+            <header class="mb-6 flex-none">
+                <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase mb-1">System Status</p>
+                <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">Dashboard</h1>
+            </header>
+
+            <!-- Status Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 flex-none">
+                <div class="data-card border-l-4 border-amber-500">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">หน่วยงานเปิดอยู่</p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 id="unitCount" class="text-5xl font-black text-white">--</h3>
+                        <span class="text-slate-500 text-xs mb-2">แห่ง</span>
+                    </div>
+                </div>
+                <div class="data-card border-l-4 border-emerald-500">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">พนักงานพร้อมปฏิบัติหน้าที่
+                    </p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 id="staffCount" class="text-5xl font-black text-emerald-400">--</h3>
+                        <span class="text-slate-500 text-xs mb-2">นาย</span>
+                    </div>
+                </div>
+                <div class="data-card border-l-4 border-cyan-500">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">ปฏิบัติงานขณะนี้</p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <h3 class="text-5xl font-black text-cyan-400">0</h3>
+                        <span class="text-slate-500 text-xs mb-2">นาย</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 flex-1 min-h-[300px]">
+                <div class="data-card border border-white/5 flex flex-col">
+                    <h4 class="text-white font-bold mb-4 flex items-center gap-2 flex-none"><i
+                            class="fas fa-chart-line text-amber-500"></i> สถิติการปฏิบัติงาน (สัปดาห์)</h4>
+                    <div class="relative w-full flex-1 min-h-[200px]">
+                        <canvas id="dashboardChart"></canvas>
+                    </div>
+                </div>
+                <div class="data-card border border-white/5 flex flex-col">
+                    <h4 class="text-white font-bold mb-4 flex items-center gap-2 flex-none"><i
+                            class="fas fa-chart-bar text-emerald-500"></i> แยกตามพื้นที่ (เฉพาะหน่วยที่เปิด)</h4>
+                    <div class="relative w-full flex-1 min-h-[200px]">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 flex-none">
+                <div class="data-card">
+                    <h4 class="text-white font-bold mb-4 flex items-center gap-2"><i
+                            class="fas fa-bullhorn text-amber-500"></i> สถานะการเชื่อมต่อ</h4>
+                    <div class="flex justify-between p-3 bg-slate-900/50 rounded-xl border border-white/5 text-sm">
+                        <span class="text-slate-300">Database Connection</span>
+                        <span class="text-emerald-500 font-bold">ONLINE</span>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <h4 class="text-white font-bold mb-4 flex items-center gap-2"><i
+                            class="fas fa-history text-amber-500"></i> กิจกรรมล่าสุด</h4>
+                    <p class="text-slate-500 text-sm py-4 text-center">ไม่มีข้อมูลกิจกรรม</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Placeholder Sections for New Reports -->
+        <section id="tab-report-site" class="view">
+            <div class="max-w-[1200px] mx-auto h-full p-8 text-center">
+                <h1 class="text-3xl font-black mb-4 uppercase">รายงานเข้าตรวจหน่วยงาน</h1>
+                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
+            </div>
+        </section>
+        <section id="tab-report-rollcall" class="view">
+            <div class="max-w-[1200px] mx-auto h-full p-8 text-center">
+                <h1 class="text-3xl font-black mb-4 uppercase">รายงานการรวมแถว</h1>
+                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
+            </div>
+        </section>
+        <section id="tab-report-training" class="view">
+            <div class="max-w-[1200px] mx-auto h-full p-8 text-center">
+                <h1 class="text-3xl font-black mb-4 uppercase">รายงานการอบรมประจำเดือน</h1>
+                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
+            </div>
+        </section>
+        <section id="tab-report-guard" class="view">
+            <div class="max-w-[1200px] mx-auto h-full p-8 text-center">
+                <h1 class="text-3xl font-black mb-4 uppercase">รายงานเข้าออกหน่วยงาน รปภ.</h1>
+                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
+            </div>
+        </section>
+
+        <!-- --- Manage Staff Section --- -->
+        <section id="tab-staff" class="view">
+            <div class="max-w-[1200px] mx-auto h-full flex flex-col w-full pb-8 sm:pb-0">
+                <header class="flex justify-between items-center mb-4 flex-none">
+                    <h1 class="text-2xl font-black uppercase tracking-tight">จัดการ <span
+                            class="text-amber-500">พนักงาน</span></h1>
+                </header>
+
+                <!-- Staff Form -->
+                <div
+                    class="mb-3 p-[1px] rounded-[14px] bg-gradient-to-br from-amber-500/30 to-emerald-500/20 w-full shadow-sm">
+                    <div
+                        class="data-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[13px] relative h-full p-3">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+                                    <i class="fas fa-user-plus text-[10px]"></i>
+                                </div>
+                                <h2 class="text-xs font-black text-white">แบบฟอร์มข้อมูลพนักงาน</h2>
+                            </div>
+                            <button onclick="addNewStaff()"
+                                class="px-4 py-1.5 rounded-md text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-black transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                                <i class="fas fa-save"></i> <span id="btnText">บันทึกข้อมูล</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 lg:gap-2 items-end">
+                            <div class="space-y-1 col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสพนักงาน</label>
+                                <input type="text" id="empId"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600 shadow-inner"
+                                    placeholder="EMP-XXXX">
+                            </div>
+                            <div class="space-y-1 lg:col-span-2">
+                                <label
+                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ชื่อ-นามสกุล</label>
+                                <input type="text" id="empName"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600 shadow-inner"
+                                    placeholder="ระบุชื่อ-นามสกุล">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label
+                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">หน่วยงานประจำ</label>
+                                <div class="relative">
+                                    <input type="text" id="empUnit" oninput="handleUnitInput(this.value)"
+                                        onfocus="handleUnitInput(this.value)" onclick="handleUnitInput(this.value)"
+                                        class="w-full px-2.5 py-1.5 rounded-md text-[11px] transition-all text-white outline-none"
+                                        placeholder="ค้นหาหน่วยงาน..." autocomplete="off">
+                                    <div id="unitSuggestions" class="suggestions-container hidden"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ตำแหน่ง</label>
+                                <input type="text" id="empRole"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600"
+                                    placeholder="ตำแหน่ง">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สิทธิ</label>
+                                <select id="empLevel"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] cursor-pointer appearance-none">
+                                    <option value="User">User</option>
+                                    <option value="Supervisor">Supervisor</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label
+                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะพนักงาน</label>
+                                <select id="empStatus"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold text-emerald-400 appearance-none">
+                                    <option value="เปิด">เปิด (ON)</option>
+                                    <option value="ปิด">ปิด (OFF)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสผ่าน</label>
+                                <input type="password" id="empPassword"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600"
+                                    placeholder="****">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Staff Table -->
+                <div
+                    class="data-card p-0 overflow-hidden border border-white/5 rounded-[14px] flex-1 flex flex-col min-h-[250px]">
+                    <div class="overflow-auto w-full flex-1 bg-[#0f172a]/20">
+                        <table class="w-full text-left relative min-w-[800px]">
+                            <thead
+                                class="bg-[#0f172a] text-slate-400 text-[9px] font-bold uppercase border-b border-slate-800 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-3 py-2 w-[12%]">รหัสพนักงาน <input type="text" id="hFilterId"
+                                            onkeyup="applyFilter()" placeholder="ค้นรหัส..."
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
+                                    </th>
+                                    <th class="px-3 py-2 w-[20%]">ชื่อพนักงาน <input type="text" id="hFilterName"
+                                            onkeyup="applyFilter()" placeholder="ค้นชื่อ..."
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
+                                    </th>
+                                    <th class="px-3 py-2 w-[15%]">หน่วยงาน <select id="hFilterUnit"
+                                            onchange="applyFilter()"
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal"></select>
+                                    </th>
+                                    <th class="px-3 py-2 w-[15%]">ตำแหน่ง <input type="text" id="hFilterRole"
+                                            onkeyup="applyFilter()" placeholder="ตำแหน่ง..."
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
+                                    </th>
+                                    <th class="px-3 py-2 w-[10%]">สิทธิ <select id="hFilterLevel"
+                                            onchange="applyFilter()"
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal">
+                                            <option value="">ทั้งหมด</option>
+                                            <option value="User">User</option>
+                                            <option value="Supervisor">Spv.</option>
+                                            <option value="Admin">Admin</option>
+                                        </select></th>
+                                    <th class="px-3 py-2 w-[13%]">สถานะ <select id="hFilterStatus"
+                                            onchange="applyFilter()"
+                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal">
+                                            <option value="">ทั้งหมด</option>
+                                            <option value="เปิด">เปิด</option>
+                                            <option value="ปิด">ปิด</option>
+                                        </select></th>
+                                    <th class="px-3 py-2 text-center w-[15%]">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffTable" class="divide-y divide-slate-800/50 text-[11px]"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex flex-col sm:flex-row items-center justify-between mt-3 px-2 gap-4 flex-none">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase">แสดง <span id="pageStartItem"
+                            class="text-amber-500">0</span> ถึง <span id="pageEndItem" class="text-amber-500">0</span>
+                        จาก <span id="totalItems" class="text-white">0</span></div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="prevPage()"
+                            class="px-3 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-slate-400 hover:text-amber-500 text-[10px] font-bold"><i
+                                class="fas fa-chevron-left"></i></button>
+                        <div id="pageNumbers" class="flex gap-1"></div>
+                        <button onclick="nextPage()"
+                            class="px-3 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-slate-400 hover:text-amber-500 text-[10px] font-bold"><i
+                                class="fas fa-chevron-right"></i></button>
+                        <select id="jumpSelect" onchange="goToPage(this.value)"
+                            class="ml-3 px-2 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-white text-[10px] font-bold"></select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- --- Manage Units Section --- -->
+        <section id="tab-units" class="view">
+            <div class="max-w-[1200px] mx-auto h-full flex flex-col w-full pb-8 sm:pb-0">
+                <header class="flex justify-between items-center mb-4 flex-none">
+                    <h1 class="text-2xl font-black uppercase tracking-tight">จัดการ <span
+                            class="text-amber-500">หน่วยงาน</span></h1>
+                </header>
+
+                <!-- Unit Form -->
+                <div
+                    class="mb-3 p-[1px] rounded-[14px] bg-gradient-to-br from-amber-500/30 to-emerald-500/20 w-full shadow-sm">
+                    <div
+                        class="data-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[13px] relative h-full p-3">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+                                    <i class="fas fa-building text-[10px]"></i>
+                                </div>
+                                <h2 class="text-xs font-black text-white uppercase tracking-tight">
+                                    แบบฟอร์มข้อมูลหน่วยงาน</h2>
+                            </div>
+                            <button onclick="addNewUnit()"
+                                class="px-4 py-1.5 rounded-md text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5">
+                                <i class="fas fa-save"></i> <span id="btnUnitText">บันทึกหน่วยงาน</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3 lg:gap-2 items-end">
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เลขที่</label>
+                                <input type="text" id="uNumber" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="001">
+                            </div>
+                            <div class="space-y-1 lg:col-span-2">
+                                <label
+                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ชื่อหน่วยงาน</label>
+                                <input type="text" id="uName" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="ชื่อหน่วยงาน">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เขต</label>
+                                <input type="text" id="uZone" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="กทม.">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสหน่วย</label>
+                                <input type="text" id="uCode" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="CODE">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ผู้ดูแล</label>
+                                <input type="text" id="uManager" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="ชื่อผู้ดูแล">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">Lat</label>
+                                <input type="text" id="uLat" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="13.xxxx">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">Lng</label>
+                                <input type="text" id="uLng" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    placeholder="100.xxxx">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รัศมี(ม.)</label>
+                                <input type="number" id="uRadius" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
+                                    value="100">
+                            </div>
+                            <div class="space-y-1 lg:col-span-1">
+                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะ</label>
+                                <select id="uStatus"
+                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold text-emerald-400 appearance-none">
+                                    <option value="เปิด">เปิด (ON)</option>
+                                    <option value="ปิด">ปิด (OFF)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unit Table -->
+                <div
+                    class="data-card p-0 overflow-hidden border border-white/5 rounded-[14px] flex-1 flex flex-col min-h-[250px]">
+                    <div class="overflow-auto w-full flex-1 bg-[#0f172a]/20">
+                        <table class="w-full text-left relative min-w-[800px]">
+                            <thead
+                                class="bg-[#0f172a] text-slate-400 text-[9px] font-bold uppercase border-b border-slate-800 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-3 py-2 w-[8%]">เลขที่</th>
+                                    <th class="px-3 py-2 w-[20%]">ชื่อหน่วยงาน</th>
+                                    <th class="px-3 py-2 w-[12%]">เขต</th>
+                                    <th class="px-3 py-2 w-[12%]">รหัสหน่วย</th>
+                                    <th class="px-3 py-2 w-[12%]">ผู้ดูแล</th>
+                                    <th class="px-3 py-2 w-[13%]">พิกัด (Lat,Lng)</th>
+                                    <th class="px-3 py-2 w-[7%]">รัศมี</th>
+                                    <th class="px-3 py-2 w-[8%]">สถานะ</th>
+                                    <th class="px-3 py-2 text-center w-[8%]">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unitsTable" class="divide-y divide-slate-800/50 text-[11px]"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- Session Guard ---
+        const userData = JSON.parse(localStorage.getItem('nexgen_user'));
+        if (!userData || (userData.level !== 'Admin' && userData.level !== 'Supervisor')) {
+            window.location.href = '../index.html';
+        }
+
+        // --- State ---
+        let staffData = [];
+        let unitsData = [];
+        let editingEmpId = null;
+        let editingUnitId = null;
+        let lineChart, barChart;
+        let currentPage = 1;
+        const itemsPerPage = 12;
+        let filteredData = [];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            initChart();
+            await fetchUnits();
+            await fetchStaff();
+        });
+
+        function initChart() {
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+            gradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
+                    datasets: [{
+                        label: 'ผู้ปฏิบัติงาน (นาย)',
+                        data: [18, 22, 20, 24, 21, 26, 23],
+                        borderColor: '#f59e0b',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#0f172a',
+                        pointBorderColor: '#f59e0b',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            let barGradient = ctxBar.createLinearGradient(0, 0, 0, 300);
+            barGradient.addColorStop(0, '#10b981');
+            barGradient.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
+
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['กทม.', 'ภาคกลาง', 'ภาคเหนือ', 'ภาคใต้', 'ภาคตะวันออก'],
+                    datasets: [{
+                        label: 'พนักงาน (นาย)',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: barGradient,
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // --- Dashboard Logic ---
+        function updateDashboardStats() {
+            const activeUnits = unitsData.filter(u => u.status !== 'ปิด');
+            const activeUnitNames = activeUnits.map(u => u.unit_name);
+            const activeStaff = staffData.filter(s => activeUnitNames.includes(s.unit));
+
+            if (document.getElementById('unitCount')) document.getElementById('unitCount').innerText = activeUnits.length;
+            if (document.getElementById('staffCount')) document.getElementById('staffCount').innerText = activeStaff.length;
+
+            if (barChart) {
+                const zoneCounts = {};
+                activeStaff.forEach(s => {
+                    const unitObj = activeUnits.find(u => u.unit_name === s.unit);
+                    const zone = unitObj ? unitObj.zone : 'อื่นๆ';
+                    zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
+                });
+                barChart.data.labels = Object.keys(zoneCounts);
+                barChart.data.datasets[0].data = Object.values(zoneCounts);
+                barChart.update();
+            }
+        }
+
+        // --- UI & Navigation ---
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.submenu-item').forEach(s => s.classList.remove('active'));
+
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+
+            if (el) el.classList.add('active');
+
+            // Handle staff filter if needed
+            if (tabId === 'staff') applyFilter();
+
+            // Clear editing states if moving away
+            if (tabId !== 'units') {
+                editingUnitId = null;
+                const btnUnitText = document.getElementById('btnUnitText');
+                if (btnUnitText) btnUnitText.innerText = 'บันทึกหน่วยงาน';
+                clearUnitForm();
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar.classList.contains('open')) toggleSidebar();
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('hidden');
+        }
+
+        function toggleSubMenu(submenuId, el) {
+            const submenu = document.getElementById(submenuId);
+            const isOpen = submenu.classList.contains('open');
+
+            // Close other submenus if any
+            document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
+            document.querySelectorAll('.menu-item.has-submenu').forEach(m => m.classList.remove('open'));
+
+            if (!isOpen) {
+                submenu.classList.add('open');
+                el.classList.add('open');
+            }
+        }
+
+        // --- Staff Management ---
+        async function fetchStaff() {
+            try {
+                const { data, error } = await supabaseClient.from('staff').select('*').order('emp_id', { ascending: true });
+                if (error) throw error;
+                staffData = data.map(i => ({ id: i.emp_id, name: i.name, unit: i.unit, role: i.role, level: i.level, status: i.status }));
+                applyFilter();
+                updateDashboardStats();
+            } catch (error) {
+                console.error("Staff Error:", error);
+            }
+        }
+
+        function applyFilter() {
+            const filters = {
+                id: document.getElementById('hFilterId')?.value.toLowerCase() || '',
+                name: document.getElementById('hFilterName')?.value.toLowerCase() || '',
+                unit: document.getElementById('hFilterUnit')?.value || '',
+                role: document.getElementById('hFilterRole')?.value.toLowerCase() || '',
+                level: document.getElementById('hFilterLevel')?.value || '',
+                status: document.getElementById('hFilterStatus')?.value || ''
+            };
+
+            filteredData = staffData.filter(s => {
+                return (filters.id ? s.id.toLowerCase().includes(filters.id) : true) &&
+                    (filters.name ? s.name.toLowerCase().includes(filters.name) : true) &&
+                    (filters.unit ? s.unit === filters.unit : true) &&
+                    (filters.role ? s.role.toLowerCase().includes(filters.role) : true) &&
+                    (filters.level ? s.level === filters.level : true) &&
+                    (filters.status ? s.status === filters.status : true);
+            });
+            currentPage = 1;
+            renderTable();
+        }
+
+        function renderTable() {
+            const body = document.getElementById('staffTable');
+            const start = (currentPage - 1) * itemsPerPage;
+            const data = filteredData.slice(start, start + itemsPerPage);
+
+            body.innerHTML = data.map(s => `
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-3 py-2 font-mono text-amber-500 font-bold">${s.id}</td>
+                    <td class="px-3 py-2 font-bold text-white">${s.name}</td>
+                    <td class="px-3 py-2 text-slate-300">${s.unit}</td>
+                    <td class="px-3 py-2 text-slate-400">${s.role}</td>
+                    <td class="px-3 py-2 text-slate-300">${s.level}</td>
+                    <td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-[9px] font-bold ${s.status === 'เปิด' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-500'}">${s.status}</span></td>
+                    <td class="px-3 py-2 text-center text-slate-500">
+                        <i class="fas fa-edit mr-3 cursor-pointer hover:text-amber-500" onclick="editStaff('${s.id}')"></i>
+                        <i class="fas fa-trash-alt cursor-pointer hover:text-red-500" onclick="deleteStaff('${s.id}')"></i>
+                    </td>
+                </tr>
+            `).join('');
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            const start = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, totalItems);
+
+            document.getElementById('pageStartItem').innerText = start;
+            document.getElementById('pageEndItem').innerText = end;
+            document.getElementById('totalItems').innerText = totalItems;
+
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const active = i === currentPage ? 'bg-amber-500 text-black' : 'bg-[#0f172a] text-slate-400';
+                html += `<button onclick="goToPage(${i})" class="w-6 h-6 rounded font-bold text-[10px] ${active} border border-slate-800">${i}</button>`;
+            }
+            document.getElementById('pageNumbers').innerHTML = html;
+
+            const jump = document.getElementById('jumpSelect');
+            jump.innerHTML = Array.from({ length: totalPages }, (_, i) => `<option value="${i + 1}" ${i + 1 === currentPage ? 'selected' : ''}>หน้า ${i + 1}</option>`).join('');
+        }
+
+        function goToPage(p) { currentPage = parseInt(p); renderTable(); }
+        function nextPage() { if (currentPage < Math.ceil(filteredData.length / itemsPerPage)) { currentPage++; renderTable(); } }
+        function prevPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
+
+        async function addNewStaff() {
+            const id = document.getElementById('empId').value;
+            const name = document.getElementById('empName').value;
+            const unit = document.getElementById('empUnit').value;
+            const role = document.getElementById('empRole').value;
+            const level = document.getElementById('empLevel').value;
+            const status = document.getElementById('empStatus').value;
+            const password = document.getElementById('empPassword').value;
+
+            if (!id || !name || !unit) return alert("กรุณากรอกข้อมูลหลักให้ครบถ้วน");
+
+            const payload = { emp_id: id, name, unit, role, level, status };
+            if (password) payload.password = password; else if (!editingEmpId) payload.password = '1234';
+
+            try {
+                const { error } = editingEmpId ?
+                    await supabaseClient.from('staff').update(payload).eq('emp_id', editingEmpId) :
+                    await supabaseClient.from('staff').insert([payload]);
+                if (error) throw error;
+
+                editingEmpId = null;
+                document.getElementById('btnText').innerText = 'บันทึกข้อมูล';
+                ['empId', 'empName', 'empUnit', 'empRole', 'empPassword'].forEach(i => document.getElementById(i).value = '');
+                await fetchStaff();
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        function editStaff(id) {
+            const s = staffData.find(x => x.id === id);
+            editingEmpId = s.id;
+            document.getElementById('empId').value = s.id;
+            document.getElementById('empName').value = s.name;
+            document.getElementById('empUnit').value = s.unit;
+            document.getElementById('empRole').value = s.role;
+            document.getElementById('empLevel').value = s.level;
+            document.getElementById('empStatus').value = s.status;
+            document.getElementById('btnText').innerText = 'บันทึกการแก้ไข';
+            document.getElementById('empId').focus();
+        }
+
+        async function deleteStaff(id) {
+            if (confirm('ยืนยันการลบพนักงาน ' + id)) {
+                await supabaseClient.from('staff').delete().eq('emp_id', id);
+                await fetchStaff();
+            }
+        }
+
+        // --- Unit Management ---
+        async function fetchUnits() {
+            try {
+                const { data, error } = await supabaseClient.from('units').select('*').order('unit_number', { ascending: true });
+                if (error) throw error;
+                unitsData = data || [];
+                renderUnitsTable();
+                updateDashboardStats();
+                updateUnitDropdowns();
+            } catch (e) { console.error("Units Error:", e); }
+        }
+
+        function renderUnitsTable() {
+            const body = document.getElementById('unitsTable');
+            if (unitsData.length === 0) { body.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-500">ไม่มีข้อมูลหน่วยงาน</td></tr>'; return; }
+            body.innerHTML = unitsData.map(u => `
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-3 py-2 font-mono text-amber-500 font-bold">${u.unit_number}</td>
+                    <td class="px-3 py-2 font-bold text-white">${u.unit_name}</td>
+                    <td class="px-3 py-2 text-slate-300">${u.zone}</td>
+                    <td class="px-3 py-2 text-slate-400">${u.unit_code}</td>
+                    <td class="px-3 py-2 text-slate-300">${u.manager_name || '-'}</td>
+                    <td class="px-3 py-2 text-amber-400/80 text-[10px] font-mono">${u.latitude || '-'}, ${u.longitude || '-'}</td>
+                    <td class="px-3 py-2 text-center text-cyan-400">${u.radius_meters || 100}</td>
+                    <td class="px-3 py-2 font-bold ${u.status === 'ปิด' ? 'text-red-500' : 'text-emerald-500'}">${u.status || 'เปิด'}</td>
+                    <td class="px-3 py-2 text-center text-slate-500">
+                        <i class="fas fa-edit mr-3 cursor-pointer hover:text-amber-500" onclick="editUnit(${u.id})"></i>
+                        <i class="fas fa-trash-alt cursor-pointer hover:text-red-500" onclick="deleteUnit(${u.id})"></i>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addNewUnit() {
+            const payload = {
+                unit_number: document.getElementById('uNumber').value,
+                unit_name: document.getElementById('uName').value,
+                zone: document.getElementById('uZone').value,
+                unit_code: document.getElementById('uCode').value,
+                manager_name: document.getElementById('uManager').value,
+                latitude: parseFloat(document.getElementById('uLat').value) || null,
+                longitude: parseFloat(document.getElementById('uLng').value) || null,
+                radius_meters: parseInt(document.getElementById('uRadius').value) || 100,
+                status: document.getElementById('uStatus').value
+            };
+            if (!payload.unit_number || !payload.unit_name) return alert("กรุณากรอกข้อมูลเลขที่และชื่อหน่วยงาน");
+
+            try {
+                const { error } = editingUnitId ?
+                    await supabaseClient.from('units').update(payload).eq('id', editingUnitId) :
+                    await supabaseClient.from('units').insert([payload]);
+                if (error) throw error;
+                clearUnitForm();
+                await fetchUnits();
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        function editUnit(id) {
+            const u = unitsData.find(x => x.id === id);
+            editingUnitId = u.id;
+            ['uNumber', 'uName', 'uZone', 'uCode', 'uManager', 'uLat', 'uLng', 'uRadius', 'uStatus'].forEach(id => {
+                const key = id === 'uNumber' ? 'unit_number' : id === 'uName' ? 'unit_name' : id === 'uZone' ? 'zone' : id === 'uCode' ? 'unit_code' : id === 'uManager' ? 'manager_name' : id === 'uLat' ? 'latitude' : id === 'uLng' ? 'longitude' : id === 'uRadius' ? 'radius_meters' : 'status';
+                document.getElementById(id).value = u[key] || (id === 'uRadius' ? 100 : id === 'uStatus' ? 'เปิด' : '');
+            });
+            document.getElementById('btnUnitText').innerText = 'บันทึกการแก้ไข';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteUnit(id) {
+            if (confirm('ยืนยันการลบหน่วยงาน?')) {
+                await supabaseClient.from('units').delete().eq('id', id);
+                await fetchUnits();
+            }
+        }
+
+        // --- Utils & Suggestions ---
+        function clearUnitForm() {
+            editingUnitId = null;
+            ['uNumber', 'uName', 'uZone', 'uCode', 'uManager', 'uLat', 'uLng'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('uRadius').value = '100';
+            document.getElementById('uStatus').value = 'เปิด';
+            document.getElementById('btnUnitText').innerText = 'บันทึกหน่วยงาน';
+        }
+
+        function updateUnitDropdowns() {
+            const f = document.getElementById('hFilterUnit');
+            if (f) {
+                const val = f.value;
+                f.innerHTML = '<option value="">ทั้งหมด</option>' + unitsData.map(u => `<option value="${u.unit_name}" ${u.unit_name === val ? 'selected' : ''}>${u.unit_name}</option>`).join('');
+            }
+        }
+
+        function handleUnitInput(val) {
+            const box = document.getElementById('unitSuggestions');
+            if (!box) return;
+            const matches = val ? unitsData.filter(u => u.unit_name.toLowerCase().includes(val.toLowerCase()) || u.unit_code.toLowerCase().includes(val.toLowerCase())) : unitsData;
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(u => `<div class="suggestion-item" onclick="selectUnit('${u.unit_name}')"><div class="font-bold text-white text-[12px]">${u.unit_name}</div><div class="text-[10px] text-amber-500/80">${u.unit_code}</div><div class="text-[9px] text-slate-400">${u.zone}</div></div>`).join('');
+                box.classList.remove('hidden');
+            } else if (val) {
+                box.innerHTML = '<div class="p-4 text-center text-slate-500 text-[11px]">ไม่พบข้อมูล</div>';
+                box.classList.remove('hidden');
+            } else { box.classList.add('hidden'); }
+        }
+
+        function selectUnit(name) { document.getElementById('empUnit').value = name; document.getElementById('unitSuggestions').classList.add('hidden'); }
+        document.addEventListener('click', e => { if (!e.target.closest('#empUnit') && !e.target.closest('#unitSuggestions')) document.getElementById('unitSuggestions')?.classList.add('hidden'); });
+
+        function logout() { 
+            if(confirm('ต้องการออกจากระบบหรือไม่?')) {
+                localStorage.removeItem('nexgen_user'); 
+                window.location.href = '../index.html'; 
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen ระบบพอร์ทัล | เข้าสู่ระบบ</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --cyber-blue: #0ea5e9;
+            --cyber-gold: #f59e0b;
+            --cyber-dark: #020617;
+            --glass: rgba(15, 23, 42, 0.8);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--cyber-dark);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: white;
+            position: relative;
+        }
+
+        /* --- ADVANCED MESH BACKGROUND --- */
+        .mesh-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(2, 6, 23, 1) 0%, rgba(2, 6, 23, 1) 100%);
+        }
+
+        .mesh-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: move 20s infinite alternate;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(14, 165, 233, 0.1);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(245, 158, 11, 0.05);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(100px, 100px);
+            }
+        }
+
+        /* --- PREMIUM LOGIN CARD --- */
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 40px;
+            width: 90%;
+            max-width: 420px;
+            padding: 50px 40px;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                inset 0 0 20px rgba(14, 165, 233, 0.05);
+            position: relative;
+            overflow: hidden;
+            animation: cardEntrance 1s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--cyber-blue), var(--cyber-gold), transparent);
+            animation: flow 3s linear infinite;
+        }
+
+        @keyframes flow {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        /* --- TYPOGRAPHY & LOGO --- */
+        .brand-logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 30px;
+            padding: 4px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            object-fit: cover;
+        }
+
+        .cyber-title {
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(to bottom, #fff 40%, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cyber-subtitle {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--cyber-blue);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        /* --- FORM ELEMENTS --- */
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .input-wrapper label {
+            position: absolute;
+            left: 20px;
+            top: -10px;
+            background: #0f172a;
+            padding: 0 8px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--cyber-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 10;
+            border-radius: 4px;
+        }
+
+        .cyber-input {
+            width: 100%;
+            padding: 18px 24px 18px 55px;
+            background: rgba(2, 6, 23, 0.4) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+            border-radius: 18px;
+            color: white !important;
+            font-size: 16px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .cyber-input:focus {
+            border-color: var(--cyber-blue) !important;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+            background: rgba(2, 6, 23, 0.6) !important;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            transition: 0.3s;
+        }
+
+        .cyber-input:focus+i {
+            color: var(--cyber-blue);
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .cyber-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+        }
+
+        .cyber-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .cyber-btn:active {
+            transform: translateY(1px);
+        }
+
+        .loader {
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s infinite linear;
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .footer-text {
+            margin-top: 35px;
+            text-align: center;
+            font-size: 11px;
+            color: #475569;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive Mobile Fixes */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 40px 25px;
+            }
+
+            .cyber-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="mesh-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="login-card">
+        <div class="brand-logo">
+            <img src="../Backend/logo-1.jpg"
+                onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=0ea5e9&color=fff'" alt="NEXGEN">
+        </div>
+
+        <h1 class="cyber-title">NEXGEN SYSTEM</h1>
+        <p class="cyber-subtitle">Secure Gateway</p>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="input-wrapper">
+                <label>รหัสพนักงาน</label>
+                <input type="text" id="username" class="cyber-input" placeholder="ระบุรหัสพนักงาน" required
+                    autocomplete="off">
+                <i class="fas fa-fingerprint"></i>
+            </div>
+
+            <div class="input-wrapper">
+                <label>รหัสผ่าน</label>
+                <input type="password" id="password" class="cyber-input" placeholder="••••••••" required>
+                <i class="fas fa-shield-alt"></i>
+            </div>
+
+            <button type="submit" class="cyber-btn">
+                <span id="btnText">เข้าสู่ระบบ</span>
+                <div id="btnLoader" class="loader"></div>
+                <i class="fas fa-bolt" id="btnIcon"></i>
+            </button>
+        </form>
+
+        <div id="errorMsg" class="mt-6 text-center text-rose-500 text-[11px] font-bold hidden animate-pulse">
+            <i class="fas fa-exclamation-triangle mr-2"></i> การเข้าถึงล้มเหลว: โปรดตรวจสอบข้อมูลอีกครั้ง
+        </div>
+
+        <div class="footer-text">
+            &copy; 2026 NextGen Security Operations Center
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user_id = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const btnText = document.getElementById('btnText');
+            const btnLoader = document.getElementById('btnLoader');
+            const btnIcon = document.getElementById('btnIcon');
+
+            // UI Feedback
+            errorMsg.classList.add('hidden');
+            btnText.innerText = 'กำลังตรวจสอบ...';
+            btnLoader.style.display = 'block';
+            btnIcon.style.display = 'none';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('staff')
+                    .select('*')
+                    .eq('emp_id', user_id)
+                    .eq('password', pass)
+                    .single();
+
+                if (error || !data) throw new Error('Unauthorized');
+
+                if (data.status === 'ปิด') {
+                    alert('บัญชีนี้ถูกระงับการใช้งาน');
+                    resetUI();
+                    return;
+                }
+
+                localStorage.setItem('nexgen_user', JSON.stringify(data));
+
+                // Success Animation then Redirect
+                btnText.innerText = 'ยืนยันตัวตนสำเร็จ';
+                setTimeout(() => {
+                    window.location.href = 'portal.html';
+                }, 1000);
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.classList.remove('hidden');
+                resetUI();
+            }
+        }
+
+        function resetUI() {
+            document.getElementById('btnText').innerText = 'เข้าสู่ระบบปฏิบัติการ';
+            document.getElementById('btnLoader').style.display = 'none';
+            document.getElementById('btnIcon').style.display = 'block';
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('nexgen_user')) {
+                window.location.href = 'portal.html';
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ศูนย์ควบคุมเน็กซ์เจน | พอร์ทัลมือถือ</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --accent: #f59e0b;
+            --bg: #020617;
+            --card: rgba(15, 23, 42, 0.9);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.1), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.05), transparent 40%);
+            color: white;
+            margin: 0;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER DESIGN --- */
+        .cyber-header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 1) 0%, rgba(2, 6, 23, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+            padding: 40px 24px 30px;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .cyber-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .avatar-glow {
+            position: relative;
+        }
+
+        .avatar-glow::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            opacity: 0.5;
+            filter: blur(8px);
+        }
+
+        .user-avatar {
+            width: 65px;
+            height: 65px;
+            border-radius: 20px;
+            position: relative;
+            z-index: 1;
+            border: 2px solid rgba(255,255,255,0.1);
+            object-fit: cover;
+        }
+
+        /* --- MENU CARDS --- */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .tactical-card {
+            background: var(--card);
+            border-radius: 28px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .tactical-card:active {
+            transform: scale(0.92);
+            background: rgba(30, 41, 59, 1);
+            border-color: var(--primary);
+        }
+
+        .tactical-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .card-icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            background: rgba(2, 6, 23, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            transition: 0.3s;
+        }
+
+        .tactical-card:active .card-icon-box {
+            transform: translateY(-5px);
+            color: white;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .card-label {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+
+        /* --- STATS SECTION --- */
+        .stats-panel {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 30px;
+            margin: 0 24px 24px;
+            padding: 24px;
+            border: 1px dashed rgba(14, 165, 233, 0.2);
+        }
+
+        .level-badge {
+            font-size: 9px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 50px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .badge-spv { background: linear-gradient(90deg, #f59e0b, #d97706); color: #000; }
+        .badge-guard { background: linear-gradient(90deg, #10b981, #059669); color: #fff; }
+
+        .logout-panel {
+            padding: 0 24px;
+            margin-top: 20px;
+        }
+
+        .btn-exit {
+            width: 100%;
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            color: #fb7185;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .btn-exit:active {
+            background: rgba(244, 63, 94, 0.2);
+            transform: scale(0.98);
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-item {
+            animation: slideIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cyber Header -->
+    <header class="cyber-header">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-5">
+                <div class="avatar-glow">
+                    <img src="../Backend/logo-1.jpg" id="userPhoto" onerror="this.src='https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff'" class="user-avatar">
+                </div>
+                <div>
+                    <h2 class="text-xl font-black tracking-tighter" id="userName">กำลังโหลดข้อมูล...</h2>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span id="userLevelBadge" class="level-badge">ระดับการเข้าถึง</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-rose-500 shadow-xl active:scale-90 transition-all">
+                <i class="fas fa-power-off"></i>
+            </button>
+        </div>
+        <div class="mt-6 flex items-center gap-2">
+            <i class="fas fa-map-marker-alt text-amber-500 text-xs"></i>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="userUnit">หน่วยงาน: กำลังตรวจสอบ...</span>
+        </div>
+    </header>
+
+    <main class="mt-8">
+        <!-- Stats Panel (Supervisor Only) -->
+        <div id="spvStats" class="hidden stats-panel animate-item" style="animation-delay: 0.2s">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-[10px] font-black text-primary uppercase tracking-[3px]">ภาพรวมพื้นที่ปฏิบัติงาน</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">กำลังพลปฏิบัติงาน</p>
+                    <p class="text-3xl font-black text-white">24<span class="text-sm font-normal text-slate-500 ml-1">นาย</span></p>
+                </div>
+                <div>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">สถานะระบบ</p>
+                    <p class="text-3xl font-black text-emerald-400">ปกติ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[4px] mb-4">เมนูการปฏิบัติงาน</h3>
+        </div>
+
+        <!-- Menu Grid -->
+        <div class="menu-grid" id="menuGrid">
+            <!-- Common -->
+            <div class="tactical-card animate-item" style="animation-delay: 0.3s" onclick="alert('กำลังเริ่มระบบ...')">
+                <div class="card-icon-box text-emerald-400">
+                    <i class="fas fa-id-badge"></i>
+                </div>
+                <span class="card-label">ลงชื่อเข้างาน</span>
+                <p class="text-[8px] text-slate-500 mt-2">บันทึกเวลาปฏิบัติหน้าที่</p>
+            </div>
+
+            <!-- Supervisor Only -->
+            <div class="tactical-card spv-only hidden animate-item" style="animation-delay: 0.4s" onclick="window.location.href='../Backend/OP05.html'">
+                <div class="card-icon-box text-amber-500">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <span class="card-label">รายงาน OP05</span>
+                <p class="text-[8px] text-slate-500 mt-2">บันทึกการเข้าพบผู้ว่าจ้าง</p>
+            </div>
+
+            <!-- Common -->
+            <div class="tactical-card animate-item" style="animation-delay: 0.5s" onclick="alert('ระบบพร้อมใช้งาน...')">
+                <div class="card-icon-box text-blue-400">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <span class="card-label">รายงานรวมแถว</span>
+                <p class="text-[8px] text-slate-500 mt-2">รวมแถวตรวจสอบกำลังพล</p>
+            </div>
+
+            <!-- Supervisor Only -->
+            <div class="tactical-card spv-only hidden animate-item" style="animation-delay: 0.6s" onclick="alert('กำลังเปิดระบบตรวจ...')">
+                <div class="card-icon-box text-purple-400">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <span class="card-label">ตรวจความเรียบร้อย</span>
+                <p class="text-[8px] text-slate-500 mt-2">ตรวจสอบหน้างาน (Audit)</p>
+            </div>
+
+            <!-- Common -->
+            <div class="tactical-card animate-item" style="animation-delay: 0.7s" onclick="alert('กำลังโหลดข้อมูลการอบรม...')">
+                <div class="card-icon-box text-rose-400">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="card-label">รายงานการอบรม</span>
+                <p class="text-[8px] text-slate-500 mt-2">บันทึกการอบรมประจำวัน</p>
+            </div>
+
+            <!-- Admin/Supervisor -->
+            <div class="tactical-card spv-only hidden animate-item" style="animation-delay: 0.8s" onclick="window.location.href='../Backend/dashboard 10.html'">
+                <div class="card-icon-box text-slate-300">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="card-label">แผงควบคุมหลัก</span>
+                <p class="text-[8px] text-slate-500 mt-2">จัดการระบบหลังบ้าน</p>
+            </div>
+        </div>
+
+        <div class="logout-panel">
+            <button onclick="logout()" class="btn-exit">
+                ออกจากระบบปฏิบัติการ
+            </button>
+        </div>
+
+        <div class="mt-12 text-center pb-8">
+            <div class="inline-block px-4 py-1 rounded-full bg-slate-900 border border-slate-800 text-[8px] font-black text-slate-500 tracking-[3px] uppercase">
+                ระบบจัดการความปลอดภัยเน็กซ์เจน v2.4
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Check Session
+        const userData = JSON.parse(localStorage.getItem('nexgen_user'));
+
+        if (!userData) {
+            window.location.href = 'index.html';
+        } else {
+            initPortal();
+        }
+
+        function initPortal() {
+            document.getElementById('userName').innerText = userData.name.toUpperCase();
+            document.getElementById('userUnit').innerText = 'หน่วยงาน: ' + (userData.unit || 'ยังไม่ได้ระบุ');
+            
+            const badge = document.getElementById('userLevelBadge');
+            badge.innerText = userData.level;
+
+            if (userData.level === 'Admin' || userData.level === 'Supervisor') {
+                badge.className = 'level-badge badge-spv';
+                document.querySelectorAll('.spv-only').forEach(el => el.classList.remove('hidden'));
+                document.getElementById('spvStats').classList.remove('hidden');
+            } else {
+                badge.className = 'level-badge badge-guard';
+            }
+        }
+
+        function logout() {
+            if (confirm('ต้องการออกจากระบบปฏิบัติการใช่หรือไม่?')) {
+                localStorage.removeItem('nexgen_user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
