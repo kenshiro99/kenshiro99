@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen | ระบบระบุพิกัดหน่วยงาน</title>
+    
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --accent: #f59e0b;
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.9);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- SCANNING ANIMATION --- */
+        .scan-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin-bottom: 40px;
+        }
+
+        .scan-ring {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(14, 165, 233, 0.1);
+            border-radius: 50%;
+        }
+
+        .scan-ring-active {
+            position: absolute;
+            inset: -10px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            border-bottom-color: transparent;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .radar-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary));
+            transform-origin: left center;
+            animation: radar 2s linear infinite;
+        }
+
+        @keyframes radar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .pulse-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+
+        .pulse-core i {
+            font-size: 30px;
+            color: var(--primary);
+            animation: pulseIcon 2s infinite;
+        }
+
+        @keyframes pulseIcon {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- STATUS CARD --- */
+        .status-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            padding: 30px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: slideUp 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .unit-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-top: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .check-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 25px;
+            display: none; /* Hide until match */
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scan-container">
+        <div class="scan-ring"></div>
+        <div class="scan-ring-active"></div>
+        <div class="radar-line" id="radar"></div>
+        <div class="pulse-core">
+            <i class="fas fa-satellite-dish" id="statusIcon"></i>
+        </div>
+    </div>
+
+    <div class="status-card">
+        <p class="text-[10px] font-black text-slate-500 uppercase tracking-[4px] mb-2" id="statusLabel">ระบบกำลังระบุพิกัด</p>
+        <h2 class="text-2xl font-black text-white" id="mainStatus">ค้นหาหน่วยงาน...</h2>
+        <div id="unitInfo" class="hidden">
+            <p class="unit-name" id="detectedUnitName">-- ชื่อหน่วยงาน --</p>
+            <p class="text-emerald-400 text-xs font-bold mt-2"><i class="fas fa-check-circle mr-1"></i> บันทึกเข้าหน่วยงานแล้ว</p>
+        </div>
+        
+        <button id="startReportBtn" class="check-btn" onclick="goToPortal()">
+            เริ่มทำรายงาน <i class="fas fa-arrow-right ml-2"></i>
+        </button>
+        
+        <p id="retryText" class="mt-4 text-[10px] text-slate-500 hidden cursor-pointer hover:text-white underline" onclick="location.reload()">
+            ไม่พบหน่วยงาน? กดลองใหม่อีกครั้ง
+        </p>
+    </div>
+
+    <script>
+        // กำหนดค่าการเชื่อมต่อ
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        
+        let supabaseClient;
+        let currentMatch = null;
+        let userData = null;
+
+        // --- บล็อกการเข้าถึงทันที (Immediate Authentication Check) ---
+        try {
+            const sessionString = localStorage.getItem('nexgen_user');
+            if (!sessionString) throw new Error('No session');
+            userData = JSON.parse(sessionString);
+            if (!userData || !userData.level) throw new Error('Invalid level');
+            // ผ่านการตรวจสอบเบื้องต้น
+        } catch (e) {
+            console.error("Access Denied:", e.message);
+            localStorage.removeItem('nexgen_user');
+            window.location.replace('index.html');
+        }
+
+        // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
+        window.onload = () => {
+            if (typeof supabase === 'undefined') {
+                console.error("Supabase library not loaded");
+                alert("เกิดข้อผิดพลาดในการโหลดระบบกรุณาลองใหม่อีกครั้ง");
+                return;
+            }
+            
+            // สร้าง Client
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            detectLocation();
+        };
+
+        function detectLocation() {
+            if (!navigator.geolocation) {
+                document.getElementById('mainStatus').innerText = 'ไม่รองรับ GPS';
+                return;
+            }
+
+            // ตั้งค่า Geolocation Options
+            const geoOptions = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const myLat = pos.coords.latitude;
+                const myLng = pos.coords.longitude;
+                console.log("พิกัดปัจจุบัน:", myLat, myLng);
+                
+                try {
+                    const { data: units, error } = await supabaseClient.from('units').select('*');
+                    if (error) throw error;
+
+                    let matchedUnit = null;
+                    units.forEach(u => {
+                        if (u.latitude && u.longitude) {
+                            const distance = calculateDistance(myLat, myLng, u.latitude, u.longitude);
+                            const radius = u.radius_meters || 100;
+                            console.log(`เปรียบเทียบ ${u.unit_name}: ระยะห่าง ${distance.toFixed(2)} เมตร (รัศมี ${radius}ม.)`);
+                            if (distance <= radius) {
+                                matchedUnit = u;
+                            }
+                        }
+                    });
+
+                    if (matchedUnit) {
+                        showMatch(matchedUnit);
+                    } else {
+                        showNoMatch();
+                    }
+
+                } catch (e) {
+                    console.error("Database Error:", e);
+                    showNoMatch();
+                }
+            }, (err) => {
+                console.error("GPS Error:", err);
+                let msg = "ไม่สามารถระบุพิกัดได้";
+                if (err.code === 1) msg = "โปรดอนุญาตสิทธิ์การเข้าถึง GPS";
+                document.getElementById('mainStatus').innerText = msg;
+                showNoMatch();
+            }, geoOptions);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // รัศมีโลกเป็นเมตร
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function showMatch(unit) {
+            currentMatch = unit;
+            // บันทึกหน่วยงานที่เข้างานไว้ใน session
+            const updatedUser = { ...userData, current_unit: unit.unit_name, current_unit_id: unit.id };
+            localStorage.setItem('nexgen_user', JSON.stringify(updatedUser));
+
+            // อัปเดต UI
+            document.getElementById('radar').style.animation = 'none';
+            document.getElementById('statusIcon').className = 'fas fa-check-circle text-emerald-500';
+            document.getElementById('statusLabel').innerText = 'ระบุพิกัดสำเร็จ';
+            document.getElementById('mainStatus').innerText = 'ตรวจพบหน่วยงาน';
+            document.getElementById('detectedUnitName').innerText = unit.unit_name;
+            document.getElementById('unitInfo').classList.remove('hidden');
+            document.getElementById('startReportBtn').style.display = 'block';
+        }
+
+        function showNoMatch() {
+            document.getElementById('radar').style.animation = 'none';
+            document.getElementById('statusIcon').className = 'fas fa-times-circle text-rose-500';
+            document.getElementById('mainStatus').innerText = 'ไม่พบหน่วยงาน';
+            document.getElementById('retryText').classList.remove('hidden');
+        }
+
+        function goToPortal() {
+            window.location.href = 'portal.html';
+        }
+    </script>
+</body>
+</html>
