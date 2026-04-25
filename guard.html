@@ -41,10 +41,10 @@
         }
 
         .user-img {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
-            border: 2px solid var(--primary);
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            border: 3px solid var(--primary);
             object-fit: cover;
         }
 
@@ -401,12 +401,23 @@
     <script>
         let userData = null;
 
-        // 1. ตรวจสอบสิทธิ์
+        // 1. ตรวจสอบสิทธิ์และดึงข้อมูลพื้นฐาน
         try {
             const session = localStorage.getItem('nexgen_user');
             if (!session) throw new Error();
             userData = JSON.parse(session);
             document.getElementById('userName').innerText = userData.name.toUpperCase();
+            
+            // แสดงรูปภาพโปรไฟล์จากฐานข้อมูล (ถ้ามี) หรือใช้รูปแทนจากชื่อ
+            const userPhoto = document.getElementById('userPhoto');
+            if (userData.image) {
+                userPhoto.src = userData.image;
+            } else {
+                const encodedName = encodeURIComponent(userData.name || 'User');
+                // สีพื้นหลังเป็นสีเขียว (10b981) สำหรับ Guard
+                userPhoto.src = `https://ui-avatars.com/api/?name=${encodedName}&background=10b981&color=fff`;
+            }
+            
         } catch (e) {
             window.location.replace('index.html');
         }

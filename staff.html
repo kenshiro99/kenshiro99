@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen | Supervisor Command Center</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            /* Blue for Supervisor */
+            --bg: #020617;
+            --box-bg: rgba(15, 23, 42, 0.6);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            padding-bottom: 30px;
+        }
+
+        /* --- BACKGROUND EFFECTS --- */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: 30px 30px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            z-index: -1;
+        }
+
+        .glow-orb {
+            position: fixed;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- HEADER --- */
+        .header-cc {
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .user-img {
+            width: 75px;
+            height: 75px;
+            border-radius: 20px;
+            border: 3px solid var(--primary);
+            object-fit: cover;
+            object-position: center top; /* จัดให้เห็นส่วนหัวชัดเจน */
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* --- STATS GRID --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .stat-card.total::before {
+            background: var(--primary);
+        }
+
+        .stat-card.present::before {
+            background: #10b981;
+        }
+
+        /* Emerald */
+        .stat-card.late::before {
+            background: #f59e0b;
+        }
+
+        /* Amber */
+        .stat-card.absent::before {
+            background: #f43f5e;
+        }
+
+        /* Rose */
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1;
+            margin-top: 10px;
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- MAIN BOXES --- */
+        .main-container {
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-box {
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .box-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- MINI BOXES (FOR WORK REPORT) --- */
+        .mini-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .mini-val {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .mini-lbl {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* --- LIST ITEMS --- */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .btn-approve {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-reject {
+            background: rgba(244, 63, 94, 0.2);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+    <div class="glow-orb"></div>
+
+    <!-- HEADER -->
+    <header class="header-cc">
+        <div class="flex items-center gap-3">
+            <img src="img/logo-1.jpg" id="userPhoto"
+                onerror="this.src='https://ui-avatars.com/api/?name=Supervisor&background=3b82f6&color=fff'"
+                class="user-img">
+            <div>
+                <h2 class="text-lg font-black text-white" id="userName">กำลังโหลด...</h2>
+                <div class="flex items-center gap-2 mt-1">
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest" id="userPosition">Command Center</p>
+                    <span class="text-[8px] bg-white/10 text-slate-300 px-2 py-0.5 rounded-full" id="userLevel">Supervisor</span>
+                </div>
+            </div>
+        </div>
+        <button onclick="logout()"
+            class="w-10 h-10 rounded-full bg-rose-500/20 text-rose-500 border border-rose-500/30 flex items-center justify-center active:scale-95 transition-all">
+            <i class="fas fa-power-off"></i>
+        </button>
+    </header>
+
+    <!-- 4 STATS GRID -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-lbl"><i class="fas fa-users mr-1"></i> กำลังพลรวม</div>
+            <div class="stat-val text-white">45 <span class="text-xs text-slate-500 font-normal">นาย</span></div>
+        </div>
+        <div class="stat-card present">
+            <div class="stat-lbl"><i class="fas fa-check-circle mr-1"></i> ปฏิบัติงาน</div>
+            <div class="stat-val text-emerald-400">40 <span class="text-xs text-emerald-400/50 font-normal">นาย</span>
+            </div>
+        </div>
+        <div class="stat-card late">
+            <div class="stat-lbl"><i class="fas fa-clock mr-1"></i> เข้าสาย</div>
+            <div class="stat-val text-amber-400">3 <span class="text-xs text-amber-400/50 font-normal">นาย</span></div>
+        </div>
+        <div class="stat-card absent">
+            <div class="stat-lbl"><i class="fas fa-times-circle mr-1"></i> ขาดงาน</div>
+            <div class="stat-val text-rose-400">2 <span class="text-xs text-rose-400/50 font-normal">นาย</span></div>
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <!-- BOX 1: UNIT STATUS (MISSING MANPOWER) -->
+        <div class="main-box border-rose-500/30 bg-rose-500/5">
+            <h2 class="box-title"><i class="fas fa-exclamation-triangle text-rose-500"></i> 1. แจ้งเตือนกำลังพลไม่ครบ (Live)</h2>
+
+            <div class="list-item">
+                <div>
+                    <div class="font-bold text-sm text-white">คอนโดลุมพินี (กะเช้า)</div>
+                    <div class="text-[10px] text-slate-400 mt-1">อัปเดตล่าสุด: 07:30 น.</div>
+                </div>
+                <div class="text-right">
+                    <span
+                        class="text-xs bg-rose-500/20 text-rose-400 px-2 py-1 rounded-md font-bold border border-rose-500/30"><i
+                            class="fas fa-user-minus"></i> ขาด 1 นาย (2/3)</span>
+                </div>
+            </div>
+
+            <div class="list-item">
+                <div>
+                    <div class="font-bold text-sm text-white">โรงพยาบาลกรุงเทพ (กะดึก)</div>
+                    <div class="text-[10px] text-slate-400 mt-1">อัปเดตล่าสุด: 19:15 น.</div>
+                </div>
+                <div class="text-right">
+                    <span
+                        class="text-xs bg-rose-500/20 text-rose-400 px-2 py-1 rounded-md font-bold border border-rose-500/30"><i
+                            class="fas fa-user-minus"></i> ขาด 2 นาย (8/10)</span>
+                </div>
+            </div>
+
+            <button
+                class="w-full mt-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-blue-400 font-bold active:scale-95 transition-all">
+                ดูสถานะทุกหน่วยงาน <i class="fas fa-chevron-right ml-1"></i>
+            </button>
+        </div>
+
+        <!-- BOX 2: PENDING APPROVALS -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-clipboard-check text-white"></i> 2. รอการอนุมัติ <span
+                    class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full ml-1">3</span></h2>
+
+            <!-- ลาป่วย -->
+            <div class="list-item flex-col items-start gap-3">
+                <div class="w-full flex justify-between items-start">
+                    <div class="flex gap-3 items-start w-full">
+                        <div
+                            class="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-[11px] font-bold text-rose-400 shrink-0">
+                            ป่วย</div>
+                        <div class="w-full">
+                            <div class="font-bold text-sm text-white">สมเกียรติ รักษาดี</div>
+                            <div class="text-xs text-rose-400 mt-1"><i class="fas fa-procedures mr-1"></i> ขอลาป่วย (1 วัน)</div>
+                            <div class="text-[11px] text-slate-300 mt-1">วันที่: 26 เม.ย. 69</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full flex gap-2">
+                    <button class="flex-1 py-2 bg-slate-800 text-slate-400 border border-white/5 rounded-xl font-bold text-xs active:scale-95 transition-all">ไม่อนุมัติ</button>
+                    <button class="flex-1 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-xs active:scale-95 transition-all">อนุมัติ</button>
+                </div>
+            </div>
+
+            <!-- ลากิจ -->
+            <div class="list-item flex-col items-start gap-3">
+                <div class="w-full flex justify-between items-start">
+                    <div class="flex gap-3 items-start w-full">
+                        <div
+                            class="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-[11px] font-bold text-amber-400 shrink-0">
+                            กิจ</div>
+                        <div class="w-full">
+                            <div class="font-bold text-sm text-white">ชัยยุทธ ยอดเยี่ยม</div>
+                            <div class="text-xs text-amber-400 mt-1"><i class="fas fa-file-alt mr-1"></i> ขอลากิจ (2 วัน)</div>
+                            <div class="text-[11px] text-slate-300 mt-1">วันที่: 27-28 เม.ย. 69</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full flex gap-2">
+                    <button class="flex-1 py-2 bg-slate-800 text-slate-400 border border-white/5 rounded-xl font-bold text-xs active:scale-95 transition-all">ไม่อนุมัติ</button>
+                    <button class="flex-1 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-xs active:scale-95 transition-all">อนุมัติ</button>
+                </div>
+            </div>
+
+            <!-- ลาพักร้อน -->
+            <div class="list-item flex-col items-start gap-3">
+                <div class="w-full flex justify-between items-start">
+                    <div class="flex gap-3 items-start w-full">
+                        <div
+                            class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-[11px] font-bold text-emerald-400 shrink-0">
+                            พัก</div>
+                        <div class="w-full">
+                            <div class="font-bold text-sm text-white">มานะ มุ่งมั่น</div>
+                            <div class="text-xs text-emerald-400 mt-1"><i class="fas fa-umbrella-beach mr-1"></i> ขอลาพักร้อน (3 วัน)</div>
+                            <div class="text-[11px] text-slate-300 mt-1">วันที่: 01-03 พ.ค. 69</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full flex gap-2">
+                    <button class="flex-1 py-2 bg-slate-800 text-slate-400 border border-white/5 rounded-xl font-bold text-xs active:scale-95 transition-all">ไม่อนุมัติ</button>
+                    <button class="flex-1 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-xs active:scale-95 transition-all">อนุมัติ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOX 3: DUTY REPORT -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-file-signature text-white"></i> 3. รายงานการปฏิบัติหน้าที่</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button class="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all text-center">
+                    <i class="fas fa-search-location text-2xl text-blue-400"></i>
+                    <span class="text-[11px] font-bold text-slate-300">รายงานเข้าตรวจหน่วยงาน</span>
+                </button>
+                <button class="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all text-center">
+                    <i class="fas fa-handshake text-2xl text-emerald-400"></i>
+                    <span class="text-[11px] font-bold text-slate-300">รายงานพบผู้ว่าจ้าง</span>
+                </button>
+                <button class="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all text-center">
+                    <i class="fas fa-users text-2xl text-amber-400"></i>
+                    <span class="text-[11px] font-bold text-slate-300">รายงานการรวมแถว</span>
+                </button>
+                <button class="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all text-center">
+                    <i class="fas fa-chalkboard-teacher text-2xl text-purple-400"></i>
+                    <span class="text-[11px] font-bold text-slate-300">รายงานอบรมประจำเดือน</span>
+                </button>
+                <button class="col-span-2 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all text-center">
+                    <i class="fas fa-user-clock text-2xl text-rose-400"></i>
+                    <span class="text-[11px] font-bold text-slate-300">รายงานเข้า/ออก รปภ.</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Authentication Guard ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const sessionString = localStorage.getItem('nexgen_user');
+            if (!sessionString) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            try {
+                const userData = JSON.parse(sessionString);
+                const userLevel = (userData.level || '').toLowerCase();
+
+                if (userLevel !== 'supervisor' && userLevel !== 'admin') {
+                    // หากเป็น Guard แอบเข้ามา ให้ดีดกลับไปหน้า guard.html
+                    window.location.replace('guard.html');
+                    return;
+                }
+
+                // แสดงชื่อและตำแหน่งจากฐานข้อมูล (Local Storage ชั่วคราว)
+                document.getElementById('userName').innerText = userData.name || 'Supervisor';
+                
+                // ดึงตำแหน่งจากคอลัมน์ 'role' ใน Supabase
+                if (userData.role) {
+                    document.getElementById('userPosition').innerText = userData.role;
+                }
+                
+                // แสดงรูปภาพโปรไฟล์จากฐานข้อมูล (ถ้ามี) หรือใช้รูปแทนจากชื่อ
+                const userPhoto = document.getElementById('userPhoto');
+                if (userData.image) {
+                    userPhoto.src = userData.image;
+                } else {
+                    const encodedName = encodeURIComponent(userData.name || 'User');
+                    userPhoto.src = `https://ui-avatars.com/api/?name=${encodedName}&background=3b82f6&color=fff`;
+                }
+                
+                // อัปเดต Level Badge
+                document.getElementById('userLevel').innerText = userLevel.charAt(0).toUpperCase() + userLevel.slice(1);
+                
+            } catch (e) {
+                localStorage.removeItem('nexgen_user');
+                window.location.replace('index.html');
+            }
+        });
+
+        function logout() {
+            if (confirm('ต้องการออกจากระบบใช่หรือไม่?')) {
+                localStorage.removeItem('nexgen_user');
+                window.location.replace('index.html');
+            }
+        }
+    </script>
+</body>
+
+</html>
