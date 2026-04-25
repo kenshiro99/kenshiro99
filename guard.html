@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen | พอร์ทัลเจ้าหน้าที่รักษาความปลอดภัย</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #020617;
+            --card-bg: rgba(15, 23, 42, 0.9);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top, rgba(16, 185, 129, 0.1), transparent 50%);
+            color: white;
+            margin: 0;
+            padding-bottom: 40px;
+        }
+
+        /* --- HEADER --- */
+        .simple-header {
+            padding: 30px 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .user-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            object-fit: cover;
+        }
+
+        /* --- 5 MAIN BOXES --- */
+        .main-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .box-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        /* --- BOX 1: HISTORY --- */
+        .date-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .date-picker-wrap input {
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            font-family: 'Outfit';
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 8px;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- BOX 2: PERFORMANCE --- */
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .mini-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .mini-val {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .mini-lbl {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* --- BOX 3: LEAVES --- */
+        .leave-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .leave-row:last-child {
+            border-bottom: none;
+        }
+
+        .leave-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .leave-stats {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .leave-remain {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        /* --- BOX 4: FINANCE --- */
+        .finance-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        .finance-total {
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .finance-total-val {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* --- BOX 5: LOGOUT --- */
+        .btn-logout {
+            width: 100%;
+            background: rgba(225, 29, 72, 0.1);
+            color: #f43f5e;
+            border: 1px solid rgba(225, 29, 72, 0.3);
+            padding: 16px;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-logout:active {
+            background: rgba(225, 29, 72, 0.2);
+            transform: scale(0.98);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="simple-header">
+        <img src="img/logo-1.jpg" id="userPhoto"
+            onerror="this.src='https://ui-avatars.com/api/?name=Guard&background=10b981&color=000'" class="user-img">
+        <div>
+            <h2 class="text-xl font-black text-white" id="userName">กำลังโหลด...</h2>
+            <div class="flex items-center gap-2 mt-1">
+                <p class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Security Guard</p>
+                <span class="text-[9px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/30">ผลัดกลางวัน</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <!-- กล่องที่ 1: ประวัติการเข้าออกงาน -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-history text-white"></i> 1. ประวัติการเข้าออกงาน</h2>
+
+            <!-- เลือกวันที่ -->
+            <div class="date-picker-wrap">
+                <i class="far fa-calendar-alt text-emerald-500"></i>
+                <input type="date" id="historyDate" onchange="filterHistory()">
+            </div>
+
+            <!-- ตารางประวัติ (จำลองกะ 12, 24, 36 ชม.) -->
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>วันที่เข้า</th>
+                        <th>ผลัด</th>
+                        <th>เข้า - ออก</th>
+                        <th class="text-center">ชม.</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td class="font-bold text-[11px]">25 เม.ย.</td>
+                        <td class="text-blue-400 text-[10px] font-bold">กลางวัน</td>
+                        <td class="text-[10px]">
+                            <span class="text-emerald-400">07:00</span> - <span class="text-slate-400">กำลังทำ</span>
+                        </td>
+                        <td class="text-center font-bold text-slate-400">-</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-[11px]">23 เม.ย.</td>
+                        <td class="text-amber-500 text-[10px] font-bold">ควงเวร</td>
+                        <td class="text-[10px]">
+                            <span class="text-emerald-400">07:00</span> - <span class="text-amber-400">07:00</span><br>
+                            <span class="text-[8px] text-slate-500">(ออก 24 เม.ย.)</span>
+                        </td>
+                        <td class="text-center font-bold text-amber-500">24</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-[11px]">21 เม.ย.</td>
+                        <td class="text-purple-400 text-[10px] font-bold">กลางคืน</td>
+                        <td class="text-[10px]">
+                            <span class="text-emerald-400">19:00</span> - <span class="text-amber-400">07:00</span>
+                        </td>
+                        <td class="text-center font-bold text-white">12</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- กล่องที่ 2: รายงานการปฏิบัติงาน -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-chart-pie text-white"></i> 2. รายงานการปฏิบัติงาน</h2>
+            <div class="perf-grid">
+                <div class="mini-box">
+                    <div class="mini-val text-white">22</div>
+                    <div class="mini-lbl">วันทำงาน</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-rose-500">1</div>
+                    <div class="mini-lbl">ขาดงาน</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-amber-500">2</div>
+                    <div class="mini-lbl">เข้าสาย</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-blue-400">0</div>
+                    <div class="mini-lbl">ออกก่อนเวลา</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- กล่องที่ 3: สิทธิและสวัสดิการ -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-notes-medical text-white"></i> 3. สิทธิและสวัสดิการ</h2>
+
+            <div class="leave-row">
+                <div>
+                    <div class="leave-name">ลากิจ</div>
+                    <div class="leave-stats">ใช้ไปแล้ว 3 วัน (จาก 6 วัน)</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-500">คงเหลือ</div>
+                    <div class="leave-remain text-amber-400">3 วัน</div>
+                </div>
+            </div>
+
+            <div class="leave-row">
+                <div>
+                    <div class="leave-name">ลาป่วย</div>
+                    <div class="leave-stats">ใช้ไปแล้ว 2 วัน (จาก 30 วัน)</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-500">คงเหลือ</div>
+                    <div class="leave-remain text-emerald-400">28 วัน</div>
+                </div>
+            </div>
+
+            <div class="leave-row">
+                <div>
+                    <div class="leave-name">ลาพักร้อน</div>
+                    <div class="leave-stats">ใช้ไปแล้ว 0 วัน (จาก 6 วัน)</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-slate-500">คงเหลือ</div>
+                    <div class="leave-remain text-blue-400">6 วัน</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- กล่องที่ 4: สถานะเงินเบิกและรายการหัก -->
+        <div class="main-box">
+            <h2 class="box-title"><i class="fas fa-wallet text-white"></i> 4. สถานะเงินเบิกและรายการหัก</h2>
+
+            <div class="finance-row">
+                <span>เงินเบิกรายสัปดาห์</span>
+                <span class="font-bold text-rose-400">-฿1,000</span>
+            </div>
+            <div class="finance-row">
+                <span>เงินเบิกค่าเช่าบ้าน</span>
+                <span class="font-bold text-rose-400">-฿1,500</span>
+            </div>
+            <div class="finance-row">
+                <span>ค่าฝึกอบรม</span>
+                <span class="font-bold text-rose-400">-฿500</span>
+            </div>
+            <div class="finance-row">
+                <span>ค่าชุดปฏิบัติงาน</span>
+                <span class="font-bold text-rose-400">-฿800</span>
+            </div>
+
+            <div class="finance-total" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="text-xs text-rose-500 font-bold">ยอดหักจ่ายรวม</span>
+                    <span class="text-lg font-bold text-rose-500">฿3,800</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px;">
+                    <div>
+                        <div class="text-sm text-emerald-500 font-bold">ยอดหักคงเหลือ</div>
+                        <div class="text-[10px] text-slate-500">อัปเดตล่าสุด: วันนี้</div>
+                    </div>
+                    <div class="finance-total-val text-emerald-400">฿11,200</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- กล่องที่ 5: ออกจากระบบ -->
+        <div class="main-box" style="padding: 10px; border: none; background: transparent; box-shadow: none;">
+            <button onclick="logout()" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        let userData = null;
+
+        // 1. ตรวจสอบสิทธิ์
+        try {
+            const session = localStorage.getItem('nexgen_user');
+            if (!session) throw new Error();
+            userData = JSON.parse(session);
+            document.getElementById('userName').innerText = userData.name.toUpperCase();
+        } catch (e) {
+            window.location.replace('index.html');
+        }
+
+        // 2. ตั้งค่าวันที่ปัจจุบันในช่องเลือกวันที่
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('historyDate').value = today;
+
+        // 3. ฟังก์ชันกรองข้อมูลเมื่อเปลี่ยนวันที่
+        function filterHistory() {
+            const selectedDate = document.getElementById('historyDate').value;
+            const tbody = document.getElementById('historyTableBody');
+
+            // แสดงเอฟเฟกต์โหลด
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-500 animate-pulse">กำลังโหลดข้อมูล...</td></tr>';
+
+            // จำลองการโหลดข้อมูล
+            setTimeout(() => {
+                // (ในระบบจริงจะดึงข้อมูลจาก Supabase ตามวันที่เลือก)
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="font-bold text-emerald-300">วันที่เลือก</td>
+                        <td class="text-emerald-400 font-bold">08:00 น.</td>
+                        <td class="text-amber-400 font-bold">17:00 น.</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-slate-400">ย้อนหลัง 1 วัน</td>
+                        <td class="text-emerald-400 font-bold">07:55 น.</td>
+                        <td class="text-amber-400 font-bold">17:10 น.</td>
+                    </tr>
+                    <tr>
+                        <td class="font-bold text-slate-400">ย้อนหลัง 2 วัน</td>
+                        <td class="text-emerald-400 font-bold">07:45 น.</td>
+                        <td class="text-amber-400 font-bold">17:05 น.</td>
+                    </tr>
+                `;
+            }, 800);
+        }
+
+        function logout() {
+            if (confirm('ยืนยันออกจากระบบ?')) {
+                localStorage.removeItem('nexgen_user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+
+</html>

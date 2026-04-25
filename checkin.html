@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nexgen | ระบบระบุพิกัดหน่วยงาน</title>
-    
+
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
-    
+
     <style>
         :root {
             --primary: #0ea5e9;
@@ -57,16 +58,12 @@
             animation: spin 3s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .radar-line {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 120px;
-            height: 2px;
+            top: 50%; left: 50%;
+            width: 120px; height: 2px;
             background: linear-gradient(90deg, transparent, var(--primary));
             transform-origin: left center;
             animation: radar 2s linear infinite;
@@ -79,11 +76,9 @@
 
         .pulse-core {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             background: rgba(14, 165, 233, 0.1);
             border-radius: 50%;
             display: flex;
@@ -114,7 +109,7 @@
             width: 90%;
             max-width: 380px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             animation: slideUp 0.8s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
@@ -143,7 +138,7 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-top: 25px;
-            display: none; /* Hide until match */
+            display: none;
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
         }
@@ -154,6 +149,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="scan-container">
@@ -172,49 +168,48 @@
             <p class="unit-name" id="detectedUnitName">-- ชื่อหน่วยงาน --</p>
             <p class="text-emerald-400 text-xs font-bold mt-2"><i class="fas fa-check-circle mr-1"></i> บันทึกเข้าหน่วยงานแล้ว</p>
         </div>
-        
-        <button id="startReportBtn" class="check-btn" onclick="goToPortal()">
-            เริ่มทำรายงาน <i class="fas fa-arrow-right ml-2"></i>
-        </button>
-        
+
+        <div id="actionButtons" class="hidden mt-6 space-y-3 w-full">
+            <button onclick="recordTime('in')" class="w-full py-4 bg-emerald-500 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-[0_10px_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all">
+                <i class="fas fa-sign-in-alt mr-2"></i> ลงเวลาเข้างาน
+            </button>
+            <button onclick="recordTime('out')" class="w-full py-4 bg-amber-500 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-[0_10px_20px_rgba(245,158,11,0.3)] active:scale-95 transition-all">
+                <i class="fas fa-sign-out-alt mr-2"></i> ลงเวลาออกงาน
+            </button>
+        </div>
+
         <p id="retryText" class="mt-4 text-[10px] text-slate-500 hidden cursor-pointer hover:text-white underline" onclick="location.reload()">
             ไม่พบหน่วยงาน? กดลองใหม่อีกครั้ง
         </p>
     </div>
 
     <script>
-        // กำหนดค่าการเชื่อมต่อ
         const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
-        
+
         let supabaseClient;
         let currentMatch = null;
         let userData = null;
 
-        // --- บล็อกการเข้าถึงทันที (Immediate Authentication Check) ---
+        // --- บล็อกการเข้าถึงทันที (Authentication Check) ---
         try {
             const sessionString = localStorage.getItem('nexgen_user');
             if (!sessionString) throw new Error('No session');
             userData = JSON.parse(sessionString);
-            if (!userData || !userData.level) throw new Error('Invalid level');
-            // ผ่านการตรวจสอบเบื้องต้น
+            const userLevel = (userData.level || '').toLowerCase();
+            if (userLevel !== 'supervisor' && userLevel !== 'guard' && userLevel !== 'admin') throw new Error('Unauthorized');
         } catch (e) {
             console.error("Access Denied:", e.message);
             localStorage.removeItem('nexgen_user');
             window.location.replace('index.html');
         }
 
-        // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
         window.onload = () => {
             if (typeof supabase === 'undefined') {
-                console.error("Supabase library not loaded");
-                alert("เกิดข้อผิดพลาดในการโหลดระบบกรุณาลองใหม่อีกครั้ง");
+                alert("เกิดข้อผิดพลาดในการโหลดระบบ กรุณาลองใหม่อีกครั้ง");
                 return;
             }
-            
-            // สร้าง Client
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
             detectLocation();
         };
 
@@ -224,18 +219,10 @@
                 return;
             }
 
-            // ตั้งค่า Geolocation Options
-            const geoOptions = {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            };
-
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const myLat = pos.coords.latitude;
                 const myLng = pos.coords.longitude;
-                console.log("พิกัดปัจจุบัน:", myLat, myLng);
-                
+
                 try {
                     const { data: units, error } = await supabaseClient.from('units').select('*');
                     if (error) throw error;
@@ -245,10 +232,7 @@
                         if (u.latitude && u.longitude) {
                             const distance = calculateDistance(myLat, myLng, u.latitude, u.longitude);
                             const radius = u.radius_meters || 100;
-                            console.log(`เปรียบเทียบ ${u.unit_name}: ระยะห่าง ${distance.toFixed(2)} เมตร (รัศมี ${radius}ม.)`);
-                            if (distance <= radius) {
-                                matchedUnit = u;
-                            }
+                            if (distance <= radius) matchedUnit = u;
                         }
                     });
 
@@ -257,45 +241,85 @@
                     } else {
                         showNoMatch();
                     }
-
                 } catch (e) {
                     console.error("Database Error:", e);
                     showNoMatch();
                 }
             }, (err) => {
                 console.error("GPS Error:", err);
-                let msg = "ไม่สามารถระบุพิกัดได้";
-                if (err.code === 1) msg = "โปรดอนุญาตสิทธิ์การเข้าถึง GPS";
-                document.getElementById('mainStatus').innerText = msg;
+                document.getElementById('mainStatus').innerText = "โปรดอนุญาตสิทธิ์การเข้าถึง GPS";
                 showNoMatch();
-            }, geoOptions);
+            }, { enableHighAccuracy: true, timeout: 10000 });
         }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // รัศมีโลกเป็นเมตร
+            const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         function showMatch(unit) {
             currentMatch = unit;
-            // บันทึกหน่วยงานที่เข้างานไว้ใน session
             const updatedUser = { ...userData, current_unit: unit.unit_name, current_unit_id: unit.id };
             localStorage.setItem('nexgen_user', JSON.stringify(updatedUser));
 
-            // อัปเดต UI
+            // --- ระบบอัตโนมัติแบบไร้สัมผัส (Zero-Click Auto Check-in/out) ---
+            let lastAction = localStorage.getItem('last_attendance_action') || 'out';
+            let nextAction = lastAction === 'out' ? 'in' : 'out';
+            let actionText = nextAction === 'in' ? 'เข้า' : 'ออก';
+            
+            // บันทึกสถานะ (จำลองการบันทึกลง Database)
+            localStorage.setItem('last_attendance_action', nextAction);
+
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-check-circle text-emerald-500';
             document.getElementById('statusLabel').innerText = 'ระบุพิกัดสำเร็จ';
-            document.getElementById('mainStatus').innerText = 'ตรวจพบหน่วยงาน';
-            document.getElementById('detectedUnitName').innerText = unit.unit_name;
-            document.getElementById('unitInfo').classList.remove('hidden');
-            document.getElementById('startReportBtn').style.display = 'block';
+            document.getElementById('mainStatus').innerText = `บันทึก${actionText}งานเรียบร้อยแล้ว`;
+            
+            // แสดงกล่องข้อความความสำเร็จ (แทนที่ปุ่มกด)
+            const unitInfoDiv = document.getElementById('unitInfo');
+            const colorClass = nextAction === 'in' ? 'emerald' : 'amber';
+            const iconClass = nextAction === 'in' ? 'fa-sign-in-alt' : 'fa-sign-out-alt';
+            
+            // เมนูให้เลือกว่าจะไปหน้าหลักไหม (แยกตามเข้า/ออกงาน)
+            let bottomMenu;
+            if (nextAction === 'in') {
+                // เข้างาน: มีปุ่มให้เลือกไปแดชบอร์ด หรือปิดแอป
+                bottomMenu = `
+                    <div class="mt-8 space-y-4">
+                        <button onclick="goToPortal()" class="w-full py-4 bg-slate-800/50 text-white border border-white/10 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all hover:bg-slate-800">
+                            <i class="fas fa-chart-pie mr-2 text-primary"></i> ไปยังหน้าแดชบอร์ดส่วนตัว
+                        </button>
+                        <p class="text-sm font-bold text-slate-400 animate-pulse mt-2"><i class="fas fa-power-off mr-1"></i> หรือ ปิดแอปพลิเคชันได้เลย</p>
+                    </div>
+                `;
+            } else {
+                // ออกงาน: แจ้งให้ปิดแอปอย่างเดียว (เหมือนเดิม)
+                bottomMenu = `
+                    <p class="text-sm font-bold text-rose-500 mt-8 animate-pulse"><i class="fas fa-power-off mr-1"></i> ท่านสามารถปิดแอปพลิเคชันได้เลย</p>
+                `;
+            }
+
+            unitInfoDiv.innerHTML = `
+                <p class="unit-name">${unit.unit_name}</p>
+                <div class="mt-6 p-4 rounded-2xl bg-${colorClass}-500/20 border border-${colorClass}-500/30 text-${colorClass}-400 shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
+                    <i class="fas ${iconClass} text-2xl mb-2 block"></i>
+                    <span class="font-black text-sm uppercase tracking-widest">ระบบลงเวลา${actionText}งานอัตโนมัติสำเร็จ</span>
+                </div>
+                ${bottomMenu}
+            `;
+            unitInfoDiv.classList.remove('hidden');
+
+            // ซ่อนปุ่มต่างๆ (ถ้ามี)
+            const actionContainer = document.getElementById('actionButtons');
+            if (actionContainer) actionContainer.style.display = 'none';
+
+            // ไม่มีการนับถอยหลัง Auto-redirect อีกต่อไป 
+            // ให้ผู้ใช้เป็นคนตัดสินใจว่าจะกดเข้าแดชบอร์ด หรือ ปิดแอป
         }
 
         function showNoMatch() {
@@ -306,8 +330,16 @@
         }
 
         function goToPortal() {
-            window.location.href = 'portal.html';
+            const user = JSON.parse(localStorage.getItem('nexgen_user'));
+            const userLevel = (user && user.level) ? user.level.toLowerCase() : '';
+
+            if (userLevel === 'guard') {
+                window.location.href = 'guard.html';
+            } else {
+                window.location.href = 'staff.html';
+            }
         }
     </script>
 </body>
+
 </html>
