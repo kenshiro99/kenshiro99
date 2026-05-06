@@ -20,20 +20,22 @@
             --cyber-gold: #f59e0b;
             --cyber-dark: #020617;
             --glass: rgba(15, 23, 42, 0.8);
+            --bg-gradient: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
         }
 
         body {
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            background: #020617;
+            background: var(--bg-gradient);
             color: white;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow-x: hidden; /* ป้องกันการล้นด้านข้าง */
+            overflow-x: hidden;
             margin: 0;
             padding: 0;
             position: relative;
+            transition: background 1s ease; /* เพื่อความนุ่มนวลเวลาเปลี่ยนสี */
         }
 
         /* --- BACKGROUND ANIMATIONS --- */
@@ -142,38 +144,64 @@
         }
 
         .gateway-active .ai-assistant-container {
-            margin-bottom: 0;
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 420px; /* เท่ากับขนาด login-card */
+            display: flex;
             flex-direction: row;
-            justify-content: space-between; /* กระจายโลโก้กับ AI */
-            padding: 0 10px;
+            justify-content: flex-end; /* ดัน AI ไปทางขวา */
+            padding: 0 40px;
+            pointer-events: none; /* เพื่อให้ยังกดช่องล็อกอินข้างใต้ได้ */
         }
 
         .gateway-active .ai-bubble {
-            width: 100%;
-            max-width: 100%;
-            margin: 15px 0;
+            position: absolute;
+            top: 80px;
+            left: 40px;
+            right: 40px;
+            width: auto;
             border-radius: 20px;
             padding: 15px;
-            order: 3; /* ย้ายลงมาด้านล่าง */
+            background: rgba(15, 23, 42, 0.95);
             border-left: 4px solid var(--cyber-blue);
-            background: rgba(15, 23, 42, 0.6);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            pointer-events: auto;
+            z-index: 1001;
         }
 
         .gateway-active .ai-mascot-wrapper {
-            order: 2; /* AI อยู่ขวา */
+            width: 100px !important;
+            height: 100px !important;
+            pointer-events: auto;
         }
 
-        /* ปรับแต่งส่วน Header ใน Card */
+        /* ปรับแต่งส่วน Header ใน Card ให้มีพื้นที่ว่างทางขวา */
         .card-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 20px;
+            justify-content: flex-start;
             margin-bottom: 10px;
         }
 
-        .gateway-active .card-header {
-            justify-content: space-between;
+        @media (max-width: 768px) {
+            .gateway-active .ai-assistant-container {
+                max-width: 95%;
+                padding: 0 20px;
+                top: 30px;
+            }
+            .gateway-active .ai-bubble {
+                top: 70px;
+                left: 20px;
+                right: 20px;
+                font-size: 13px;
+            }
+            .gateway-active .ai-mascot-wrapper {
+                width: 80px !important;
+                height: 80px !important;
+            }
         }
 
         /* Responsive Fixes for Mobile */
@@ -182,28 +210,37 @@
                 width: 180px !important;
                 height: 180px !important;
             }
+            .gateway-active .ai-assistant-container {
+                position: absolute;
+                top: 25px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 95%;
+                padding: 0 15px;
+                flex-direction: row;
+                justify-content: flex-end;
+            }
             .gateway-active .ai-mascot-wrapper {
-                width: 100px !important;
-                height: 100px !important;
+                width: 80px !important;
+                height: 80px !important;
             }
             .ai-bubble {
                 width: 95%;
                 padding: 15px;
             }
-            .ai-text {
-                font-size: 14px !important;
-            }
-            .ai-text h2 {
-                font-size: 1.5rem !important;
+            .gateway-active .ai-bubble {
+                position: absolute;
+                top: 75px;
+                left: 15px;
+                right: 15px;
+                width: auto;
+                font-size: 12px;
             }
             .login-card {
                 padding: 30px 20px;
                 border-radius: 30px;
                 width: 95%;
-            }
-            .gateway-active .ai-assistant-container {
-                flex-direction: column !important; /* บนมือถือให้เรียงแนวตั้งเหมือนเดิมเพื่อประหยัดพื้นที่ข้างๆ */
-                gap: 10px;
+                margin-top: 20px;
             }
         }
 
@@ -282,11 +319,11 @@
             height: 100%;
             object-fit: cover;
             clip-path: circle(48%);
-            mix-blend-mode: screen; 
-            /* เร่ง Contrast เพื่อกำจัดปื้นสีเทาให้ดำสนิท */
-            filter: contrast(1.4) brightness(1.1);
+            mix-blend-mode: screen; /* ตัวช่วยสำคัญที่ทำให้สีดำกลายเป็นโปร่งใส */
+            /* ปรับแต่งเพื่อให้สีดำสนิทจริงๆ และตัวละครสว่างคมชัด */
+            filter: contrast(1.5) brightness(1.2) saturate(1.1);
             border: none;
-            background: none;
+            background: transparent !important;
         }
 
         .brand-logo img {
@@ -780,12 +817,7 @@
                     <img src="img/logo-1.jpg"
                         onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=0ea5e9&color=fff'" alt="NEXGEN">
                 </div>
-                
-                <!-- AI MASCOT WRAPPER (WILL BE MOVED HERE WHEN ACTIVE) -->
-                <div id="mascotTarget"></div>
             </div>
-
-            <div id="bubbleTarget"></div>
 
             <h1 class="cyber-title">NEXGEN <span style="color: var(--cyber-gold);">SYSTEM CENTER</span></h1>
             <p class="cyber-subtitle" id="formSubtitle">Identity Verification</p>
@@ -1016,15 +1048,21 @@
             // ซ่อนเมนูทันทีที่เลือก
             aiChoices.style.display = 'none';
 
-            // Set Mode
+            // Set Mode & Change Theme
             if (mode === 'checkin') {
                 checkinRadio.checked = true;
                 aiText.innerHTML = "รับทราบค่ะ! กำลังเปิดระบบ <b>ลงเวลาเข้า-ออกหน่วยงาน</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้า-ออกหน่วยงานนะคะ";
                 formSubtitle.innerText = "Portal: Clock-In System";
+                
+                // เปลี่ยนโทนแอปเป็นสีฟ้าสดใส
+                document.body.style.background = "radial-gradient(circle at center, #0c4a6e 0%, #020617 100%)";
             } else {
                 reportRadio.checked = true;
                 aiText.innerHTML = "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ";
                 formSubtitle.innerText = "Admin: Reporting System";
+                
+                // เปลี่ยนโทนแอปเป็นสีน้ำเงินเข้มหรูหรา
+                document.body.style.background = "radial-gradient(circle at center, #1e1b4b 0%, #020617 100%)";
             }
 
             // Switch UI to Login Mode
