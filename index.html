@@ -574,17 +574,35 @@
         }
 
         .ai-bubble {
+            position: relative;
             width: 100%;
             max-width: 450px;
-            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-radius: 25px;
             padding: 25px;
-            background: rgba(15, 23, 42, 0.9);
-            border-left: 4px solid var(--cyber-blue);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            order: 1; /* ข้อความอยู่บน */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(14, 165, 233, 0.1);
+            order: 1;
             text-align: center;
-            backdrop-filter: blur(10px);
-            animation: bubble-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: bubble-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), bubble-glow 4s infinite;
+        }
+
+        /* หางของกล่องข้อความ */
+        .ai-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 15px solid rgba(30, 41, 59, 0.9);
+        }
+
+        @keyframes bubble-glow {
+            0%, 100% { border-color: rgba(14, 165, 233, 0.3); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(14, 165, 233, 0.1); }
+            50% { border-color: rgba(14, 165, 233, 0.6); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(14, 165, 233, 0.3); }
         }
 
         .ai-video-avatar {
@@ -669,6 +687,42 @@
             50% { transform: translateY(-15px); }
         }
 
+        /* --- DIGITAL SMOKE DISSOLVE EFFECTS --- */
+        .ai-smoke-out {
+            animation: smoke-dissolve 0.5s ease-in forwards;
+        }
+
+        .ai-smoke-in {
+            animation: smoke-materialize 0.5s ease-out forwards;
+        }
+
+        @keyframes smoke-dissolve {
+            0% { opacity: 1; filter: blur(0) brightness(1); transform: scale(1); }
+            100% { opacity: 0; filter: blur(30px) brightness(2); transform: scale(1.3); }
+        }
+
+        @keyframes smoke-materialize {
+            0% { opacity: 0; filter: blur(30px) brightness(2); transform: scale(0.8); }
+            100% { opacity: 1; filter: blur(0) brightness(1); transform: scale(1); }
+        }
+
+        .ai-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background: var(--cyber-gold);
+            margin-left: 5px;
+            vertical-align: middle;
+            animation: blink 0.8s infinite;
+            box-shadow: 0 0 10px var(--cyber-gold);
+            border-radius: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
         @keyframes bubble-pop {
             from { opacity: 0; transform: scale(0.8) translateY(20px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
@@ -679,10 +733,6 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* Glitch & Flash Effects */
-        .ai-glitch { animation: glitch-anim 0.3s ease-in-out; }
-        @keyframes glitch-anim {
-            0%, 100% { transform: translate(0); filter: hue-rotate(0deg); }
             33% { transform: translate(-5px, 2px); filter: hue-rotate(90deg) brightness(2); }
             66% { transform: translate(5px, -2px); filter: hue-rotate(180deg) brightness(1.5); }
         }
@@ -999,22 +1049,57 @@
             setTimeout(initAIGreeting, 1500);
         }
 
+        // --- SMART TYPEWRITER EFFECT ---
+        function typeText(element, html, speed = 25) {
+            element.innerHTML = "";
+            let i = 0;
+            let isTag = false;
+            let currentHtml = "";
+
+            function type() {
+                if (i < html.length) {
+                    let char = html.charAt(i);
+                    if (char === "<") isTag = true;
+                    
+                    currentHtml += char;
+                    
+                    if (char === ">") {
+                        isTag = false;
+                        element.innerHTML = currentHtml + '<span class="ai-cursor"></span>';
+                    }
+
+                    if (!isTag) {
+                        element.innerHTML = currentHtml + '<span class="ai-cursor"></span>';
+                        i++;
+                        setTimeout(type, speed);
+                    } else {
+                        i++;
+                        type();
+                    }
+                } else {
+                    // เมื่อพิมพ์เสร็จ ให้เคอร์เซอร์ยังอยู่
+                    element.innerHTML = html + '<span class="ai-cursor"></span>';
+                }
+            }
+            type();
+        }
+
         function initAIGreeting() {
             const aiText = document.getElementById('aiText');
             const aiImage = document.getElementById('aiImage');
             const aiChoices = document.getElementById('aiChoices');
             const aiMascotWrapper = document.getElementById('aiMascotWrapper');
 
-            // 1. ท่าตะเบ๊ะเริ่มต้น (ใช้น้องผู้หญิงท่าตะเบ๊ะ)
+            // 1. ท่าตะเบ๊ะเริ่มต้น
             aiImage.src = 'img/avata-salute.png?v=3'; 
-            aiText.innerHTML = `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดีค่ะ</h2><p class="text-lg opacity-80">ดิฉัน <b>Nexgen-AI</b> ยินดีที่ได้ดูแลคุณค่ะ</p>`;
+            typeText(aiText, `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดีค่ะ</h2><p class="text-lg opacity-80">ดิฉัน <b>Nexgen-AI</b> ยินดีที่ได้ดูแลคุณค่ะ</p>`);
 
             // 2. ดีเลย์ แล้วเปลี่ยนเป็นเมนู
             setTimeout(() => {
                 aiMascotWrapper.classList.add('ai-flash', 'ai-glitch');
 
                 setTimeout(() => {
-                    aiText.innerHTML = `<p class="text-base">วันนี้ต้องการให้ดิฉันช่วยดำเนินการในส่วนไหนดีคะ?</p>`;
+                    typeText(aiText, `<p class="text-base">วันนี้ต้องการให้ดิฉันช่วยดำเนินการในส่วนไหนดีคะ?</p>`);
                     aiChoices.style.display = 'grid';
                     aiChoices.classList.add('animate-bounce-short');
                     
@@ -1022,7 +1107,7 @@
                         aiMascotWrapper.classList.remove('ai-flash', 'ai-glitch');
                     }, 500);
                 }, 150);
-            }, 2000);
+            }, 3500); // เพิ่มเวลาให้อ่านข้อความแรกจบก่อน
         }
 
         function aiChoose(mode) {
@@ -1032,40 +1117,38 @@
             const aiText = document.getElementById('aiText');
             const formSubtitle = document.getElementById('formSubtitle');
             const aiChoices = document.getElementById('aiChoices');
-
             const aiImage = document.getElementById('aiImage');
             const aiMascotWrapper = document.getElementById('aiMascotWrapper');
 
-            // ซ่อนเมนูทันทีที่เลือก
+            const newImgSrc = mode === 'checkin' ? 'img/avata-checkin.png?v=6' : 'img/avata-dashboard.png?v=6';
+            const isDifferent = !aiImage.src.includes(newImgSrc.split('?')[0]);
+
             aiChoices.style.display = 'none';
 
-            // Trigger Futuristic Transition when changing pose
-            aiMascotWrapper.classList.add('ai-flash', 'ai-glitch');
+            if (isDifferent) {
+                aiImage.classList.add('ai-smoke-out');
+                setTimeout(() => {
+                    aiImage.src = newImgSrc;
+                    aiImage.classList.remove('ai-smoke-out');
+                    aiImage.classList.add('ai-smoke-in');
+                    setTimeout(() => { aiImage.classList.remove('ai-smoke-in'); }, 500);
+                }, 450);
+            }
 
-            // Set Mode & Change Theme & Change Pose
             if (mode === 'checkin') {
                 checkinRadio.checked = true;
-                aiImage.src = 'img/avata-checkin.png?v=4';
-                aiText.innerHTML = "รับทราบค่ะ! กำลังเปิดระบบ <b>ลงเวลาเข้า-ออกหน่วยงาน</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้า-ออกหน่วยงานนะคะ";
+                typeText(aiText, "รับทราบค่ะ! กำลังเปิดระบบ <b>ลงเวลาเข้า-ออกหน่วยงาน</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้า-ออกหน่วยงานนะคะ");
                 formSubtitle.innerText = "Portal: Clock-In System";
                 document.body.style.background = "radial-gradient(circle at center, #0c4a6e 0%, #020617 100%)";
             } else {
                 reportRadio.checked = true;
-                aiImage.src = 'img/avata-dashboard.png?v=4';
-                aiText.innerHTML = "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ";
+                typeText(aiText, "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ");
                 formSubtitle.innerText = "Admin: Reporting System";
                 document.body.style.background = "radial-gradient(circle at center, #1e1b4b 0%, #020617 100%)";
             }
 
-            // Switch UI to Login Mode
             mainGateway.classList.add('gateway-active');
 
-            // Remove glitch after switch
-            setTimeout(() => {
-                aiMascotWrapper.classList.remove('ai-flash', 'ai-glitch');
-            }, 500);
-
-            // Focus Input
             setTimeout(() => {
                 document.getElementById('username').focus();
             }, 800);
