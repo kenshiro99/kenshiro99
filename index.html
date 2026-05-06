@@ -145,62 +145,55 @@
 
         .gateway-active .ai-assistant-container {
             position: absolute;
-            top: 50px;
+            top: 5%;
             left: 50%;
             transform: translateX(-50%);
-            width: 100%;
-            max-width: 420px; /* เท่ากับขนาด login-card */
+            width: 95%;
+            max-width: 420px;
             display: flex;
-            flex-direction: row;
-            justify-content: flex-end; /* ดัน AI ไปทางขวา */
-            padding: 0 40px;
-            pointer-events: none; /* เพื่อให้ยังกดช่องล็อกอินข้างใต้ได้ */
+            flex-direction: column; /* เปลี่ยนเป็นแนวตั้งเพื่อให้ bubble อยู่ติดกับ AI */
+            align-items: flex-end; /* ดันไปทางขวา */
+            gap: 5px; /* ลดช่องว่างให้น้อยที่สุด */
+            pointer-events: none;
+            z-index: 1000;
         }
 
         .gateway-active .ai-bubble {
-            position: absolute;
-            top: 80px;
-            left: 40px;
-            right: 40px;
+            position: relative;
+            top: 0;
+            left: 0;
+            right: 0;
             width: auto;
-            border-radius: 20px;
-            padding: 15px;
+            max-width: 80%;
+            border-radius: 15px;
+            padding: 10px 15px;
             background: rgba(15, 23, 42, 0.95);
-            border-left: 4px solid var(--cyber-blue);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            border-left: 3px solid var(--cyber-blue);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            font-size: 13px;
             pointer-events: auto;
-            z-index: 1001;
         }
 
         .gateway-active .ai-mascot-wrapper {
-            width: 100px !important;
-            height: 100px !important;
+            width: 25vw !important; /* ปรับขนาดตามหน้าจอ */
+            height: 25vw !important;
+            max-width: 100px;
+            max-height: 100px;
             pointer-events: auto;
         }
 
-        /* ปรับแต่งส่วน Header ใน Card ให้มีพื้นที่ว่างทางขวา */
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 768px) {
+        /* Responsive Fixes for Mobile */
+        @media (max-width: 480px) {
             .gateway-active .ai-assistant-container {
-                max-width: 95%;
-                padding: 0 20px;
-                top: 30px;
-            }
-            .gateway-active .ai-bubble {
-                top: 70px;
-                left: 20px;
-                right: 20px;
-                font-size: 13px;
+                top: 2%;
             }
             .gateway-active .ai-mascot-wrapper {
-                width: 80px !important;
-                height: 80px !important;
+                width: 30vw !important;
+                height: 30vw !important;
+            }
+            .gateway-active .ai-bubble {
+                font-size: 11px;
+                padding: 8px 12px;
             }
         }
 
@@ -319,9 +312,9 @@
             height: 100%;
             object-fit: cover;
             clip-path: circle(48%);
-            mix-blend-mode: screen; /* ตัวช่วยสำคัญที่ทำให้สีดำกลายเป็นโปร่งใส */
-            /* ปรับแต่งเพื่อให้สีดำสนิทจริงๆ และตัวละครสว่างคมชัด */
-            filter: contrast(1.5) brightness(1.2) saturate(1.1);
+            mix-blend-mode: screen; 
+            /* เร่ง Contrast สุดตัวเพื่อให้สีที่ไม่ดำสนิทกลายเป็นดำสนิท 100% */
+            filter: contrast(2.5) brightness(1.1);
             border: none;
             background: transparent !important;
         }
