@@ -126,26 +126,72 @@
             letter-spacing: -0.5px;
         }
 
-        .check-btn {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            border: none;
-            border-radius: 20px;
-            color: white;
-            font-weight: 800;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 25px;
-            display: none;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+        /* --- AI ASSISTANT STYLES --- */
+        .ai-assistant-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 1000;
         }
 
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .ai-bubble {
+            position: relative;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 13px;
+            max-width: 220px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(14, 165, 233, 0.1);
+            animation: fadeInRight 0.5s ease-out, bubble-glow 4s infinite;
+            color: white;
+            text-align: right;
+        }
+
+        .ai-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 30px;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(30, 41, 59, 0.9);
+        }
+
+        @keyframes bubble-glow {
+            0%, 100% { border-color: rgba(14, 165, 233, 0.3); }
+            50% { border-color: rgba(14, 165, 233, 0.6); box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(14, 165, 233, 0.2); }
+        }
+
+        .ai-mascot-wrapper {
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            animation: float-ai 4s ease-in-out infinite;
+        }
+
+        .ai-video-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            mix-blend-mode: normal;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+        }
+
+        @keyframes float-ai {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
         }
     </style>
 </head>
@@ -164,18 +210,9 @@
     <div class="status-card">
         <p class="text-[10px] font-black text-slate-500 uppercase tracking-[4px] mb-2" id="statusLabel">ระบบกำลังระบุพิกัด</p>
         <h2 class="text-2xl font-black text-white" id="mainStatus">ค้นหาหน่วยงาน...</h2>
+        
         <div id="unitInfo" class="hidden">
-            <p class="unit-name" id="detectedUnitName">-- ชื่อหน่วยงาน --</p>
-            <p class="text-emerald-400 text-xs font-bold mt-2"><i class="fas fa-check-circle mr-1"></i> บันทึกเข้าหน่วยงานแล้ว</p>
-        </div>
-
-        <div id="actionButtons" class="hidden mt-6 space-y-3 w-full">
-            <button onclick="recordTime('in')" class="w-full py-4 bg-emerald-500 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-[0_10px_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all">
-                <i class="fas fa-sign-in-alt mr-2"></i> ลงเวลาเข้างาน
-            </button>
-            <button onclick="recordTime('out')" class="w-full py-4 bg-amber-500 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-[0_10px_20px_rgba(245,158,11,0.3)] active:scale-95 transition-all">
-                <i class="fas fa-sign-out-alt mr-2"></i> ลงเวลาออกงาน
-            </button>
+            <!-- Dynamic Content Injected Here -->
         </div>
 
         <p id="retryText" class="mt-4 text-[10px] text-slate-500 hidden cursor-pointer hover:text-white underline" onclick="location.reload()">
@@ -192,8 +229,18 @@
         <span class="text-[7px] text-slate-700 block">Developer: Ponchai Onkum</span>
     </div>
 
+    <!-- AI ASSISTANT -->
+    <div class="ai-assistant-container">
+        <div class="ai-bubble" id="aiBubbleText">
+            สวัสดีค่ะ! <b>Nexgen-AI</b> <br>พร้อมบันทึกพิกัดให้คุณแล้วค่ะ
+        </div>
+        <div class="ai-mascot-wrapper">
+            <img src="img/avata-checkin.png?v=1" class="ai-video-avatar" id="aiImage" alt="AI Assistant">
+        </div>
+    </div>
+
     <script>
-        // --- Configuration & Global State ---
+        // --- 1. CONFIGURATION & STATE ---
         const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
         
@@ -201,10 +248,7 @@
         let currentMatch = null;
         let userData = null;
 
-        /**
-         * Authentication & Access Control
-         * Bounces unauthorized users back to login
-         */
+        // --- 2. AUTHENTICATION ---
         function checkAuth() {
             try {
                 const sessionString = localStorage.getItem('nexgen_user');
@@ -212,9 +256,8 @@
                 
                 userData = JSON.parse(sessionString);
                 const userLevel = (userData.level || '').toLowerCase();
-                
-                // Allowed roles for this page
                 const allowedRoles = ['supervisor', 'guard', 'admin', 'manager'];
+                
                 if (!allowedRoles.includes(userLevel)) throw new Error('Unauthorized');
                 
             } catch (e) {
@@ -224,36 +267,20 @@
             }
         }
 
-        /**
-         * Initialization on page load
-         */
-        window.onload = () => {
-            checkAuth(); // Verify user first
-
-            if (typeof supabase === 'undefined') {
-                alert("เกิดข้อผิดพลาดในการโหลดระบบ กรุณาลองใหม่อีกครั้ง");
-                return;
-            }
-
-            // Initialize Supabase Client
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            
-            // Start GPS Detection
-            detectLocation();
-        };
-
-        // --- Core Functions ---
-
-
+        // --- 3. GPS LOGIC ---
         function detectLocation() {
             if (!navigator.geolocation) {
                 document.getElementById('mainStatus').innerText = 'ไม่รองรับ GPS';
+                updateAIText("อุปกรณ์ของคุณไม่รองรับการระบุพิกัด GPS ค่ะ");
                 return;
             }
+
+            updateAIText("กำลังสแกนหาพิกัดของคุณ... <br>โปรดรอสักครู่นะคะ");
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const myLat = pos.coords.latitude;
                 const myLng = pos.coords.longitude;
+                console.log(`GPS FIX: ${myLat}, ${myLng}`);
 
                 try {
                     const { data: units, error } = await supabaseClient.from('units').select('*');
@@ -262,30 +289,37 @@
                     let matchedUnits = [];
                     units.forEach(u => {
                         if (u.latitude && u.longitude) {
-                            const distance = calculateDistance(myLat, myLng, u.latitude, u.longitude);
-                            const radius = u.radius_meters || 100;
+                            const uLat = parseFloat(u.latitude);
+                            const uLng = parseFloat(u.longitude);
+                            const distance = calculateDistance(myLat, myLng, uLat, uLng);
+                            const radius = parseFloat(u.radius_meters) || 300;
+                            
                             if (distance <= radius) matchedUnits.push(u);
                         }
                     });
 
                     if (matchedUnits.length === 1) {
-                        // กรณีเจอที่เดียว: บันทึกอัตโนมัติเหมือนเดิม
                         showMatch(matchedUnits[0], myLat, myLng);
                     } else if (matchedUnits.length > 1) {
-                        // กรณีเจอหลายที่: แสดงรายการให้เลือก
                         showSelection(matchedUnits, myLat, myLng);
                     } else {
-                        showNoMatch();
+                        showNoMatch(myLat, myLng);
                     }
                 } catch (e) {
-                    console.error("Database Error:", e);
-                    showNoMatch();
+                    console.error("DB Error:", e);
+                    updateAIText("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูลค่ะ");
+                    showNoMatch(myLat, myLng);
                 }
             }, (err) => {
                 console.error("GPS Error:", err);
-                document.getElementById('mainStatus').innerText = "โปรดอนุญาตสิทธิ์การเข้าถึง GPS";
+                let reason = "โปรดเปิด GPS และอนุญาตสิทธิ์การเข้าถึงพิกัดนะคะ";
+                if(err.code === 1) reason = "คุณปฏิเสธการเข้าถึง GPS โปรดตั้งค่าอนุญาตนะคะ";
+                if(err.code === 3) reason = "ค้นหาพิกัดนานเกินไป โปรดลองใหม่อีกครั้งค่ะ";
+                
+                document.getElementById('mainStatus').innerText = "ระบุพิกัดไม่สำเร็จ";
+                updateAIText(reason);
                 showNoMatch();
-            }, { enableHighAccuracy: true, timeout: 10000 });
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
         }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -298,24 +332,11 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
-        /**
-         * Helper to get current Thai time in ISO format with +07:00 offset
-         */
-        function getThaiISOString() {
-            const now = new Date();
-            // Adjust to UTC+7
-            const tzOffset = 7 * 60 * 60 * 1000; // 7 hours in ms
-            const localTime = new Date(now.getTime() + tzOffset);
-            return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
-        }
-
+        // --- 4. DATA RECORDING ---
         async function showMatch(unit, lat, lng) {
             currentMatch = unit;
-            
-            // 1. ตรวจสอบสถานะล่าสุดจากฐานข้อมูลจริง (Supabase)
             let nextAction = 'check_in';
             let actionText = 'เข้า';
-            const thaiNow = getThaiISOString();
             
             try {
                 const { data: lastLog, error } = await supabaseClient
@@ -333,140 +354,180 @@
                     }
                 }
 
-                // 2. บันทึกข้อมูลลงฐานข้อมูลจริง
+                // Check for Early Check-out (Guard Only)
+                const userLevel = (userData.level || '').toLowerCase();
+                if (nextAction === 'check_out' && userLevel === 'guard') {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    let isEarly = false;
+                    let shiftTime = "";
+                    
+                    if (hour >= 7 && hour < 19) { isEarly = true; shiftTime = "19:00 น."; }
+                    else if (hour >= 19 || hour < 7) { isEarly = true; shiftTime = "07:00 น."; }
+
+                    if (isEarly) {
+                        const cleanName = userData.name.split(' ')[0];
+                        updateAIText(`<span class="text-rose-400 font-bold">⚠️ คำเตือน!</span><br>คุณ <b>${cleanName}</b> กำลังจะบันทึกออกงานก่อนเวลานะคะ (เลิกงานคือ ${shiftTime})`);
+                        
+                        const unitInfoDiv = document.getElementById('unitInfo');
+                        unitInfoDiv.innerHTML = `
+                            <p class="unit-name">${unit.unit_name}</p>
+                            <div class="mt-6 p-4 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 shadow-lg">
+                                <p class="text-xs font-bold mb-3">ต้องการยืนยันการออกก่อนเวลาหรือไม่?</p>
+                                <div class="flex gap-2">
+                                    <button onclick="executeRecord('${nextAction}', '${actionText}', ${lat}, ${lng})" class="flex-1 py-3 bg-amber-500 text-white rounded-xl font-bold text-[10px] uppercase">ยืนยันออกงาน</button>
+                                    <button onclick="location.reload()" class="flex-1 py-3 bg-slate-700 text-white rounded-xl font-bold text-[10px] uppercase">ยกเลิก</button>
+                                </div>
+                            </div>
+                        `;
+                        unitInfoDiv.classList.remove('hidden');
+                        document.getElementById('radar').style.animation = 'none';
+                        document.getElementById('statusIcon').className = 'fas fa-exclamation-triangle text-amber-500';
+                        document.getElementById('mainStatus').innerText = 'พบการออกก่อนเวลา';
+                        return;
+                    }
+                }
+
+                await executeRecord(nextAction, actionText, lat, lng);
+
+            } catch (e) {
+                console.error("Recording Exception:", e);
+                alert("ระบบขัดข้อง! กรุณาตรวจสอบการเชื่อมต่อ");
+            }
+        }
+
+        async function executeRecord(nextAction, actionText, lat, lng) {
+            const thaiNow = getThaiISOString();
+            try {
                 const { error: insertError } = await supabaseClient
                     .from('duty_logs')
                     .insert([{
                         emp_id: userData.emp_id,
                         name: userData.name,
                         role: userData.level || userData.role,
-                        unit_name: unit.unit_name,
+                        unit_name: currentMatch.unit_name,
                         action_type: nextAction,
                         gps_location: `${lat},${lng}`,
-                        timestamp: thaiNow, // บันทึกเวลาไทยมาตรฐานเดียวกับ Supervisor
-                        note: 'บันทึกอัตโนมัติผ่านพิกัด GPS'
+                        timestamp: thaiNow,
+                        note: 'บันทึกผ่านระบบ AI Assistant'
                     }]);
 
                 if (insertError) throw insertError;
-
+                updateAIText(`บันทึก <b>${actionText}งาน</b> เรียบร้อยแล้วค่ะ<br>ขอให้เดินทางปลอดภัยนะคะ`);
+                updateUIForMatch(currentMatch, nextAction, actionText);
             } catch (e) {
-                console.error("Recording Exception:", e);
-                alert("บันทึกข้อมูลล้มเหลว! กรุณาตรวจสอบการเชื่อมต่อ");
+                alert("บันทึกข้อมูลไม่สำเร็จ!");
             }
-
-            // --- อัปเดต UI ---
-            updateUIForMatch(unit, nextAction, actionText);
         }
 
-        /**
-         * Show selection screen when multiple units are found
-         */
+        // --- 5. UI UPDATES ---
         function showSelection(units, lat, lng) {
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-layer-group text-amber-500';
             document.getElementById('statusLabel').innerText = 'พบหลายหน่วยงาน';
-            document.getElementById('mainStatus').innerText = 'กรุณาเลือกหน่วยงานที่ต้องการบันทึก';
+            document.getElementById('mainStatus').innerText = 'กรุณาเลือกหน่วยงาน';
 
             const unitInfoDiv = document.getElementById('unitInfo');
             let html = '<div class="mt-4 space-y-3">';
-            
             units.forEach(u => {
                 html += `
                     <button onclick="showMatch(${JSON.stringify(u).replace(/"/g, '&quot;')}, ${lat}, ${lng})" 
-                        class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-primary/20 hover:border-primary/50 transition-all active:scale-95">
+                        class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-sky-500/20 hover:border-sky-500/50 transition-all active:scale-95">
                         <div class="flex justify-between items-center">
                             <div>
                                 <div class="text-white font-bold text-sm">${u.unit_name}</div>
-                                <div class="text-[10px] text-slate-500">${u.unit_code || 'UNIT'}</div>
+                                <div class="text-[9px] text-slate-500 uppercase tracking-widest">${u.unit_code || 'UNIT'}</div>
                             </div>
-                            <i class="fas fa-chevron-right text-primary"></i>
+                            <i class="fas fa-chevron-right text-sky-500"></i>
                         </div>
-                    </button>
-                `;
+                    </button>`;
             });
-            
             html += '</div>';
             unitInfoDiv.innerHTML = html;
             unitInfoDiv.classList.remove('hidden');
         }
 
-        /**
-         * Helper to update UI after recording
-         */
         function updateUIForMatch(unit, nextAction, actionText) {
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-check-circle text-emerald-500';
             document.getElementById('statusLabel').innerText = 'ระบุพิกัดสำเร็จ';
-            document.getElementById('mainStatus').innerText = `บันทึก${actionText}งานเรียบร้อยแล้ว`;
+            document.getElementById('mainStatus').innerText = `บันทึก${actionText}งานเรียบร้อย`;
             
             const unitInfoDiv = document.getElementById('unitInfo');
             const colorClass = nextAction === 'check_in' ? 'emerald' : 'amber';
             const iconClass = nextAction === 'check_in' ? 'fa-sign-in-alt' : 'fa-sign-out-alt';
             
-            let bottomMenu = '';
-            
-            if (nextAction === 'check_in') {
-                // กรณีบันทึกเข้างาน
-                bottomMenu = `
-                    <div class="mt-8 space-y-3">
-                        <button onclick="goToPortal()" class="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all shadow-lg shadow-primary/20">
-                            <i class="fas fa-chart-pie mr-2"></i> ไปหน้าแดชบอร์ด
-                        </button>
-                        <button onclick="logout()" class="w-full py-4 bg-slate-800/50 text-slate-300 border border-white/10 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
-                            <i class="fas fa-sign-out-alt mr-2"></i> กลับหน้า Login
-                        </button>
-                    </div>
-                `;
-            } else {
-                // กรณีบันทึกออกงาน
-                bottomMenu = `
-                    <div class="mt-8 space-y-3">
-                        <p class="text-sm font-bold text-rose-500 animate-pulse mb-4">ลงเวลาออกงานสำเร็จ</p>
-                        <button onclick="logout()" class="w-full py-4 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
-                            <i class="fas fa-sign-out-alt mr-2"></i> กลับสู่หน้าหลัก (Login)
-                        </button>
-                    </div>
-                `;
-            }
+            let bottomMenu = nextAction === 'check_in' ? `
+                <div class="mt-8 space-y-3">
+                    <button onclick="goToPortal()" class="w-full py-4 bg-sky-600 text-white rounded-2xl font-bold text-sm tracking-widest shadow-lg shadow-sky-900/20 active:scale-95 transition-all">
+                        <i class="fas fa-chart-pie mr-2"></i> ไปหน้าแดชบอร์ด
+                    </button>
+                    <button onclick="logout()" class="w-full py-4 bg-slate-800/50 text-slate-300 border border-white/10 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
+                        <i class="fas fa-sign-out-alt mr-2"></i> กลับหน้า Login
+                    </button>
+                </div>` : `
+                <div class="mt-8 space-y-3">
+                    <p class="text-[10px] font-bold text-rose-500 animate-pulse mb-4 uppercase">Clock-Out Sequence Completed</p>
+                    <button onclick="logout()" class="w-full py-4 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
+                        <i class="fas fa-sign-out-alt mr-2"></i> กลับสู่หน้าหลัก
+                    </button>
+                </div>`;
 
             unitInfoDiv.innerHTML = `
                 <p class="unit-name">${unit.unit_name}</p>
-                <div class="mt-6 p-4 rounded-2xl bg-${colorClass}-500/20 border border-${colorClass}-500/30 text-${colorClass}-400 shadow-lg">
+                <div class="mt-6 p-4 rounded-2xl bg-${colorClass}-500/20 border border-${colorClass}-500/30 text-${colorClass}-400">
                     <i class="fas ${iconClass} text-2xl mb-2 block"></i>
-                    <span class="font-black text-[11px] uppercase tracking-widest">ลงเวลา${actionText}งานสำเร็จ</span>
+                    <span class="font-black text-[11px] uppercase tracking-widest">Success: ${actionText}งาน</span>
                 </div>
-                ${bottomMenu}
-            `;
+                ${bottomMenu}`;
             unitInfoDiv.classList.remove('hidden');
         }
 
-        function showNoMatch() {
+        function showNoMatch(lat, lng) {
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-times-circle text-rose-500';
             document.getElementById('mainStatus').innerText = 'ไม่พบหน่วยงาน';
             document.getElementById('retryText').classList.remove('hidden');
+
+            if (lat && lng) {
+                updateAIText(`ขออภัยค่ะ ไม่พบหน่วยงานในรัศมีใกล้เคียง<br><span class="text-[10px] text-slate-400 italic">GPS Fix: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`);
+            } else {
+                updateAIText("ไม่สามารถระบุพิกัดได้ โปรดตรวจสอบการตั้งค่า GPS นะคะ");
+            }
+        }
+
+        function updateAIText(text) {
+            const bubble = document.getElementById('aiBubbleText');
+            if (bubble) bubble.innerHTML = text;
+        }
+
+        // --- 6. UTILITIES ---
+        function getThaiISOString() {
+            const now = new Date();
+            const tzOffset = 7 * 60 * 60 * 1000;
+            const localTime = new Date(now.getTime() + tzOffset);
+            return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
         }
 
         function goToPortal() {
             const user = JSON.parse(localStorage.getItem('nexgen_user'));
-            const userLevel = (user && user.level) ? user.level.toLowerCase() : '';
-
-            if (userLevel === 'admin' || userLevel === 'manager') {
-                window.location.href = 'Backend/dashboard.html';
-            } else if (userLevel === 'supervisor') {
-                // ส่งสายตรวจ/หัวหน้างานไปที่หน้า Staff
-                window.location.href = 'Frontend/staff.html';
-            } else {
-                // ส่ง รปภ. ไปที่หน้า Guard
-                window.location.href = 'Frontend/guard.html';
-            }
+            const level = user ? user.level.toLowerCase() : '';
+            if (level === 'admin' || level === 'manager') window.location.href = 'Backend/dashboard.html';
+            else if (level === 'supervisor') window.location.href = 'Frontend/staff.html';
+            else window.location.href = 'Frontend/guard.html';
         }
 
         function logout() {
             localStorage.removeItem('nexgen_user');
             window.location.replace('index.html');
         }
+
+        window.onload = () => {
+            checkAuth();
+            if (typeof supabase === 'undefined') { alert("Network Error: Supabase failed to load."); return; }
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            detectLocation();
+        };
     </script>
 </body>
-
 </html>
