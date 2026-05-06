@@ -24,14 +24,15 @@
 
         body {
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            background-color: var(--cyber-dark);
-            height: 100vh;
-            margin: 0;
+            background: #020617;
+            color: white;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            color: white;
+            overflow-x: hidden; /* ป้องกันการล้นด้านข้าง */
+            margin: 0;
+            padding: 0;
             position: relative;
         }
 
@@ -122,6 +123,7 @@
             align-items: center;
             padding: 20px 0;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .ai-assistant-container {
@@ -250,6 +252,18 @@
             100% {
                 left: 150%;
             }
+        }
+
+        .ai-video-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            clip-path: circle(48%);
+            mix-blend-mode: screen; 
+            /* เร่ง Contrast เพื่อกำจัดปื้นสีเทาให้ดำสนิท */
+            filter: contrast(1.4) brightness(1.1);
+            border: none;
+            background: none;
         }
 
         .brand-logo img {
@@ -524,9 +538,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* แก้ไขขอบสี่เหลี่ยมด้วยการบังขอบด้วยวงกลมฟุ้งๆ */
-            mask-image: radial-gradient(circle, black 60%, transparent 80%);
-            -webkit-mask-image: radial-gradient(circle, black 60%, transparent 80%);
+            /* ตัดขอบสี่เหลี่ยมทิ้งถาวรด้วยวงกลม */
+            clip-path: circle(48%);
+            -webkit-clip-path: circle(48%);
         }
 
         .gateway-active .ai-mascot-wrapper {
