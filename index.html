@@ -116,6 +116,12 @@
 
         #mainGateway {
             transition: all 0.8s ease-in-out;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            min-height: 100vh;
         }
 
         .ai-assistant-container {
@@ -123,8 +129,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             transition: all 0.8s ease-in-out;
+            width: 100%;
+            z-index: 100;
         }
 
         .gateway-active .login-card {
@@ -132,7 +140,7 @@
         }
 
         .gateway-active .ai-assistant-container {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             flex-direction: row;
         }
 
@@ -141,6 +149,37 @@
             max-width: 400px;
             margin-bottom: 0;
             border-radius: 30px;
+        }
+
+        /* Responsive Fixes for Mobile */
+        @media (max-width: 768px) {
+            .ai-mascot-wrapper {
+                width: 180px !important;
+                height: 180px !important;
+            }
+            .gateway-active .ai-mascot-wrapper {
+                width: 100px !important;
+                height: 100px !important;
+            }
+            .ai-bubble {
+                width: 95%;
+                padding: 15px;
+            }
+            .ai-text {
+                font-size: 14px !important;
+            }
+            .ai-text h2 {
+                font-size: 1.5rem !important;
+            }
+            .login-card {
+                padding: 30px 20px;
+                border-radius: 30px;
+                width: 95%;
+            }
+            .gateway-active .ai-assistant-container {
+                flex-direction: column !important; /* บนมือถือให้เรียงแนวตั้งเหมือนเดิมเพื่อประหยัดพื้นที่ข้างๆ */
+                gap: 10px;
+            }
         }
 
         #aiChoices {
@@ -485,11 +524,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* แก้ไขขอบสี่เหลี่ยมด้วยการบังขอบด้วยวงกลมฟุ้งๆ */
+            mask-image: radial-gradient(circle, black 60%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle, black 60%, transparent 80%);
         }
 
         .gateway-active .ai-mascot-wrapper {
             width: 140px;
             height: 140px;
+            mask-image: none; /* เอา Mask ออกเมื่อย่อขนาดเพื่อความชัดเจน */
+            -webkit-mask-image: none;
         }
 
         .ai-mascot-wrapper:hover {
