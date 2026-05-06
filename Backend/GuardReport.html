@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานเข้า/ออก รปภ. | Nexgen System Center</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+
+    <!-- ใช้ CSS ชุดเดียวกับ Dashboard -->
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #020617; color: white; margin: 0; overflow: hidden; }
+        .main-content { flex: 1; overflow-y: auto; padding: 16px; background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent 600px); }
+        .report-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
+        input, select { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; outline: none; }
+        
+        @media print { 
+            /* การตั้งค่าหน้ากระดาษ */
+            @page { margin: 12mm; size: A4 portrait; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            
+            body { background: white !important; color: #1e293b !important; font-family: 'Sarabun', sans-serif !important; }
+            .sidebar, .no-print { display: none !important; } 
+            
+            /* โครงสร้างหลัก */
+            .main-content { padding: 0 !important; background: white !important; overflow: visible !important; }
+            .report-card { border: none !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; margin-bottom: 20px !important; }
+            
+            /* ส่วนหัว (Header) */
+            header h1 { font-size: 22px !important; color: #0f172a !important; margin-bottom: 4px !important; }
+            header p { font-size: 13px !important; color: #64748b !important; }
+            header .w-14 { display: none !important; } /* ซ่อนไอคอนกล่องใหญ่ */
+            
+            /* ตารางรายงานหลัก */
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px !important; }
+            th { background-color: #f1f5f9 !important; color: #334155 !important; font-weight: bold; border-bottom: 2px solid #cbd5e1 !important; padding: 8px !important; text-transform: uppercase; letter-spacing: 0.5px; }
+            td { border-bottom: 1px solid #e2e8f0 !important; padding: 8px !important; color: #0f172a !important; }
+            tr { break-inside: avoid; }
+            
+            /* ปรับสีตัวหนังสือสำหรับพื้นขาวให้เข้มขึ้น (Print Friendly Colors) */
+            .text-emerald-400 { color: #059669 !important; }
+            .text-amber-400, .text-amber-500 { color: #d97706 !important; }
+            .text-rose-400, .text-rose-500 { color: #e11d48 !important; }
+            .text-blue-400 { color: #2563eb !important; }
+            .text-indigo-400 { color: #4f46e5 !important; }
+            .text-cyan-400 { color: #0891b2 !important; }
+            .text-white { color: #0f172a !important; }
+            .text-slate-400, .text-slate-500 { color: #475569 !important; }
+            .bg-emerald-500\/5, .bg-blue-500\/5, .bg-red-500\/5, .bg-amber-500\/5, .bg-rose-500\/5 { background: transparent !important; }
+
+            /* สไตล์สำหรับพิมพ์ประวัติ (Modal) */
+            body.printing-modal { margin: 0 !important; padding: 0 !important; background: white !important; }
+            body.printing-modal > *:not(#historyModal) { display: none !important; }
+            
+            body.printing-modal #historyModal {
+                position: relative !important; display: block !important; opacity: 1 !important; pointer-events: auto !important;
+                background: white !important; padding: 0 !important; margin: 0 !important; overflow: visible !important;
+            }
+            body.printing-modal #historyModal > div:first-child { display: none !important; } /* ซ่อนฉากหลังสีดำ */
+            body.printing-modal #historyModalContent {
+                width: 100% !important; max-width: 100% !important; transform: none !important; border: none !important;
+                background: white !important; color: black !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+            }
+            body.printing-modal .no-print-modal { display: none !important; }
+            
+            /* หัวข้อ Modal ตอนพิมพ์ */
+            #modalGuardName { font-size: 24px !important; color: #0f172a !important; font-weight: 800 !important; }
+            #modalDateRange { font-size: 14px !important; color: #475569 !important; display: block; margin-top: 4px !important; }
+            #historyModalContent > div:first-child { border-bottom: 2px solid #0f172a !important; padding: 0 0 10px 0 !important; margin-bottom: 15px !important; background: transparent !important; }
+            
+            /* สรุปสถิติด้านล่าง Modal */
+            #historyModalContent > div:last-child { border-top: none !important; padding: 0 !important; margin-top: 20px !important; background: transparent !important; }
+            #modalStats {
+                width: 100%; text-align: center; font-size: 14px !important; background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 12px !important;
+            }
+            #modalStats span { margin: 0 8px; font-weight: bold; }
+            
+            body.printing-modal .custom-scrollbar { overflow: visible !important; max-height: none !important; }
+        }
+
+        /* Flatpickr Custom */
+        .flatpickr-calendar {
+            background: #0f172a !important;
+            border: 1px solid rgba(245, 158, 11, 0.2) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+            font-family: 'Sarabun', sans-serif !important;
+        }
+        .flatpickr-day.selected {
+            background: #f59e0b !important;
+            border-color: #f59e0b !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="flex h-screen w-screen overflow-hidden">
+        
+        <!-- Sidebar Container -->
+        <aside id="sidebar-container" class="sidebar flex flex-col shrink-0"></aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content custom-scrollbar">
+            
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/30">
+                        <i class="fas fa-user-shield text-xl text-amber-500"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none mb-1">
+                            Guard <span class="text-amber-500">Attendance Report</span>
+                        </h1>
+                        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[3px]">
+                            รายงานสรุปการปฏิบัติงาน และการเข้า/ออก รปภ.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="no-print flex gap-3 items-center">
+                    <button onclick="window.print()" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl text-xs font-bold hover:bg-white/10 transition-all shadow-lg"><i class="fas fa-print mr-2"></i> พิมพ์รายงาน</button>
+                </div>
+            </header>
+
+            <!-- Filters -->
+            <div class="report-card p-3 mb-4 no-print shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+                    <div>
+                        <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">รหัส-ชื่อ-นามสกุล</label>
+                        <div class="relative mt-1">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchStaff" onkeyup="renderTable()" class="w-full pl-8 pr-3 py-2 bg-black/20 border border-white/10 rounded-xl text-xs text-white focus:border-amber-500/50 focus:bg-white/5 transition-all outline-none shadow-inner" placeholder="พิมพ์รหัส หรือ ชื่อ...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">หน่วยงาน</label>
+                        <select id="unitFilter" onchange="renderTable()" class="w-full px-3 py-2 rounded-xl text-xs mt-1 cursor-pointer bg-black/20 border border-white/10 text-white">
+                            <option value="">ทั้งหมดทุกหน่วยงาน</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">เขต</label>
+                        <select id="zoneFilter" onchange="renderTable()" class="w-full px-3 py-2 rounded-xl text-xs mt-1 cursor-pointer bg-black/20 border border-white/10 text-white">
+                            <option value="">ทั้งหมดทุกเขต</option>
+                            <option value="เขต 1">เขต 1</option>
+                            <option value="เขต 2">เขต 2</option>
+                            <option value="เขต 3">เขต 3</option>
+                            <option value="เขต 4">เขต 4</option>
+                            <option value="เขต 5">เขต 5</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">วันที่เริ่ม</label>
+                        <input type="text" id="startDate" placeholder="วว/ดด/ปปปป" class="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-xl text-xs text-white transition-all mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">วันที่สิ้นสุด</label>
+                        <input type="text" id="endDate" placeholder="วว/ดด/ปปปป" class="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-xl text-xs text-white transition-all mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <button onclick="fetchReportData()" class="w-full py-2 bg-amber-500 text-black rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all active:scale-95"><i class="fas fa-search mr-1"></i> ค้นหา</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="report-card overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#020617] text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-white/5">
+                            <tr>
+                                <th class="px-3 py-4">รหัส รปภ.</th>
+                                <th class="px-3 py-4">ชื่อ-นามสกุล</th>
+                                <th class="px-3 py-4">หน่วยงาน</th>
+                                <th class="px-2 py-4 text-center bg-emerald-500/5">มาทำงาน</th>
+                                <th class="px-2 py-4 text-center bg-blue-500/5">ลางาน</th>
+                                <th class="px-2 py-4 text-center bg-red-500/5">ขาดงาน</th>
+                                <th class="px-2 py-4 text-center bg-amber-500/5">มาสาย</th>
+                                <th class="px-2 py-4 text-center bg-rose-500/5 rounded-tr-lg">ออกก่อน</th>
+                                <th class="px-3 py-4 text-center bg-white/5"><i class="fas fa-bars"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-white/5">
+                            <tr><td colspan="9" class="px-6 py-20 text-center italic text-slate-500">กรุณาเลือกช่วงวันที่แล้วกดค้นหา...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeHistoryModal()"></div>
+        <div class="relative w-[95%] md:w-[750px] max-h-[90vh] bg-[#0f172a] border border-amber-500/30 rounded-2xl shadow-2xl flex flex-col transform scale-95 transition-transform duration-300" id="historyModalContent">
+            
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
+                <div>
+                    <h2 class="text-xl font-bold text-amber-500" id="modalGuardName">ประวัติการทำงาน</h2>
+                    <p class="text-xs text-slate-400 mt-1" id="modalDateRange">1 พ.ค. 2569 - 31 พ.ค. 2569</p>
+                </div>
+                <div class="flex gap-2 no-print-modal">
+                    <button onclick="printHistoryModal()" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-emerald-400 transition-all" title="พิมพ์ประวัติ">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button onclick="closeHistoryModal()" class="w-10 h-10 rounded-full bg-white/5 hover:bg-rose-500/20 flex items-center justify-center text-slate-300 hover:text-rose-400 transition-all" title="ปิดหน้าต่าง">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-0 overflow-y-auto custom-scrollbar flex-1">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-black/60 sticky top-0 backdrop-blur-md text-amber-500 text-[10px] font-black uppercase tracking-widest border-b border-white/10 z-10">
+                        <tr>
+                            <th class="px-6 py-4">วันที่</th>
+                            <th class="px-4 py-4 text-center">เวลาเข้า</th>
+                            <th class="px-4 py-4 text-center">เวลาออก</th>
+                            <th class="px-6 py-4 text-right">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-white/5">
+                        <!-- Content injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-5 border-t border-white/10 bg-white/5 rounded-b-2xl flex justify-between items-center">
+                <div class="text-xs text-slate-400 font-bold" id="modalStats">
+                    <!-- Stats injected via JS -->
+                </div>
+                <div class="flex gap-2 no-print-modal">
+                    <button onclick="printHistoryModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20"><i class="fas fa-print mr-2"></i>พิมพ์ประวัติ</button>
+                    <button onclick="closeHistoryModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-white/10">ปิดหน้าต่าง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Script -->
+    <script src="js/sidebar.js"></script>
+
+    <script>
+        let reportData = [];
+        let fpStart, fpEnd;
+        let globalLogs = [];
+        let globalLeaves = [];
+
+        window.onload = () => {
+            const now = new Date();
+            const thTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'numeric' }).formatToParts(now);
+            const year = parseInt(thTime.find(p => p.type === 'year').value);
+            const month = parseInt(thTime.find(p => p.type === 'month').value) - 1;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            const fpConfig = {
+                locale: 'th',
+                dateFormat: "d/m/Y",
+                disableMobile: "true",
+                onReady: function(selectedDates, dateStr, instance) {
+                    const yearEles = instance.calendarContainer.querySelectorAll('.flatpickr-current-month .cur-year');
+                    yearEles.forEach(el => { if (el.value) el.value = parseInt(el.value) + 543; });
+                }
+            };
+
+            fpStart = flatpickr("#startDate", { ...fpConfig, defaultDate: firstDay });
+            fpEnd = flatpickr("#endDate", { ...fpConfig, defaultDate: lastDay });
+            
+            init();
+        };
+
+        async function init() {
+            await fetchUnits();
+            await fetchReportData();
+        }
+
+        async function fetchUnits() {
+            try {
+                const { data } = await supabaseClient.from('units').select('unit_name').eq('status', 'เปิด');
+                const sel = document.getElementById('unitFilter');
+                data?.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.unit_name; opt.textContent = u.unit_name;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {}
+        }
+
+        async function fetchReportData() {
+            // แปลงจาก DD/MM/YYYY กลับเป็น YYYY-MM-DD
+            const parseDate = (dStr) => {
+                if (!dStr) return null;
+                const [d, m, y] = dStr.split('/');
+                return `${y}-${m}-${d}`;
+            };
+
+            const start = parseDate(document.getElementById('startDate').value);
+            const end = parseDate(document.getElementById('endDate').value);
+            const body = document.getElementById('reportTableBody');
+            
+            if (!start || !end) return;
+
+            body.innerHTML = '<tr><td colspan="8" class="px-6 py-20 text-center animate-pulse italic text-slate-500">กำลังประมวลผลข้อมูล...</td></tr>';
+
+            const d1 = new Date(start); const d2 = new Date(end);
+            const totalDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            try {
+                const { data: staff } = await supabaseClient.from('staff').select('*');
+                const { data: logs } = await supabaseClient.from('duty_logs').select('*').gte('timestamp', start).lte('timestamp', end + "T23:59:59");
+                const { data: leaves } = await supabaseClient.from('leave_records').select('*').eq('status', 'approved').gte('start_date', start);
+
+                globalLogs = logs || [];
+                globalLeaves = leaves || [];
+
+                const guards = staff.filter(s => (s.level || '').toLowerCase().includes('guard') || (s.level || '').includes('รปภ'));
+
+                reportData = guards.map(s => {
+                    const sLogs = logs.filter(l => l.emp_id === s.emp_id);
+                    
+                    // สร้าง Map สำหรับจัดกลุ่มสถานะรายวัน
+                    const dayMap = {}; // { 'YYYY-MM-DD': 'work' | 'leave' }
+                    
+                    const getLocalYMD = (utcStr) => {
+                        const d = new Date(utcStr);
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    };
+
+                    sLogs.forEach(l => {
+                        const datePart = getLocalYMD(l.timestamp);
+                        if (l.action_type.includes('leave')) {
+                            dayMap[datePart] = 'leave';
+                        } else if ((l.action_type === 'check_in' || l.action_type === 'check_out') && dayMap[datePart] !== 'leave') {
+                            dayMap[datePart] = 'work';
+                        }
+                    });
+
+                    // นับจาก leave_records ด้วย (ถ้ามี)
+                    const sLeaves = (leaves || []).filter(l => l.emp_id === s.emp_id);
+                    sLeaves.forEach(l => {
+                        const lStart = new Date(l.start_date); const lEnd = new Date(l.end_date || l.start_date);
+                        let curr = new Date(lStart);
+                        while (curr <= lEnd) {
+                            const dateStr = curr.toISOString().split('T')[0];
+                            if (dateStr >= start && dateStr <= end) {
+                                dayMap[dateStr] = 'leave';
+                            }
+                            curr.setDate(curr.getDate() + 1);
+                        }
+                    });
+
+                    let workDays = 0, leaveDays = 0;
+                    Object.values(dayMap).forEach(v => {
+                        if (v === 'work') workDays++;
+                        else if (v === 'leave') leaveDays++;
+                    });
+
+                    // คำนวณ มาสาย/ออกก่อน (เฉพาะวันที่เป็น 'work')
+                    let late = 0, early = 0;
+                    const sLogsIn = sLogs.filter(l => l.action_type === 'check_in');
+                    const sLogsOut = sLogs.filter(l => l.action_type === 'check_out');
+
+                    sLogsIn.forEach(l => {
+                        const datePart = getLocalYMD(l.timestamp);
+                        if (dayMap[datePart] === 'work') {
+                            const d = new Date(l.timestamp);
+                            const h = d.getHours(); const m = d.getMinutes();
+                            if (h === 7 && m > 15) late++; else if (h > 7 && h < 18) late++;
+                            else if (h === 19 && m > 15) late++; else if (h > 19 || h < 6) late++;
+                        }
+                    });
+
+                    sLogsOut.forEach(l => {
+                        const datePart = getLocalYMD(l.timestamp);
+                        if (dayMap[datePart] === 'work') {
+                            const d = new Date(l.timestamp);
+                            const h = d.getHours();
+                            if (h >= 17 && h < 19) early++; else if (h >= 5 && h < 7) early++;
+                        }
+                    });
+
+                    let absent = totalDays - (workDays + leaveDays);
+                    if (absent < 0) absent = 0;
+
+                    return { ...s, workDays, leaveDays, absent, late, early };
+                });
+
+                renderTable();
+            } catch (e) {
+                body.innerHTML = `<tr><td colspan="8" class="px-6 py-20 text-center text-red-500">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        function renderTable() {
+            const unit = document.getElementById('unitFilter').value;
+            const zone = document.getElementById('zoneFilter').value;
+            const search = document.getElementById('searchStaff').value.toLowerCase();
+            const body = document.getElementById('reportTableBody');
+            
+            const filtered = reportData.filter(s => {
+                const matchUnit = !unit || s.unit === unit;
+                const matchZone = !zone || s.zone === zone;
+                const matchSearch = !search || (s.name && s.name.toLowerCase().includes(search)) || (s.emp_id && s.emp_id.toLowerCase().includes(search));
+                return matchUnit && matchZone && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="9" class="px-6 py-20 text-center text-slate-500 italic">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+
+            body.innerHTML = filtered.map(s => {
+                const cleanName = (s.name || '').split(' (')[0];
+                return `
+                <tr class="hover:bg-white/5 transition-all border-b border-white/5">
+                    <td class="px-3 py-3 font-mono font-bold text-amber-500 text-xs">${s.emp_id}</td>
+                    <td class="px-3 py-3 font-bold text-white text-xs">${cleanName}</td>
+                    <td class="px-3 py-3 text-slate-400 text-[10px]">${s.unit || '-'}</td>
+                    <td class="px-2 py-3 text-center font-black text-emerald-400 text-base bg-emerald-500/5">${s.workDays}</td>
+                    <td class="px-2 py-3 text-center font-black text-blue-400 text-base bg-blue-500/5">${s.leaveDays}</td>
+                    <td class="px-2 py-3 text-center font-black ${s.absent > 0 ? 'text-red-500' : 'text-slate-700'} text-base bg-red-500/5">${s.absent}</td>
+                    <td class="px-2 py-3 text-center font-black ${s.late > 0 ? 'text-amber-500' : 'text-slate-700'} text-base bg-amber-500/5">${s.late}</td>
+                    <td class="px-2 py-3 text-center font-black ${s.early > 0 ? 'text-rose-400' : 'text-slate-700'} text-base bg-rose-500/5">${s.early}</td>
+                    <td class="px-3 py-3 text-center">
+                        <button onclick="viewHistory('${s.emp_id}', '${cleanName}')" class="w-8 h-8 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-lg flex items-center justify-center transition-all mx-auto shadow-sm">
+                            <i class="fas fa-history text-xs"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- History Modal Functions ---
+        function viewHistory(empId, name) {
+            const startStr = document.getElementById('startDate').value;
+            const endStr = document.getElementById('endDate').value;
+            document.getElementById('modalGuardName').textContent = `ประวัติ: ${name} (${empId})`;
+            document.getElementById('modalDateRange').textContent = `ช่วงเวลา: ${startStr} ถึง ${endStr}`;
+            
+            const parseDate = (dStr) => {
+                if (!dStr) return null;
+                const [d, m, y] = dStr.split('/');
+                return `${y}-${m}-${d}`;
+            };
+            const start = parseDate(startStr);
+            const end = parseDate(endStr);
+            
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            
+            const d1 = new Date(start); const d2 = new Date(end);
+            
+            const sLogs = globalLogs.filter(l => l.emp_id === empId);
+            const sLeaves = globalLeaves.filter(l => l.emp_id === empId);
+            
+            const grouped = {};
+            const getLocalYMD = (utcStr) => {
+                const d = new Date(utcStr);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
+            const getLocalTime = (utcStr) => {
+                const d = new Date(utcStr);
+                return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} น.`;
+            };
+
+            sLogs.forEach(l => {
+                const dStr = getLocalYMD(l.timestamp);
+                if (!grouped[dStr]) grouped[dStr] = { leave: null, in: null, out: null, inFull: null, outFull: null };
+                
+                if (l.action_type.includes('leave')) {
+                    grouped[dStr].leave = l.action_type;
+                } else if (l.action_type === 'check_in') {
+                    if (!grouped[dStr].in || l.timestamp < grouped[dStr].inFull) {
+                        grouped[dStr].in = getLocalTime(l.timestamp);
+                        grouped[dStr].inFull = new Date(l.timestamp);
+                    }
+                } else if (l.action_type === 'check_out') {
+                    if (!grouped[dStr].out || l.timestamp > grouped[dStr].outFull) {
+                        grouped[dStr].out = getLocalTime(l.timestamp);
+                        grouped[dStr].outFull = new Date(l.timestamp);
+                    }
+                }
+            });
+
+            sLeaves.forEach(l => {
+                const lStart = new Date(l.start_date); const lEnd = new Date(l.end_date || l.start_date);
+                let curr = new Date(lStart);
+                while (curr <= lEnd) {
+                    const dateStr = curr.toISOString().split('T')[0];
+                    if (!grouped[dateStr]) grouped[dateStr] = { leave: null, in: null, out: null };
+                    grouped[dateStr].leave = 'approved_leave';
+                    curr.setDate(curr.getDate() + 1);
+                }
+            });
+
+            let currDay = new Date(d1);
+            let html = '';
+            let stats = { work: 0, leave: 0, absent: 0, late: 0, early: 0 };
+            const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+            while (currDay <= d2) {
+                const dStr = currDay.toISOString().split('T')[0];
+                const dDisplay = `${currDay.getDate()} ${thMonths[currDay.getMonth()]} ${currDay.getFullYear() + 543}`;
+                
+                const dData = grouped[dStr];
+                let inTime = '--', outTime = '--', statusHtml = '<span class="text-rose-500 font-bold">ขาดงาน</span>', color = 'text-slate-500';
+                
+                if (dData && dData.leave) {
+                    inTime = '-'; outTime = '-';
+                    stats.leave++;
+                    if (dData.leave === 'sick_leave') statusHtml = '<span class="text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">ลาป่วย</span>';
+                    else if (dData.leave === 'personal_leave') statusHtml = '<span class="text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded">ลากิจ</span>';
+                    else statusHtml = '<span class="text-cyan-400 font-bold bg-cyan-500/10 px-2 py-1 rounded">ลาพักร้อน</span>';
+                } else if (dData && dData.in) {
+                    inTime = dData.in;
+                    outTime = dData.out || '--';
+                    stats.work++;
+                    
+                    let statuses = [];
+                    let isLate = false;
+                    let isEarly = false;
+                    
+                    const h = dData.inFull.getHours(); const m = dData.inFull.getMinutes();
+                    if (h > 7 && h < 18) isLate = true;
+                    else if (h === 7 && m > 15) isLate = true;
+                    else if (h > 19 || h < 6) isLate = true;
+                    else if (h === 19 && m > 15) isLate = true;
+                    
+                    if (isLate) {
+                        statuses.push('<span class="text-amber-500">เข้าสาย</span>');
+                        stats.late++;
+                    }
+                    
+                    if (dData.outFull) {
+                        const oh = dData.outFull.getHours();
+                        if (oh >= 17 && oh < 19) isEarly = true;
+                        else if (oh >= 5 && oh < 7) isEarly = true;
+                        
+                        if (isEarly) {
+                            statuses.push('<span class="text-rose-400">ออกก่อน</span>');
+                            stats.early++;
+                        }
+                    }
+                    
+                    if (statuses.length === 0) statusHtml = '<span class="text-emerald-400 font-bold">มาทำงาน</span>';
+                    else statusHtml = statuses.join(' + ');
+                    
+                    color = 'text-white';
+                } else {
+                    stats.absent++;
+                }
+
+                html += `
+                    <tr class="hover:bg-white/5 transition-all">
+                        <td class="px-6 py-4 font-bold ${color}">${dDisplay}</td>
+                        <td class="px-4 py-4 text-center font-mono text-sm">${inTime}</td>
+                        <td class="px-4 py-4 text-center font-mono text-sm">${outTime}</td>
+                        <td class="px-6 py-4 text-right">${statusHtml}</td>
+                    </tr>
+                `;
+                currDay.setDate(currDay.getDate() + 1);
+            }
+            
+            tbody.innerHTML = html || '<tr><td colspan="4" class="px-6 py-10 text-center text-slate-500 italic">ไม่มีข้อมูลในช่วงเวลานี้</td></tr>';
+            
+            document.getElementById('modalStats').innerHTML = `
+                <span class="text-emerald-400">ทำงาน ${stats.work} วัน</span> &bull; 
+                <span class="text-amber-400">สาย ${stats.late} วัน</span> &bull; 
+                <span class="text-rose-400">ออกก่อน ${stats.early} วัน</span> &bull; 
+                <span class="text-blue-400">ลา ${stats.leave} วัน</span> &bull; 
+                <span class="text-red-500">ขาด ${stats.absent} วัน</span>
+            `;
+            
+            const modal = document.getElementById('historyModal');
+            const modalContent = document.getElementById('historyModalContent');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            const modalContent = document.getElementById('historyModalContent');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function printHistoryModal() {
+            document.body.classList.add('printing-modal');
+            window.print();
+            setTimeout(() => { document.body.classList.remove('printing-modal'); }, 500);
+        }
+    </script>
+</body>
+</html>

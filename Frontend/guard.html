@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen | Guard Portal v1.0</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #020617;
+            --card-bg: rgba(15, 23, 42, 0.9);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top, rgba(16, 185, 129, 0.1), transparent 50%);
+            color: white;
+            margin: 0;
+            padding-bottom: 40px;
+        }
+
+        .main-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .box-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Date Picker Custom */
+        .date-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 18px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        /* History Table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 10px 8px;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .history-table td {
+            padding: 14px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Stats Grid */
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .mini-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .mini-val {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .mini-lbl {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .btn-logout {
+            width: 100%;
+            background: rgba(225, 29, 72, 0.1);
+            color: #f43f5e;
+            border: 1px solid rgba(225, 29, 72, 0.3);
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-logout:active {
+            transform: scale(0.96);
+            background: rgba(225, 29, 72, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="p-8 pb-6 flex items-center gap-5 border-b border-white/5 bg-black/20">
+        <div
+            class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
+            <i class="fas fa-user-shield text-2xl"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-black text-white tracking-tight" id="userName">กำลังโหลด...</h2>
+            <div class="flex items-center gap-2 mt-1">
+                <p class="text-[10px] text-emerald-500 font-black uppercase tracking-[2px]">Guard Portal</p>
+                <span class="text-[9px] bg-white/5 text-slate-400 px-2 py-0.5 rounded border border-white/10 uppercase"
+                    id="userUnit">หน่วยงาน: --</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <!-- 1. ประวัติการเข้าออกงาน -->
+        <div class="main-box">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-black text-white uppercase tracking-widest"><i
+                        class="fas fa-history text-emerald-500 mr-2"></i> ประวัติ 7 วันล่าสุด</h2>
+                <span class="text-[9px] text-slate-500 font-bold">อัปเดตเรียลไทม์</span>
+            </div>
+
+            <div class="date-picker-wrap" onclick="document.getElementById('historyDate').showPicker()">
+                <i class="far fa-calendar-alt text-emerald-500"></i>
+                <span id="displayDateText" class="text-sm font-bold text-white">เลือกวันที่ดูประวัติ</span>
+                <input type="date" id="historyDate" class="hidden" onchange="updateThaiDateDisplay()">
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>ผลัด</th>
+                            <th>เวลา</th>
+                            <th class="text-center">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center py-8 text-slate-500 animate-pulse text-[11px]">
+                                กำลังดึงข้อมูล...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. สรุปการปฏิบัติงานเดือนนี้ -->
+        <div class="main-box">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-sm font-black text-white uppercase tracking-widest"><i
+                        class="fas fa-calendar-check text-emerald-500 mr-2"></i> สรุปรายเดือน</h2>
+                <span
+                    class="text-[10px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-black border border-emerald-500/20"
+                    id="currentMonthLabel">...</span>
+            </div>
+
+            <!-- Attendance Grid (Simple 1-31) -->
+            <div class="grid grid-cols-7 gap-2 mb-8" id="attendanceGrid"></div>
+
+            <div class="perf-grid grid-cols-3 gap-3">
+                <div class="mini-box">
+                    <div class="mini-val text-white" id="totalWorkDays">0</div>
+                    <div class="mini-lbl text-[9px]">ทำงาน</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-rose-500" id="totalAbsentDays">0</div>
+                    <div class="mini-lbl text-[9px]">ขาดงาน</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-amber-500" id="totalLateEarlyDays">0</div>
+                    <div class="mini-lbl text-[9px]">เข้าสาย/ออกก่อน</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-blue-400" id="totalSickDays">0</div>
+                    <div class="mini-lbl text-[9px]">ลาป่วย</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-indigo-400" id="totalPersonalDays">0</div>
+                    <div class="mini-lbl text-[9px]">ลากิจ</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-val text-emerald-400" id="totalVacationDays">0</div>
+                    <div class="mini-lbl text-[9px]">พักร้อน</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-2">
+            <button onclick="logout()" class="btn-logout shadow-xl">
+                <i class="fas fa-sign-out-alt"></i> ออกจากระบบรักษาความปลอดภัย
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-10 text-center pb-12 space-y-2">
+        <p class="text-[9px] text-slate-500 font-bold tracking-[1px] opacity-60 uppercase">
+            &copy; 2026 &bull; NEXGEN SYSTEM CENTER Ver.1.0
+        </p>
+        <span class="text-[8px] text-slate-700 block font-bold">Developer: Ponchai Onkum</span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let userData = null;
+        const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+        async function initPortal() {
+            try {
+                const session = localStorage.getItem('nexgen_user');
+                if (!session) throw new Error();
+                userData = JSON.parse(session);
+
+                document.getElementById('userName').innerText = userData.name.toUpperCase();
+                document.getElementById('userUnit').innerText = 'หน่วยงาน: ' + (userData.unit || 'ทั่วไป');
+
+                await fetchAttendance();
+            } catch (e) {
+                window.location.replace('../index.html');
+            }
+        }
+
+        async function fetchAttendance() {
+            const now = new Date();
+            const thTime = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'numeric' }).formatToParts(now);
+            const year = parseInt(thTime.find(p => p.type === 'year').value);
+            const month = parseInt(thTime.find(p => p.type === 'month').value) - 1;
+
+            document.getElementById('currentMonthLabel').innerText = `${thaiMonthsFull[month]} ${year + 543}`;
+
+            try {
+                // กำหนดช่วงเวลาแบบ Thai Time (+07:00) เพื่อป้องกันข้อมูลตกหล่น 7 ชม.
+                const firstDay = `${year}-${(month + 1).toString().padStart(2, '0')}-01T00:00:00+07:00`;
+                const lastDayObj = new Date(year, month + 1, 0);
+                const lastDay = `${year}-${(month + 1).toString().padStart(2, '0')}-${lastDayObj.getDate().toString().padStart(2, '0')}T23:59:59+07:00`;
+
+                const { data: logs, error } = await supabaseClient
+                    .from('duty_logs')
+                    .select('*')
+                    .eq('emp_id', userData.emp_id)
+                    .gte('timestamp', firstDay)
+                    .lte('timestamp', lastDay)
+                    .order('timestamp', { ascending: false });
+
+                if (error) throw error;
+
+                const attendanceMap = {}; // { day: 'work' | 'sick' | 'personal' | 'vacation' }
+                const grouped = {};
+
+                logs.forEach(log => {
+                    const d = new Date(log.timestamp);
+                    const day = d.getDate();
+                    
+                    // ลำดับความสำคัญใหม่: "วันลา" มีความสำคัญสูงสุด
+                    // หากมีการบันทึกวันลาไว้ จะไม่สนใจการลงเวลาทำงาน
+                    const type = log.action_type;
+                    if (type.includes('leave')) {
+                        attendanceMap[day] = type.replace('_leave', ''); // ทับสถานะเดิมทันที
+                    } else if (type === 'check_in' || type === 'check_out') {
+                        // บันทึกว่ามาทำงาน เฉพาะเมื่อวันนั้นไม่ได้ถูกมาร์คว่าลาไปแล้ว
+                        if (!['sick', 'personal', 'vacation'].includes(attendanceMap[day])) {
+                            attendanceMap[day] = 'work';
+                        }
+                    }
+
+                    const dateKey = `${day.toString().padStart(2, '0')} ${thaiMonthsShort[month]}`;
+                    if (!grouped[dateKey]) grouped[dateKey] = { in: null, out: null, inFull: null, outFull: null, leave: null };
+
+                    if (type === 'check_in') { grouped[dateKey].in = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }); grouped[dateKey].inFull = d; }
+                    else if (type === 'check_out') { grouped[dateKey].out = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }); grouped[dateKey].outFull = d; }
+                    else if (type.includes('leave')) { grouped[dateKey].leave = type; }
+                });
+
+                renderGrid(year, month, attendanceMap);
+                renderHistory(grouped);
+                updateStats(attendanceMap, logs);
+
+            } catch (e) { console.error(e); }
+        }
+
+        function renderGrid(year, month, attendanceMap) {
+            const grid = document.getElementById('attendanceGrid');
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date().getDate();
+            const isCurrentMonth = (new Date().getMonth() === month);
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayBox = document.createElement('div');
+                dayBox.className = 'flex flex-col items-center justify-center p-1.5 rounded-xl border transition-all min-h-[45px]';
+                let color = 'bg-slate-800/30 border-white/5 text-slate-700', text = '-';
+
+                const status = attendanceMap[i];
+                if (status === 'work') { 
+                    color = 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'; text = 'ทำงาน'; 
+                } else if (status === 'sick') {
+                    color = 'bg-blue-500/20 border-blue-500/30 text-blue-400'; text = 'ลาป่วย';
+                } else if (status === 'personal') {
+                    color = 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'; text = 'ลากิจ';
+                } else if (status === 'vacation') {
+                    color = 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400'; text = 'พักร้อน';
+                } else if (isCurrentMonth && i < today) { 
+                    color = 'bg-rose-500/10 border-rose-500/30 text-rose-500'; text = 'ขาดงาน'; 
+                } else if (isCurrentMonth && i === today) { 
+                    color = 'bg-slate-800 border-amber-500/50 text-white shadow-lg'; text = 'วันนี้'; 
+                }
+
+                dayBox.className += ' ' + color;
+                dayBox.innerHTML = `<span class="text-[8px] mb-1 opacity-40">${i}</span><span class="text-[9px] font-black">${text}</span>`;
+                grid.appendChild(dayBox);
+            }
+        }
+
+        function renderHistory(grouped) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            const now = new Date();
+            const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+            // วนลูปย้อนหลัง 7 วัน (รวมวันนี้)
+            for (let i = 0; i < 7; i++) {
+                const targetDate = new Date();
+                targetDate.setDate(now.getDate() - i);
+
+                const day = targetDate.getDate().toString().padStart(2, '0');
+                const month = targetDate.getMonth();
+                const dateKey = `${day} ${thaiMonthsShort[month]}`;
+                const todayStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' });
+
+                const d = grouped[dateKey];
+                let shift = '-', color = 'text-slate-500', inTime = '--', outTime = '-', finalStatus = '-';
+
+                if (d && d.in) inTime = d.in;
+
+                if (d && d.leave) {
+                    // ลำดับ 1: กรณีมีการลา (ทับสิทธิ์การลงเวลาเข้างาน)
+                    shift = 'ลางาน';
+                    inTime = '-'; // ซ่อนเวลาเข้า
+                    outTime = '-'; // ซ่อนเวลาออก
+                    if (d.leave === 'sick_leave') {
+                        finalStatus = '<span class="text-blue-400 font-bold">ลาป่วย</span>';
+                        color = 'text-blue-400';
+                    } else if (d.leave === 'personal_leave') {
+                        finalStatus = '<span class="text-indigo-400 font-bold">ลากิจ</span>';
+                        color = 'text-indigo-400';
+                    } else {
+                        finalStatus = '<span class="text-cyan-400 font-bold">ลาพักร้อน</span>';
+                        color = 'text-cyan-400';
+                    }
+                } else if (d && d.inFull) {
+                    // ลำดับ 2: กรณีมาทำงานปกติ
+                    let statuses = [];
+                    const h = d.inFull.getHours(), m = d.inFull.getMinutes();
+
+                    if (h >= 6 && h < 18) {
+                        shift = 'ผลัดกลางวัน'; color = 'text-blue-400';
+                        if (h > 7 || (h === 7 && m > 15)) statuses.push('<span class="text-rose-500">เข้าสาย</span>');
+                    } else {
+                        shift = 'ผลัดกลางคืน'; color = 'text-purple-400';
+                        if (h > 19 || (h === 19 && m > 15)) statuses.push('<span class="text-rose-500">เข้าสาย</span>');
+                    }
+
+                    if (d.outFull) {
+                        const hrs = (d.outFull - d.inFull) / 3600000;
+                        if (hrs >= 15) { shift = 'ควงกะ'; color = 'text-amber-500'; }
+                        if (hrs < 8) statuses.push('<span class="text-amber-500">ออกก่อน</span>');
+                        outTime = d.out;
+                    } else {
+                        if (dateKey === todayStr) {
+                            statuses.push('<span class="text-emerald-400">ในเวร</span>');
+                            outTime = '<span class="text-emerald-500 animate-pulse">กำลังทำ...</span>';
+                        } else {
+                            statuses.push('<span class="text-rose-600 font-black">ลืมออกงาน</span>');
+                            outTime = '<span class="text-rose-500">ไม่พบ</span>';
+                        }
+                    }
+                    finalStatus = statuses.length > 0 ? statuses.join(' + ') : '<span class="text-emerald-400">ปกติ</span>';
+                } else {
+                    // ถ้าไม่มีข้อมูลในวันนั้น (ขาดงาน)
+                    shift = 'ไม่ระบุ';
+                    finalStatus = '<span class="text-rose-500 font-bold">ขาดงาน</span>';
+                    outTime = '-';
+                    // ถ้าเป็นวันนี้และยังไม่ลงเวลาเข้า
+                    if (dateKey === todayStr) {
+                        finalStatus = '<span class="text-slate-500 italic">รอเข้างาน</span>';
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="font-bold text-white text-[11px]">${dateKey}</td>
+                        <td class="${color} font-bold text-[10px]">${shift}</td>
+                        <td class="text-[10px] font-medium">${inTime} - ${outTime}</td>
+                        <td class="text-center font-bold text-[10px]">${finalStatus}</td>
+                    </tr>`;
+            }
+        }
+
+        function updateStats(attendanceMap, logs) {
+            const today = new Date().getDate();
+            
+            // 1. วันทำงาน (นับเฉพาะที่ status เป็น 'work')
+            let work = 0;
+            Object.values(attendanceMap).forEach(v => { if (v === 'work') work++; });
+            document.getElementById('totalWorkDays').innerText = work;
+
+            // 2. สาย หรือ ออกก่อน
+            let lateEarly = 0;
+            const dailyLogs = {};
+            logs.forEach(l => {
+                const day = new Date(l.timestamp).getDate();
+                if (!dailyLogs[day]) dailyLogs[day] = [];
+                dailyLogs[day].push(l);
+            });
+
+            Object.values(dailyLogs).forEach(dayGroup => {
+                let isLate = false;
+                let isEarly = false;
+                let cin = dayGroup.find(l => l.action_type === 'check_in');
+                let cout = dayGroup.find(l => l.action_type === 'check_out');
+
+                if (cin) {
+                    const h = new Date(cin.timestamp).getHours(), m = new Date(cin.timestamp).getMinutes();
+                    if ((h >= 6 && h < 18 && (h > 7 || (h === 7 && m > 15))) || (!(h >= 6 && h < 18) && (h > 19 || (h === 19 && m > 15)))) isLate = true;
+                }
+                if (cin && cout) {
+                    const hrs = (new Date(cout.timestamp) - new Date(cin.timestamp)) / 3600000;
+                    if (hrs < 8) isEarly = true;
+                }
+                if (isLate || isEarly) lateEarly++;
+            });
+            document.getElementById('totalLateEarlyDays').innerText = lateEarly;
+
+            // 3. วันลา (นับจาก attendanceMap เพื่อความแม่นยำรายวัน)
+            let sick = 0, personal = 0, vacation = 0;
+            Object.values(attendanceMap).forEach(v => {
+                if (v === 'sick') sick++;
+                else if (v === 'personal') personal++;
+                else if (v === 'vacation') vacation++;
+            });
+
+            document.getElementById('totalSickDays').innerText = sick;
+            document.getElementById('totalPersonalDays').innerText = personal;
+            document.getElementById('totalVacationDays').innerText = vacation;
+
+            // 4. วันขาด (นับเฉพาะวันที่ไม่มีทั้งงานและลา)
+            let absent = 0;
+            for (let i = 1; i < today; i++) {
+                if (!attendanceMap[i]) absent++;
+            }
+            document.getElementById('totalAbsentDays').innerText = absent;
+        }
+
+        function updateThaiDateDisplay() {
+            const input = document.getElementById('historyDate');
+            if (input.value) {
+                const d = new Date(input.value);
+                document.getElementById('displayDateText').innerText = `${d.getDate()} ${thaiMonthsFull[d.getMonth()]} ${d.getFullYear() + 543}`;
+                location.reload();
+            }
+        }
+
+        function logout() { if (confirm('ยืนยันออกจากระบบ?')) { localStorage.removeItem('nexgen_user'); window.location.href = '../index.html'; } }
+        initPortal();
+    </script>
+</body>
+
+</html>

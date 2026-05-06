@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงาน OP05 | Nexgen System Center</title>
+    
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <script src="js/sidebar.js"></script>
+
+    <!-- ใช้ CSS ชุดเดียวกับ Dashboard -->
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <style>
+        /* ปรับปรุง CSS เพิ่มเติมเพื่อให้เข้ากับหน้า Report */
+        :root {
+            --primary: #3b82f6;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #020617;
+            color: white;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 600px);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+        }
+
+        /* Digital Clock Style */
+        .clock-widget {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 16px;
+            text-align: right;
+            min-width: 180px;
+        }
+        #digital-clock {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: #3b82f6;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        #digital-date {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .status-normal { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-issue { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2); }
+        .status-followup { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        /* ปรับปรุง Sidebar Submenu ให้โชว์ค้างไว้ถ้าอยู่หน้านั้น */
+        .submenu.open { display: block; }
+    </style>
+</head>
+
+<body>
+    <div class="flex h-screen w-screen overflow-hidden">
+        
+        <!-- Sidebar (เรียกใช้ผ่าน sidebar.js) -->
+        <aside id="sidebar-container" class="sidebar flex flex-col shrink-0"></aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content custom-scrollbar">
+            
+            <!-- Header with Digital Clock -->
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
+                        <i class="fas fa-file-invoice text-2xl text-blue-500"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black tracking-tighter uppercase leading-none mb-1">
+                            Client <span class="text-blue-500">Visit Reports (OP05)</span>
+                        </h1>
+                        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[3px]">
+                            รายงานการเข้าพบผู้ว่าจ้าง (OP05)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="clock-widget">
+                    <div id="digital-clock">00:00:00</div>
+                    <div id="digital-date">Monday, 04 May 2026</div>
+                </div>
+            </header>
+
+            <!-- Stats Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="glass-card p-4 border-l-4 border-blue-500 hover:bg-white/5 transition-all">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">รายงานทั้งหมด</p>
+                    <h3 class="text-2xl font-black text-white" id="stat-total">0</h3>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-emerald-500 hover:bg-white/5 transition-all">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">สถานะปกติ</p>
+                    <h3 class="text-2xl font-black text-emerald-500" id="stat-normal">0</h3>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-amber-500 hover:bg-white/5 transition-all">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">ต้องติดตาม</p>
+                    <h3 class="text-2xl font-black text-amber-500" id="stat-followup">0</h3>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-rose-500 hover:bg-white/5 transition-all">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">พบปัญหา</p>
+                    <h3 class="text-2xl font-black text-rose-500" id="stat-issue">0</h3>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass-card p-3 mb-4 flex flex-wrap items-center gap-4">
+                <div class="flex-1 min-w-[200px] relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                    <input type="text" id="searchReport" placeholder="ค้นหาหน่วยงาน หรือ ผู้เข้าพบ..." 
+                        class="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="fetchReports()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20">
+                        <i class="fas fa-sync-alt mr-2"></i> อัปเดตข้อมูล
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-white/5 border-b border-white/5">
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">วันที่</th>
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">เลขที่เอกสาร</th>
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">หน่วยงาน</th>
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">ผู้เข้าพบ</th>
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400 text-center">สถานะ</th>
+                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400 text-right">แอคชั่น</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportList" class="divide-y divide-white/5 text-sm">
+                        <!-- Content via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="reportModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-[100] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="sticky top-0 bg-[#020617] p-6 border-b border-white/10 flex items-center justify-between">
+                <h3 class="text-xl font-black uppercase">Report <span class="text-blue-500">Details</span></h3>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-rose-500/20 hover:text-rose-500 transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-8" id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let allReports = [];
+
+        window.onload = () => {
+            startClock();
+            fetchReports();
+        };
+
+        function startClock() {
+            const clockEl = document.getElementById('digital-clock');
+            const dateEl = document.getElementById('digital-date');
+            function update() {
+                const now = new Date();
+                const options = { timeZone: 'Asia/Bangkok' };
+                clockEl.textContent = now.toLocaleTimeString('en-GB', { ...options, hour12: false });
+                dateEl.textContent = now.toLocaleDateString('th-TH', { 
+                    ...options, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+                });
+            }
+            setInterval(update, 1000);
+            update();
+        }
+
+        async function fetchReports() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('op05_reports')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allReports = data.map(report => {
+                    let status = 'normal';
+                    if (report.checklist) {
+                        const values = Object.values(report.checklist);
+                        if (values.some(v => v.status === 'issue')) status = 'issue';
+                        else if (values.some(v => v.status === 'discuss')) status = 'followup';
+                    }
+
+                    const cleanName = (str) => (str || '').split(' (')[0];
+                    
+                    // Format Date to Buddhist Era (พ.ศ.)
+                    let formattedDate = report.visit_date || '-';
+                    if (report.visit_date && report.visit_date !== '-') {
+                        const [y, m, d] = report.visit_date.split('-');
+                        if (y && m && d) {
+                            formattedDate = `${d}/${m}/${parseInt(y) + 543}`;
+                        }
+                    }
+
+                    return {
+                        id: report.id,
+                        date: formattedDate,
+                        time: report.visit_time ? report.visit_time.substring(0, 5) : '--:--',
+                        unit: report.site_name,
+                        docId: report.doc_id,
+                        client: cleanName(report.client_name),
+                        supervisor: cleanName(report.op_name),
+                        status: status,
+                        raw: report
+                    };
+                });
+
+                renderReports(allReports);
+            } catch (e) {
+                console.error("Fetch error:", e);
+                renderReports([]);
+            }
+        }
+
+        function renderReports(reports) {
+            const list = document.getElementById('reportList');
+            list.innerHTML = reports.map(r => `
+                <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
+                    <td class="px-4 py-3 font-bold text-white text-xs">${r.date}</td>
+                    <td class="px-4 py-3 font-bold text-amber-500 font-mono text-xs">${r.docId}</td>
+                    <td class="px-4 py-3 font-bold text-white text-xs uppercase">${r.unit}</td>
+                    <td class="px-4 py-3 text-slate-300 text-xs font-medium">${r.supervisor}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="status-badge status-${r.status}">
+                            ${r.status === 'normal' ? 'ปกติ' : (r.status === 'issue' ? 'พบปัญหา' : 'หารือ')}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="viewDetail('${r.id}')" class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-400 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase">
+                            ดูรายละเอียด
+                        </button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" class="p-20 text-center text-slate-600 italic">ไม่พบข้อมูลรายงาน</td></tr>';
+        }
+
+        function updateStats(reports) {
+            document.getElementById('stat-total').textContent = reports.length;
+            document.getElementById('stat-normal').textContent = reports.filter(r => r.status === 'normal').length;
+            document.getElementById('stat-followup').textContent = reports.filter(r => r.status === 'followup').length;
+            document.getElementById('stat-issue').textContent = reports.filter(r => r.status === 'issue').length;
+        }
+
+        function viewDetail(id) {
+            const item = allReports.find(r => r.id == id);
+            if (!item) return;
+            const report = item.raw;
+            const modalContent = document.getElementById('modalContent');
+            
+            let checklistHtml = '';
+            if (report.checklist) {
+                const labels = {
+                    manpower: "ด้านกำลังพล", discipline: "ด้านระเบียบวินัย",
+                    quality: "ด้านคุณภาพการปฏิบัติงาน", equipment: "ด้านอุปกรณ์และเทคโนโลยี",
+                    personnel: "ด้านข้อมูลและประวัติพนักงาน", inspection: "ด้านการตรวจ / ความถี่",
+                    complaint: "ข้อร้องเรียนอื่นๆ", suggestion: "คำแนะนำและความต้องการ"
+                };
+
+                checklistHtml = Object.entries(report.checklist).map(([key, val]) => {
+                    if (!val.status) return '';
+                    const statusText = val.status === 'pass' ? 'ปกติ' : (val.status === 'issue' ? 'พบปัญหา' : 'หารือ');
+                    const statusColor = val.status === 'pass' ? 'text-emerald-400' : (val.status === 'issue' ? 'text-rose-500' : 'text-amber-500');
+                    return `
+                        <div class="p-4 bg-white/5 rounded-xl border border-white/5 mb-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-slate-400">${labels[key] || key}</span>
+                                <span class="text-[10px] font-black uppercase ${statusColor}">${statusText}</span>
+                            </div>
+                            <p class="text-sm text-slate-300">${val.note || '-'}</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6 text-slate-300">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest">เลขที่เอกสาร</label>
+                            <p class="text-blue-400 font-black text-lg">${report.doc_id}</p>
+                            <h4 class="text-2xl font-black text-white uppercase mt-1">${report.site_name}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-[10px] text-slate-500 font-black uppercase tracking-widest">ผู้ว่าจ้าง</label><p class="font-bold text-white">${(report.client_name || '').split(' (')[0]}</p></div>
+                            <div><label class="text-[10px] text-slate-500 font-black uppercase tracking-widest">เจ้าหน้าที่</label><p class="font-bold text-amber-500">${(report.op_name || '').split(' (')[0]}</p></div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 block">รายการตรวจสอบ</label>
+                            <div class="max-h-[300px] overflow-y-auto custom-scrollbar pr-2">${checklistHtml}</div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-white p-4 rounded-2xl">
+                            <label class="text-[9px] text-slate-400 font-black uppercase mb-2 block text-center">ลายเซ็นผู้ว่าจ้าง</label>
+                            <img src="${report.sig_client || ''}" class="h-24 object-contain mx-auto" onerror="this.classList.add('hidden')">
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl">
+                            <label class="text-[9px] text-slate-400 font-black uppercase mb-2 block text-center">ลายเซ็นเจ้าหน้าที่</label>
+                            <img src="${report.sig_staff || ''}" class="h-24 object-contain mx-auto" onerror="this.classList.add('hidden')">
+                        </div>
+                        <button onclick="window.open('../Frontend/OP05-View.html?id=${report.id}', '_blank')" class="w-full py-4 bg-blue-600 hover:bg-blue-500 transition-colors text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-600/20">
+                            <i class="fas fa-print mr-2"></i> พิมพ์เอกสาร A4
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('reportModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('reportModal').classList.add('hidden'); }
+    </script>
+</body>
+</html>

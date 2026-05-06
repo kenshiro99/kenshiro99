@@ -109,7 +109,43 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(14, 165, 233, 0.05);
             position: relative;
             overflow: hidden;
-            animation: cardEntrance 1s cubic-bezier(0.23, 1, 0.32, 1);
+            display: none;
+            /* ซ่อนไว้ก่อนจนกว่าจะเลือกโหมด */
+            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #mainGateway {
+            transition: all 0.8s ease-in-out;
+        }
+
+        .ai-assistant-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: all 0.8s ease-in-out;
+        }
+
+        .gateway-active .login-card {
+            display: block;
+        }
+
+        .gateway-active .ai-assistant-container {
+            margin-bottom: 30px;
+            flex-direction: row;
+        }
+
+        .gateway-active .ai-bubble {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 0;
+            border-radius: 30px;
+        }
+
+        #aiChoices {
+            display: none;
+            /* ซ่อนจนกว่าจะทักทายเสร็จ */
         }
 
         @keyframes cardEntrance {
@@ -142,8 +178,17 @@
         }
 
         @keyframes pulse-border {
-            0%, 100% { border-color: rgba(14, 165, 233, 0.4); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
-            50% { border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 0 30px rgba(245, 158, 11, 0.3); }
+
+            0%,
+            100% {
+                border-color: rgba(14, 165, 233, 0.4);
+                box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+            }
+
+            50% {
+                border-color: rgba(245, 158, 11, 0.6);
+                box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+            }
         }
 
         .brand-logo::after {
@@ -159,8 +204,13 @@
         }
 
         @keyframes sheen {
-            0% { left: -150%; }
-            100% { left: 150%; }
+            0% {
+                left: -150%;
+            }
+
+            100% {
+                left: 150%;
+            }
         }
 
         .brand-logo img {
@@ -249,7 +299,7 @@
         .cyber-btn {
             width: 100%;
             padding: 20px;
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            background: var(--btn-bg, linear-gradient(135deg, #10b981 0%, #059669 100%));
             border: none;
             border-radius: 20px;
             color: white;
@@ -258,19 +308,125 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+            box-shadow: var(--btn-shadow, 0 10px 25px rgba(16, 185, 129, 0.3));
         }
 
         .cyber-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.4);
+            box-shadow: var(--btn-shadow-hover, 0 15px 35px rgba(16, 185, 129, 0.4));
             filter: brightness(1.1);
+        }
+
+        .cyber-btn.mode-report {
+            --btn-bg: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            --btn-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+            --btn-shadow-hover: 0 15px 35px rgba(14, 165, 233, 0.4);
+        }
+
+        /* --- MODE SELECTOR --- */
+        .mode-selector {
+            display: flex;
+            position: relative;
+            background: rgba(2, 6, 23, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            margin-bottom: 25px;
+            padding: 6px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .mode-selector input[type="radio"] {
+            display: none;
+        }
+
+        .mode-btn {
+            flex: 1;
+            text-align: center;
+            padding: 14px 5px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mode-selector input[id="mode_checkin"]:checked~.mode-slider {
+            transform: translateX(0);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.3) 100%);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .mode-selector input[id="mode_report"]:checked~.mode-slider {
+            transform: translateX(100%);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(2, 132, 199, 0.3) 100%);
+            border-color: rgba(14, 165, 233, 0.5);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        }
+
+        .mode-selector input[id="mode_checkin"]:checked+label {
+            color: #34d399;
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+
+        .mode-selector input[id="mode_report"]:checked+label {
+            color: #38bdf8;
+            text-shadow: 0 0 15px rgba(14, 165, 233, 0.6);
+        }
+
+        .mode-slider {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: calc(50% - 6px);
+            height: calc(100% - 12px);
+            border-radius: 12px;
+            border: 1px solid transparent;
+            z-index: 1;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+        }
+
+        .cyber-btn-outline {
+            width: 100%;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(14, 165, 233, 0.3);
+            border-radius: 20px;
+            color: #bae6fd;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .cyber-btn-outline:hover {
+            background: rgba(14, 165, 233, 0.15);
+            border-color: var(--cyber-blue);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.15);
         }
 
         .loader {
@@ -295,7 +451,6 @@
             font-size: 11px;
             color: #475569;
             font-weight: 600;
-            text-transform: uppercase;
             letter-spacing: 1px;
         }
 
@@ -308,6 +463,205 @@
                 font-size: 24px;
             }
         }
+
+        /* --- AI ASSISTANT STYLES --- */
+        .ai-assistant-container {
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .ai-mascot-wrapper {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            cursor: pointer;
+            transition: all 0.8s ease-in-out;
+            animation: float-ai 5s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gateway-active .ai-mascot-wrapper {
+            width: 140px;
+            height: 140px;
+        }
+
+        .ai-mascot-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- HD Hologram: Focus on Clarity --- */
+        .ai-video-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            mix-blend-mode: screen;
+            /* ทำให้พื้นหลังสีดำสนิทหายไปและเนียนไปกับสีแอป */
+            filter: brightness(1.05) contrast(1.1);
+            /* ปรับให้คมชัดขึ้นเล็กน้อย */
+            border: none;
+            background: none;
+        }
+
+        /* --- Ambient Glow Removed --- */
+
+        @keyframes float-ai {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* --- FUTURISTIC TRANSITION EFFECTS --- */
+        .ai-glitch {
+            animation: glitch-anim 0.3s ease-in-out;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                transform: translate(0);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+
+            20% {
+                transform: translate(-5px, 2px);
+                filter: hue-rotate(90deg) brightness(2);
+            }
+
+            40% {
+                transform: translate(5px, -2px);
+                filter: hue-rotate(180deg) brightness(1.5);
+            }
+
+            60% {
+                transform: translate(-3px, -1px);
+                filter: hue-rotate(270deg) brightness(2);
+            }
+
+            80% {
+                transform: translate(3px, 1px);
+                filter: hue-rotate(360deg) brightness(1.2);
+            }
+
+            100% {
+                transform: translate(0);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+        }
+
+        .ai-flash {
+            position: relative;
+        }
+
+        .ai-flash::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: white;
+            border-radius: 50%;
+            z-index: 10;
+            animation: flash-anim 0.4s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes flash-anim {
+            0% {
+                opacity: 0.8;
+                transform: scale(0.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+
+        .ai-bubble {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.4);
+            border-radius: 30px 30px 5px 30px;
+            padding: 25px;
+            width: 320px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            transform-origin: bottom right;
+            animation: bubble-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 5px;
+        }
+
+        @keyframes bubble-pop {
+            from {
+                opacity: 0;
+                transform: scale(0.5) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .ai-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .ai-choice-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 12px;
+            color: #bae6fd;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: left;
+            transition: all 0.3s;
+        }
+
+        .ai-choice-btn:hover {
+            background: rgba(14, 165, 233, 0.3);
+            border-color: var(--cyber-blue);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .ai-choice-btn i {
+            margin-right: 8px;
+            color: var(--cyber-gold);
+        }
+
+        @media (max-width: 768px) {
+            .ai-assistant-container {
+                right: 20px;
+                bottom: 20px;
+            }
+
+            .ai-bubble {
+                width: 220px;
+                padding: 15px;
+            }
+
+            .ai-mascot {
+                width: 70px;
+                height: 70px;
+            }
+        }
     </style>
 </head>
 
@@ -317,42 +671,75 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
-    <div class="login-card">
-        <div class="brand-logo">
-            <img src="img/logo-1.jpg"
-                onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=0ea5e9&color=fff'" alt="NEXGEN">
+    <div class="flex flex-col items-center justify-center w-full max-w-4xl px-4" id="mainGateway">
+
+        <!-- AI ASSISTANT (CONCIERGE MODE) -->
+        <div class="ai-assistant-container" id="aiAssistant">
+            <div class="ai-bubble" id="aiBubble">
+                <div class="ai-text" id="aiText">
+                    กำลังเตรียมระบบผู้ช่วย...
+                </div>
+                <div id="aiChoices" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button class="ai-choice-btn py-4" onclick="aiChoose('checkin')">
+                        <i class="fas fa-location-dot"></i> ลงเวลางาน
+                    </button>
+                    <button class="ai-choice-btn py-4" onclick="aiChoose('report')">
+                        <i class="fas fa-chart-line"></i> ดูรายงานสรุป
+                    </button>
+                </div>
+            </div>
+            <div class="ai-mascot-wrapper" id="aiMascotWrapper">
+                <img src="img/avata2.png" class="ai-video-avatar" id="aiImage" alt="AI Assistant">
+            </div>
         </div>
 
-        <h1 class="cyber-title">NEXGEN SYSTEM</h1>
-        <p class="cyber-subtitle">Secure Gateway</p>
-
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="input-wrapper">
-                <label>รหัสพนักงาน</label>
-                <input type="text" id="username" class="cyber-input" placeholder="ระบุรหัสพนักงาน" required
-                    autocomplete="off">
-                <i class="fas fa-fingerprint"></i>
+        <div class="login-card" id="loginCard">
+            <div class="brand-logo">
+                <img src="img/logo-1.jpg"
+                    onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=0ea5e9&color=fff'"
+                    alt="NEXGEN">
             </div>
 
-            <div class="input-wrapper">
-                <label>รหัสผ่าน</label>
-                <input type="password" id="password" class="cyber-input" placeholder="••••••••" required>
-                <i class="fas fa-shield-alt"></i>
+            <h1 class="cyber-title">NEXGEN <span style="color: var(--cyber-gold);">SYSTEM CENTER</span></h1>
+            <p class="cyber-subtitle" id="formSubtitle">Identity Verification</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="input-wrapper">
+                    <label>รหัสพนักงาน</label>
+                    <input type="text" id="username" class="cyber-input" placeholder="ระบุรหัสพนักงาน" required
+                        autocomplete="off">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+
+                <div class="input-wrapper">
+                    <label>รหัสผ่าน</label>
+                    <input type="password" id="password" class="cyber-input" placeholder="••••••••" required>
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+
+                <!-- HIDDEN MODE SELECTOR (NOW CONTROLLED BY AI) -->
+                <div class="hidden">
+                    <input type="radio" name="login_mode" id="mode_checkin" value="checkin">
+                    <input type="radio" name="login_mode" id="mode_report" value="report">
+                </div>
+
+                <button type="submit" class="cyber-btn" id="mainSubmitBtn">
+                    <span id="btnText">ยืนยันตัวตน</span>
+                    <div id="btnLoader" class="loader"></div>
+                    <i class="fas fa-satellite-dish" id="btnIcon"></i>
+                </button>
+            </form>
+
+            <div id="errorMsg" class="mt-6 text-center text-rose-500 text-[11px] font-bold hidden animate-pulse">
+                <i class="fas fa-exclamation-triangle mr-2"></i> ข้อมูลไม่ถูกต้อง โปรดลองอีกครั้ง
             </div>
 
-            <button type="submit" class="cyber-btn">
-                <span id="btnText">เข้าสู่ระบบ</span>
-                <div id="btnLoader" class="loader"></div>
-                <i class="fas fa-bolt" id="btnIcon"></i>
-            </button>
-        </form>
-
-        <div id="errorMsg" class="mt-6 text-center text-rose-500 text-[11px] font-bold hidden animate-pulse">
-            <i class="fas fa-exclamation-triangle mr-2"></i> การเข้าถึงล้มเหลว: โปรดตรวจสอบข้อมูลอีกครั้ง
-        </div>
-
-        <div class="footer-text">
-            &copy; 2026 NEXGEN SECURITY OPERATIONS
+            <div class="footer-text mt-8 pt-6 border-t border-white/5 space-y-2 text-center">
+                <p class="text-[9px] text-slate-500 font-bold tracking-[1px] opacity-60">
+                    <span class="uppercase">&copy; 2026 &bull; NEXGEN SYSTEM CENTER</span> <span
+                        class="ml-1">Ver.1.0</span>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -361,20 +748,46 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Dynamic UI Switch based on Mode
+        document.addEventListener('DOMContentLoaded', () => {
+            const radios = document.querySelectorAll('input[name="login_mode"]');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const mainBtn = document.getElementById('mainSubmitBtn');
+
+            radios.forEach(radio => {
+                radio.addEventListener('change', function () {
+                    if (this.value === 'checkin') {
+                        btnText.innerText = 'เริ่มสแกนพิกัด';
+                        btnIcon.className = 'fas fa-satellite-dish';
+                        mainBtn.classList.remove('mode-report');
+                    } else {
+                        btnText.innerText = 'เข้าสู่แดชบอร์ด';
+                        btnIcon.className = 'fas fa-bolt';
+                        mainBtn.classList.add('mode-report');
+                    }
+                });
+            });
+        });
+
         async function handleLogin(e) {
             e.preventDefault();
             const user_id = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
+            const mode = document.querySelector('input[name="login_mode"]:checked').value;
             const btnText = document.getElementById('btnText');
-            const btnLoader = document.getElementById('btnLoader');
             const btnIcon = document.getElementById('btnIcon');
+            const btnLoader = document.getElementById('btnLoader');
+            const mainBtn = document.getElementById('mainSubmitBtn');
 
             // UI Feedback
             errorMsg.classList.add('hidden');
             btnText.innerText = 'กำลังตรวจสอบ...';
             btnLoader.style.display = 'block';
             btnIcon.style.display = 'none';
+            mainBtn.style.pointerEvents = 'none';
+            mainBtn.style.opacity = '0.7';
 
             try {
                 // 1. ตรวจสอบข้อมูลพนักงานจาก Supabase
@@ -405,16 +818,39 @@
                 localStorage.setItem('nexgen_user', JSON.stringify(data));
 
                 // Success Animation
-                // Success Animation
-                btnText.innerText = 'ยืนยันสำเร็จ';
+                // ตัดคำนำหน้าชื่อออกเพื่อความสวยงาม
+                let cleanName = (data.name || '').trim();
+                const prefixes = ['นาย', 'นางสาว', 'นาง', 'น.ส.', 'นส.'];
+                prefixes.forEach(p => {
+                    if (cleanName.startsWith(p)) {
+                        cleanName = cleanName.replace(p, '').trim();
+                    }
+                });
+
+                const fullName = `${cleanName} ${data.lastname || ''}`.trim();
+                btnText.innerText = 'ยืนยันตัวตนสำเร็จ';
+
+                // AI Welcome Message
+                const aiText = document.getElementById('aiText');
+                document.getElementById('aiChoices').style.display = 'none';
+                document.getElementById('loginCard').style.opacity = '0.3';
+                document.getElementById('loginCard').style.pointerEvents = 'none';
+
+                aiText.innerHTML = `<span class="text-amber-400 font-bold text-lg">ยินดีต้อนรับค่ะคุณ ${fullName}!</span><br>ดิฉันตรวจสอบข้อมูลเรียบร้อยแล้ว กำลังพาคุณเข้าสู่ระบบนะคะ...`;
+
                 setTimeout(() => {
                     const level = (data.level || '').toLowerCase();
                     if (level === 'admin' || level === 'manager') {
                         window.location.href = 'Backend/dashboard.html';
                     } else {
-                        window.location.href = 'checkin.html';
+                        // แยกการเดินทางตามปุ่มที่เลือก
+                        if (mode === 'checkin') {
+                            window.location.href = 'checkin.html';
+                        } else {
+                            window.location.href = level === 'supervisor' ? 'Frontend/staff.html' : 'Frontend/guard.html';
+                        }
                     }
-                }, 800);
+                }, 2000);
 
             } catch (err) {
                 console.error('Login error:', err);
@@ -424,15 +860,98 @@
         }
 
         function resetUI() {
-            document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
-            document.getElementById('btnLoader').style.display = 'none';
-            document.getElementById('btnIcon').style.display = 'block';
+            const mode = document.querySelector('input[name="login_mode"]:checked').value;
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const btnLoader = document.getElementById('btnLoader');
+            const mainBtn = document.getElementById('mainSubmitBtn');
+
+            if (mode === 'checkin') {
+                btnText.innerText = 'เริ่มสแกนพิกัด';
+                btnIcon.className = 'fas fa-satellite-dish';
+            } else {
+                btnText.innerText = 'เข้าสู่แดชบอร์ด';
+                btnIcon.className = 'fas fa-bolt';
+            }
+
+            btnLoader.style.display = 'none';
+            btnIcon.style.display = 'block';
+            mainBtn.style.pointerEvents = 'auto';
+            mainBtn.style.opacity = '1';
         }
 
         window.onload = () => {
             // เคลียร์ session เก่าเพื่อบังคับให้ล็อกอินใหม่ทุกครั้งตามความต้องการ
             localStorage.removeItem('nexgen_user');
             console.log("System Ready. Please login.");
+
+            // AI Greeting Logic
+            setTimeout(initAIGreeting, 1500);
+        }
+
+        function initAIGreeting() {
+            const aiText = document.getElementById('aiText');
+            const aiImage = document.getElementById('aiImage');
+            const aiChoices = document.getElementById('aiChoices');
+            const aiMascotWrapper = document.getElementById('aiMascotWrapper');
+
+            // 1. ท่าตะเบ๊ะ + สวัสดีค่ะ
+            aiImage.src = 'img/avata-salute.png';
+            aiText.innerHTML = `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดีค่ะ</h2><p class="text-lg opacity-80">ดิฉัน <b>Nexgen-AI</b> ยินดีที่ได้ดูแลคุณค่ะ</p>`;
+
+            // 2. ดีเลย์ 2.8 วินาที แล้วเปลี่ยนท่าแบบล้ำๆ
+            setTimeout(() => {
+                // Trigger Futuristic Transition
+                aiMascotWrapper.classList.add('ai-flash', 'ai-glitch');
+
+                setTimeout(() => {
+                    aiImage.src = 'img/avata2.png';
+                    aiText.innerHTML = `<p class="text-base">วันนี้ต้องการให้ดิฉันช่วยดำเนินการในส่วนไหนดีคะ?</p>`;
+                    aiChoices.style.display = 'grid';
+                    aiChoices.classList.add('animate-bounce-short');
+
+                    // Remove effects after finished
+                    setTimeout(() => {
+                        aiMascotWrapper.classList.remove('ai-flash', 'ai-glitch');
+                    }, 500);
+                }, 150);
+            }, 2800);
+        }
+
+        function aiChoose(mode) {
+            const checkinRadio = document.getElementById('mode_checkin');
+            const reportRadio = document.getElementById('mode_report');
+            const mainGateway = document.getElementById('mainGateway');
+            const aiText = document.getElementById('aiText');
+            const formSubtitle = document.getElementById('formSubtitle');
+            const aiChoices = document.getElementById('aiChoices');
+
+            // ซ่อนเมนูทันทีที่เลือก
+            aiChoices.style.display = 'none';
+
+            // Set Mode
+            if (mode === 'checkin') {
+                checkinRadio.checked = true;
+                aiText.innerHTML = "รับทราบค่ะ! กำลังเปิดระบบ <b>ลงเวลาเข้า-ออกหน่วยงาน</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้า-ออกหน่วยงานนะคะ";
+                formSubtitle.innerText = "Portal: Clock-In System";
+            } else {
+                reportRadio.checked = true;
+                aiText.innerHTML = "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ";
+                formSubtitle.innerText = "Admin: Reporting System";
+            }
+
+            // Switch UI to Login Mode
+            mainGateway.classList.add('gateway-active');
+
+            // Focus Input
+            setTimeout(() => {
+                document.getElementById('username').focus();
+            }, 800);
+        }
+
+        function toggleAI() {
+            const bubble = document.getElementById('aiBubble');
+            bubble.classList.toggle('hidden');
         }
     </script>
 </body>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAN Security — พิมพ์รายงานการตรวจเยี่ยมหน่วยงาน</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="../Backend/config.js"></script>
+  <style>
+    :root {
+      --navy: #1B2A4A;
+      --navy-mid: #243560;
+      --gold: #C9920C;
+      --gold-light: #F0B429;
+      --blue: #1A56DB;
+      --gray-100: #F4F6F9;
+      --gray-200: #E8ECF2;
+      --gray-400: #9AABC2;
+      --gray-600: #5A6E8C;
+      --white: #FFFFFF;
+      --green: #0D7A4E;
+      --green-bg: #E6F4EE;
+      --red: #C0392B;
+      --red-bg: #FDECEA;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--gray-100);
+      color: var(--navy);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @page {
+      size: A4;
+      margin: 8mm;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .page {
+        box-shadow: none;
+        border: none;
+        max-width: 100%;
+        width: 100%;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* บีบอัดขนาดเพื่อให้อยู่ใน 1 หน้ากระดาษ */
+      .top-bar {
+        padding: 8px 16px !important;
+      }
+
+      .section {
+        padding: 10px 16px !important;
+      }
+
+      .section-label {
+        margin-bottom: 6px !important;
+        font-size: 9px !important;
+      }
+
+      .field-row {
+        margin-bottom: 6px !important;
+        gap: 6px !important;
+      }
+
+      .field .value {
+        min-height: 26px !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+      }
+
+      .check-item {
+        padding: 4px 8px !important;
+        gap: 4px !important;
+        border-width: 1px !important;
+      }
+
+      .check-text {
+        font-size: 11px !important;
+      }
+
+      .staff-table th,
+      .staff-table td {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+      }
+
+      .sig-box {
+        height: 80px !important;
+        padding: 4px !important;
+      }
+
+      .sig-label {
+        margin-top: 4px !important;
+        font-size: 10px !important;
+      }
+
+      .remark-box {
+        min-height: 50px !important;
+        padding: 8px !important;
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+      }
+
+      .doc-footer {
+        padding: 8px 16px !important;
+        border-radius: 0 !important;
+      }
+
+      .img-box {
+        aspect-ratio: auto !important;
+        height: 110px !important;
+        border-width: 1px !important;
+      }
+    }
+
+    /* ===== HEADER BAR ===== */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--navy);
+      border-radius: 12px 12px 0 0;
+      padding: 14px 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-text {
+      color: white;
+    }
+
+    .brand-text .company {
+      font-size: 11px;
+      opacity: 0.7;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-text .doc-type {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .doc-meta {
+      text-align: right;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 11px;
+    }
+
+    .doc-id {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--gold-light);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ===== PAGE ===== */
+    .page {
+      background: white;
+      max-width: 680px;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(27, 42, 74, 0.10);
+      overflow: hidden;
+    }
+
+    /* ===== SECTION WRAPPERS ===== */
+    .form-body {
+      padding: 0;
+    }
+
+    .section {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-200);
+    }
+
+    /* ===== FIELD GROUPS ===== */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .field-row.three {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .field-row.full {
+      grid-template-columns: 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-600);
+      letter-spacing: 0.3px;
+    }
+
+    .field .value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--navy);
+      background: var(--gray-100);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 7px;
+      padding: 8px 12px;
+      min-height: 36px;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+    }
+
+    .field .value.highlight {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 13px;
+      background: #EEF4FF;
+      border-color: transparent;
+    }
+
+    /* ===== BADGE ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .badge.ok {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .badge.warn {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .badge.fail {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .badge::before {
+      content: '●';
+      font-size: 8px;
+    }
+
+    /* ===== CHECKLIST ===== */
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--gray-200);
+    }
+
+    .check-item.checked {
+      background: var(--green-bg);
+      border-color: #A7DFC4;
+    }
+
+    .check-item.issue {
+      background: var(--red-bg);
+      border-color: #FABBB6;
+    }
+
+    .check-item.noted {
+      background: #FEF3C7;
+      border-color: #FBBF24;
+    }
+
+    .check-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .checked .check-icon {
+      background: var(--green);
+      color: white;
+    }
+
+    .issue .check-icon {
+      background: var(--red);
+      color: white;
+    }
+
+    .noted .check-icon {
+      background: #D97706;
+      color: white;
+    }
+
+    .check-text {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .check-result {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .checked .check-result {
+      background: var(--green);
+      color: white;
+    }
+
+    .issue .check-result {
+      background: var(--red);
+      color: white;
+    }
+
+    .noted .check-result {
+      background: #D97706;
+      color: white;
+    }
+
+    /* ===== STAFF TABLE ===== */
+    .staff-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .staff-table th {
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .staff-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--gray-200);
+      color: var(--navy);
+    }
+
+    .staff-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .staff-table tr:nth-child(even) td {
+      background: var(--gray-100);
+    }
+
+    /* ===== IMAGES ===== */
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .img-box {
+      aspect-ratio: 1;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      background: var(--gray-100);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .img-empty {
+      font-size: 10px;
+      color: var(--gray-400);
+      text-align: center;
+    }
+
+    /* ===== REMARKS ===== */
+    .remark-box {
+      background: var(--gray-100);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.8;
+      min-height: 80px;
+    }
+
+    /* ===== FOOTER ===== */
+    .doc-footer {
+      background: var(--navy);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .doc-footer .left {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .doc-footer .right {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--gold-light);
+    }
+
+    /* ===== ACTION BUTTONS (no-print) ===== */
+    .actions {
+      max-width: 680px;
+      margin: 16px auto 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-mid);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--navy);
+      border: 1.5px solid var(--gray-200);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--navy);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+    <div class="top-bar">
+      <div class="brand">
+        <div class="brand-logo" style="background:transparent; padding:0;">
+          <img src="../img/logo-1.jpg" onerror="this.src='../Backend/logo-1.jpg'"
+            style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        </div>
+        <div class="brand-text">
+          <div class="company">NEXGEN SYSTEM CENTER</div>
+          <div class="doc-type">รายงานการตรวจเยี่ยมหน่วยงาน (FMQC-02)</div>
+        </div>
+      </div>
+      <div class="doc-meta">
+        <div class="doc-id" id="v-docId">กำลังโหลด...</div>
+        <div style="margin-top:3px;" id="v-docDate">...</div>
+      </div>
+    </div>
+
+    <div class="form-body">
+      <!-- SECTION 1 -->
+      <div class="section">
+        <div class="section-label">ข้อมูลพื้นฐาน</div>
+        <div class="field-row three">
+          <div class="field">
+            <label>วันที่ตรวจ</label>
+            <div class="value highlight" id="v-visitDate">-</div>
+          </div>
+          <div class="field">
+            <label>เวลาเข้าตรวจ</label>
+            <div class="value highlight" id="v-timeIn">-</div>
+          </div>
+          <div class="field">
+            <label>เวลาออก</label>
+            <div class="value">— : — น.</div>
+          </div>
+        </div>
+        <div class="field-row full">
+          <div class="field">
+            <label>ชื่อหน่วยงาน (Site Name)</label>
+            <div class="value" id="v-siteName">-</div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ผู้ตรวจ (Inspector)</label>
+            <div class="value" id="v-inspector">-</div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>กำลังพลตามสัญญา</label>
+            <div class="value highlight" id="v-reqStaff">- นาย</div>
+          </div>
+          <div class="field">
+            <label>กำลังพลที่ปฏิบัติงานจริง</label>
+            <div class="value highlight" id="v-actStaff">- นาย</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2 -->
+      <div class="section">
+        <div class="section-label">รายการตรวจสอบ (Inspection Checklist)</div>
+        <div class="checklist" id="v-checklistArea">
+          <!-- JS generated -->
+        </div>
+      </div>
+
+      <!-- SECTION 3 -->
+      <div class="section">
+        <div class="section-label">ข้อมูลกำลังพล (Personnel on Duty)</div>
+        <table class="staff-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ชื่อ-สกุล</th>
+              <th>ตำแหน่ง</th>
+              <th>ผลัด</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="v-staffTable">
+            <!-- JS generated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SECTION 4 -->
+      <div class="section">
+        <div class="section-label">รูปภาพประกอบ (Images)</div>
+        <div class="img-grid" id="v-imgGrid">
+          <!-- JS generated -->
+        </div>
+      </div>
+
+      <!-- SECTION 5 -->
+      <div class="section">
+        <div class="section-label">หมายเหตุ / สิ่งที่ต้องติดตาม</div>
+        <div class="remark-box" id="v-remarks">
+          -
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <div class="left">NEXGEN SYSTEM CENTER</div>
+      <div class="right">FMQC-02 | v1.0</div>
+    </div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn btn-outline" style="flex:1" onclick="window.close()">ปิดหน้านี้</button>
+    <button class="btn btn-primary" style="flex:2" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const docId = urlParams.get('id');
+
+    window.onload = async () => {
+      if (!docId) { alert('ไม่พบข้อมูลอ้างอิงเอกสาร'); return; }
+      await fetchDoc();
+    };
+
+    async function fetchDoc() {
+      // Query form fmqc02 based on uuid 'id'
+      const { data, error } = await supabaseClient.from('fmqc02').select('*').eq('id', docId).single();
+      if (error || !data) { alert('เกิดข้อผิดพลาด หรือไม่พบเอกสารนี้ในฐานข้อมูล'); return; }
+
+      document.getElementById('v-docId').innerText = data.doc_id || '-';
+      document.getElementById('v-docDate').innerText = 'สร้างเมื่อ: ' + new Date(data.created_at).toLocaleString('th-TH');
+
+      document.getElementById('v-visitDate').innerText = data.visit_date || '-';
+      document.getElementById('v-timeIn').innerText = (data.time_in || '-') + ' น.';
+      document.getElementById('v-siteName').innerText = data.site_name || '-';
+      document.getElementById('v-inspector').innerText = data.inspector || '-';
+
+      const results = data.results || {};
+
+      // กำลังพล
+      let actCount = parseInt(results.actStaff) || 0;
+      let reqCount = parseInt(results.reqStaff) || 0;
+      let diffBadge = actCount >= reqCount ? `<span class="badge ok" style="margin-left:6px;">ครบ</span>` : `<span class="badge fail" style="margin-left:6px;">ขาด</span>`;
+      document.getElementById('v-reqStaff').innerHTML = reqCount + ' นาย';
+      document.getElementById('v-actStaff').innerHTML = actCount + ' นาย ' + diffBadge;
+
+      // Checklist
+      const checkArea = document.getElementById('v-checklistArea');
+      const items = ['กำลังพลตามสัญญา', 'การแต่งกาย', 'การเดินตรวจพื้นที่', 'การอำนวยความสะดวกจราจร'];
+      checkArea.innerHTML = items.map(item => {
+        const status = results[item] || 'pass';
+        let statusClass = 'checked', iconText = '✓', resText = 'ผ่าน';
+        if (status === 'fail') { statusClass = 'issue'; iconText = '✗'; resText = 'พบปัญหา'; }
+        else if (status === 'warn') { statusClass = 'noted'; iconText = '!'; resText = 'กำชับ'; }
+
+        return `
+            <div class="check-item ${statusClass}">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="check-icon">${iconText}</div>
+                <div class="check-text">${item}</div>
+              </div>
+              <div class="check-result">${resText}</div>
+            </div>`;
+      }).join('');
+
+      // Staff Table
+      const staffTbody = document.getElementById('v-staffTable');
+      const staffList = results.staffList || [];
+      if (staffList.length === 0) {
+        staffTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--gray-400);">ไม่มีข้อมูลกำลังพล</td></tr>';
+      } else {
+        staffTbody.innerHTML = staffList.map((s, i) => `
+                <tr>
+                    <td style="text-align:center;">${i + 1}</td>
+                    <td>${s.name}</td>
+                    <td>${s.role}</td>
+                    <td>${s.shift}</td>
+                    <td style="text-align:center;"><span class="badge ok">ปฏิบัติงาน</span></td>
+                </tr>
+            `).join('');
+      }
+
+      // Images
+      const imgGrid = document.getElementById('v-imgGrid');
+      const imgs = [data.image1, data.image2, data.image3].filter(Boolean);
+      if (imgs.length === 0) {
+        imgGrid.innerHTML = '<div style="grid-column:1/-1; padding:20px; text-align:center; color:var(--gray-400); border:1.5px dashed var(--gray-400); border-radius:8px;">ไม่มีการแนบรูปภาพ</div>';
+      } else {
+        imgGrid.innerHTML = imgs.map(url => `
+                <div class="img-box"><img src="${url}" onerror="this.style.display='none'"></div>
+            `).join('');
+      }
+
+      // Remarks
+      document.getElementById('v-remarks').innerText = data.remarks || '- ไม่มี -';
+    }
+  </script>
+</body>
+
+</html>

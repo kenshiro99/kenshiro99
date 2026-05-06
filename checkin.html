@@ -183,35 +183,67 @@
         </p>
     </div>
 
+    <!-- Premium Footer -->
+    <div class="mt-8 text-center pb-6 space-y-1">
+        <p class="text-[10px] text-white font-black uppercase tracking-[2px]">NEXGEN <span class="text-amber-500">SYSTEM CENTER</span></p>
+        <p class="text-[8px] text-slate-500 font-bold tracking-[1px] opacity-60">
+            <span class="uppercase">&copy; 2026 &bull; NEXGEN SYSTEM CENTER</span> <span class="ml-1">Ver.1.0</span>
+        </p>
+        <span class="text-[7px] text-slate-700 block">Developer: Ponchai Onkum</span>
+    </div>
+
     <script>
+        // --- Configuration & Global State ---
         const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
-
+        
         let supabaseClient;
         let currentMatch = null;
         let userData = null;
 
-        // --- บล็อกการเข้าถึงทันที (Authentication Check) ---
-        try {
-            const sessionString = localStorage.getItem('nexgen_user');
-            if (!sessionString) throw new Error('No session');
-            userData = JSON.parse(sessionString);
-            const userLevel = (userData.level || '').toLowerCase();
-            if (userLevel !== 'supervisor' && userLevel !== 'guard' && userLevel !== 'admin') throw new Error('Unauthorized');
-        } catch (e) {
-            console.error("Access Denied:", e.message);
-            localStorage.removeItem('nexgen_user');
-            window.location.replace('index.html');
+        /**
+         * Authentication & Access Control
+         * Bounces unauthorized users back to login
+         */
+        function checkAuth() {
+            try {
+                const sessionString = localStorage.getItem('nexgen_user');
+                if (!sessionString) throw new Error('No session');
+                
+                userData = JSON.parse(sessionString);
+                const userLevel = (userData.level || '').toLowerCase();
+                
+                // Allowed roles for this page
+                const allowedRoles = ['supervisor', 'guard', 'admin', 'manager'];
+                if (!allowedRoles.includes(userLevel)) throw new Error('Unauthorized');
+                
+            } catch (e) {
+                console.error("Access Denied:", e.message);
+                localStorage.removeItem('nexgen_user');
+                window.location.replace('index.html');
+            }
         }
 
+        /**
+         * Initialization on page load
+         */
         window.onload = () => {
+            checkAuth(); // Verify user first
+
             if (typeof supabase === 'undefined') {
                 alert("เกิดข้อผิดพลาดในการโหลดระบบ กรุณาลองใหม่อีกครั้ง");
                 return;
             }
+
+            // Initialize Supabase Client
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // Start GPS Detection
             detectLocation();
         };
+
+        // --- Core Functions ---
+
 
         function detectLocation() {
             if (!navigator.geolocation) {
@@ -227,17 +259,21 @@
                     const { data: units, error } = await supabaseClient.from('units').select('*');
                     if (error) throw error;
 
-                    let matchedUnit = null;
+                    let matchedUnits = [];
                     units.forEach(u => {
                         if (u.latitude && u.longitude) {
                             const distance = calculateDistance(myLat, myLng, u.latitude, u.longitude);
                             const radius = u.radius_meters || 100;
-                            if (distance <= radius) matchedUnit = u;
+                            if (distance <= radius) matchedUnits.push(u);
                         }
                     });
 
-                    if (matchedUnit) {
-                        showMatch(matchedUnit);
+                    if (matchedUnits.length === 1) {
+                        // กรณีเจอที่เดียว: บันทึกอัตโนมัติเหมือนเดิม
+                        showMatch(matchedUnits[0], myLat, myLng);
+                    } else if (matchedUnits.length > 1) {
+                        // กรณีเจอหลายที่: แสดงรายการให้เลือก
+                        showSelection(matchedUnits, myLat, myLng);
                     } else {
                         showNoMatch();
                     }
@@ -262,64 +298,146 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
-        function showMatch(unit) {
+        /**
+         * Helper to get current Thai time in ISO format with +07:00 offset
+         */
+        function getThaiISOString() {
+            const now = new Date();
+            // Adjust to UTC+7
+            const tzOffset = 7 * 60 * 60 * 1000; // 7 hours in ms
+            const localTime = new Date(now.getTime() + tzOffset);
+            return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
+        }
+
+        async function showMatch(unit, lat, lng) {
             currentMatch = unit;
-            const updatedUser = { ...userData, current_unit: unit.unit_name, current_unit_id: unit.id };
-            localStorage.setItem('nexgen_user', JSON.stringify(updatedUser));
-
-            // --- ระบบอัตโนมัติแบบไร้สัมผัส (Zero-Click Auto Check-in/out) ---
-            let lastAction = localStorage.getItem('last_attendance_action') || 'out';
-            let nextAction = lastAction === 'out' ? 'in' : 'out';
-            let actionText = nextAction === 'in' ? 'เข้า' : 'ออก';
             
-            // บันทึกสถานะ (จำลองการบันทึกลง Database)
-            localStorage.setItem('last_attendance_action', nextAction);
+            // 1. ตรวจสอบสถานะล่าสุดจากฐานข้อมูลจริง (Supabase)
+            let nextAction = 'check_in';
+            let actionText = 'เข้า';
+            const thaiNow = getThaiISOString();
+            
+            try {
+                const { data: lastLog, error } = await supabaseClient
+                    .from('duty_logs')
+                    .select('action_type')
+                    .eq('emp_id', userData.emp_id)
+                    .eq('unit_name', unit.unit_name)
+                    .order('timestamp', { ascending: false })
+                    .limit(1);
 
+                if (!error && lastLog && lastLog.length > 0) {
+                    if (lastLog[0].action_type === 'check_in') {
+                        nextAction = 'check_out';
+                        actionText = 'ออก';
+                    }
+                }
+
+                // 2. บันทึกข้อมูลลงฐานข้อมูลจริง
+                const { error: insertError } = await supabaseClient
+                    .from('duty_logs')
+                    .insert([{
+                        emp_id: userData.emp_id,
+                        name: userData.name,
+                        role: userData.level || userData.role,
+                        unit_name: unit.unit_name,
+                        action_type: nextAction,
+                        gps_location: `${lat},${lng}`,
+                        timestamp: thaiNow, // บันทึกเวลาไทยมาตรฐานเดียวกับ Supervisor
+                        note: 'บันทึกอัตโนมัติผ่านพิกัด GPS'
+                    }]);
+
+                if (insertError) throw insertError;
+
+            } catch (e) {
+                console.error("Recording Exception:", e);
+                alert("บันทึกข้อมูลล้มเหลว! กรุณาตรวจสอบการเชื่อมต่อ");
+            }
+
+            // --- อัปเดต UI ---
+            updateUIForMatch(unit, nextAction, actionText);
+        }
+
+        /**
+         * Show selection screen when multiple units are found
+         */
+        function showSelection(units, lat, lng) {
+            document.getElementById('radar').style.animation = 'none';
+            document.getElementById('statusIcon').className = 'fas fa-layer-group text-amber-500';
+            document.getElementById('statusLabel').innerText = 'พบหลายหน่วยงาน';
+            document.getElementById('mainStatus').innerText = 'กรุณาเลือกหน่วยงานที่ต้องการบันทึก';
+
+            const unitInfoDiv = document.getElementById('unitInfo');
+            let html = '<div class="mt-4 space-y-3">';
+            
+            units.forEach(u => {
+                html += `
+                    <button onclick="showMatch(${JSON.stringify(u).replace(/"/g, '&quot;')}, ${lat}, ${lng})" 
+                        class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-primary/20 hover:border-primary/50 transition-all active:scale-95">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-white font-bold text-sm">${u.unit_name}</div>
+                                <div class="text-[10px] text-slate-500">${u.unit_code || 'UNIT'}</div>
+                            </div>
+                            <i class="fas fa-chevron-right text-primary"></i>
+                        </div>
+                    </button>
+                `;
+            });
+            
+            html += '</div>';
+            unitInfoDiv.innerHTML = html;
+            unitInfoDiv.classList.remove('hidden');
+        }
+
+        /**
+         * Helper to update UI after recording
+         */
+        function updateUIForMatch(unit, nextAction, actionText) {
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-check-circle text-emerald-500';
             document.getElementById('statusLabel').innerText = 'ระบุพิกัดสำเร็จ';
             document.getElementById('mainStatus').innerText = `บันทึก${actionText}งานเรียบร้อยแล้ว`;
             
-            // แสดงกล่องข้อความความสำเร็จ (แทนที่ปุ่มกด)
             const unitInfoDiv = document.getElementById('unitInfo');
-            const colorClass = nextAction === 'in' ? 'emerald' : 'amber';
-            const iconClass = nextAction === 'in' ? 'fa-sign-in-alt' : 'fa-sign-out-alt';
+            const colorClass = nextAction === 'check_in' ? 'emerald' : 'amber';
+            const iconClass = nextAction === 'check_in' ? 'fa-sign-in-alt' : 'fa-sign-out-alt';
             
-            // เมนูให้เลือกว่าจะไปหน้าหลักไหม (แยกตามเข้า/ออกงาน)
-            let bottomMenu;
-            if (nextAction === 'in') {
-                // เข้างาน: มีปุ่มให้เลือกไปแดชบอร์ด หรือปิดแอป
+            let bottomMenu = '';
+            
+            if (nextAction === 'check_in') {
+                // กรณีบันทึกเข้างาน
                 bottomMenu = `
-                    <div class="mt-8 space-y-4">
-                        <button onclick="goToPortal()" class="w-full py-4 bg-slate-800/50 text-white border border-white/10 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all hover:bg-slate-800">
-                            <i class="fas fa-chart-pie mr-2 text-primary"></i> ไปยังหน้าแดชบอร์ดส่วนตัว
+                    <div class="mt-8 space-y-3">
+                        <button onclick="goToPortal()" class="w-full py-4 bg-primary text-white rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all shadow-lg shadow-primary/20">
+                            <i class="fas fa-chart-pie mr-2"></i> ไปหน้าแดชบอร์ด
                         </button>
-                        <p class="text-sm font-bold text-slate-400 animate-pulse mt-2"><i class="fas fa-power-off mr-1"></i> หรือ ปิดแอปพลิเคชันได้เลย</p>
+                        <button onclick="logout()" class="w-full py-4 bg-slate-800/50 text-slate-300 border border-white/10 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
+                            <i class="fas fa-sign-out-alt mr-2"></i> กลับหน้า Login
+                        </button>
                     </div>
                 `;
             } else {
-                // ออกงาน: แจ้งให้ปิดแอปอย่างเดียว (เหมือนเดิม)
+                // กรณีบันทึกออกงาน
                 bottomMenu = `
-                    <p class="text-sm font-bold text-rose-500 mt-8 animate-pulse"><i class="fas fa-power-off mr-1"></i> ท่านสามารถปิดแอปพลิเคชันได้เลย</p>
+                    <div class="mt-8 space-y-3">
+                        <p class="text-sm font-bold text-rose-500 animate-pulse mb-4">ลงเวลาออกงานสำเร็จ</p>
+                        <button onclick="logout()" class="w-full py-4 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-2xl font-bold text-sm tracking-widest active:scale-95 transition-all">
+                            <i class="fas fa-sign-out-alt mr-2"></i> กลับสู่หน้าหลัก (Login)
+                        </button>
+                    </div>
                 `;
             }
 
             unitInfoDiv.innerHTML = `
                 <p class="unit-name">${unit.unit_name}</p>
-                <div class="mt-6 p-4 rounded-2xl bg-${colorClass}-500/20 border border-${colorClass}-500/30 text-${colorClass}-400 shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
+                <div class="mt-6 p-4 rounded-2xl bg-${colorClass}-500/20 border border-${colorClass}-500/30 text-${colorClass}-400 shadow-lg">
                     <i class="fas ${iconClass} text-2xl mb-2 block"></i>
-                    <span class="font-black text-sm uppercase tracking-widest">ระบบลงเวลา${actionText}งานอัตโนมัติสำเร็จ</span>
+                    <span class="font-black text-[11px] uppercase tracking-widest">ลงเวลา${actionText}งานสำเร็จ</span>
                 </div>
                 ${bottomMenu}
             `;
             unitInfoDiv.classList.remove('hidden');
-
-            // ซ่อนปุ่มต่างๆ (ถ้ามี)
-            const actionContainer = document.getElementById('actionButtons');
-            if (actionContainer) actionContainer.style.display = 'none';
-
-            // ไม่มีการนับถอยหลัง Auto-redirect อีกต่อไป 
-            // ให้ผู้ใช้เป็นคนตัดสินใจว่าจะกดเข้าแดชบอร์ด หรือ ปิดแอป
         }
 
         function showNoMatch() {
@@ -333,11 +451,20 @@
             const user = JSON.parse(localStorage.getItem('nexgen_user'));
             const userLevel = (user && user.level) ? user.level.toLowerCase() : '';
 
-            if (userLevel === 'guard') {
-                window.location.href = 'guard.html';
+            if (userLevel === 'admin' || userLevel === 'manager') {
+                window.location.href = 'Backend/dashboard.html';
+            } else if (userLevel === 'supervisor') {
+                // ส่งสายตรวจ/หัวหน้างานไปที่หน้า Staff
+                window.location.href = 'Frontend/staff.html';
             } else {
-                window.location.href = 'staff.html';
+                // ส่ง รปภ. ไปที่หน้า Guard
+                window.location.href = 'Frontend/guard.html';
             }
+        }
+
+        function logout() {
+            localStorage.removeItem('nexgen_user');
+            window.location.replace('index.html');
         }
     </script>
 </body>

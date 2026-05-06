@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OP05 — รายงานการเข้าพบผู้ว่าจ้าง | V.A.N. Security</title>
+    <title>OP05 — รายงานการเข้าพบผู้ว่าจ้าง | NEXGEN SYSTEM CENTER</title>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
+    <script src="../Backend/config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -517,7 +517,7 @@
             <div class="lux-brand-wrap">
                 <div class="lux-logo-box">
                     <div class="lux-logo overflow-hidden border-2 border-amber-500/20 shadow-xl">
-                        <img src="logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=OP&background=0f172a&color=fff'" class="w-full h-full object-cover">
+                        <img src="../Backend/logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=OP&background=0f172a&color=fff'" class="w-full h-full object-cover">
                     </div>
                     <div class="lux-title">
                         <p>Operational Excellence</p>
@@ -531,7 +531,7 @@
             </div>
 
             <div class="flex justify-between items-center mb-[-10px]">
-                <button onclick="window.location.href='../portal.html'" class="text-[11px] font-bold text-slate-400 hover:text-amber-500 transition-all flex items-center gap-2">
+                <button onclick="window.location.href='portal.html'" class="text-[11px] font-bold text-slate-400 hover:text-amber-500 transition-all flex items-center gap-2">
                     <i class="fas fa-arrow-left"></i> กลับสู่หน้าพอร์ทัล
                 </button>
             </div>
@@ -543,7 +543,7 @@
                 </div>
                 <div class="lux-meta-item">
                     <span class="lux-meta-label">หน่วยงานต้นสังกัด</span>
-                    <span class="lux-meta-value">Nexgen Suritech&tecnology</span>
+                    <span class="lux-meta-value">NEXGEN SYSTEM CENTER</span>
                 </div>
             </div>
         </div>
@@ -576,12 +576,20 @@
                 </div>
 
                 <div class="lux-field relative">
-                    <label class="lux-label">ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน <span
-                            class="text-red-500">*</span></label>
-                    <input type="text" id="op05SiteName" class="lux-input" placeholder="พิมพ์ชื่อหน่วยงานเพื่อค้นหา..."
-                        oninput="handleOp05UnitInput(this.value)" autocomplete="off">
+                    <label class="lux-label">ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน <span class="text-red-500">*</span></label>
+                    <div class="relative group">
+                        <input type="text" id="op05SiteName" class="lux-input pr-12" 
+                            placeholder="เลือกหรือพิมพ์ชื่อหน่วยงาน..."
+                            oninput="handleOp05UnitInput(this.value)" 
+                            onfocus="handleOp05UnitInput(this.value)"
+                            onclick="handleOp05UnitInput(this.value)"
+                            autocomplete="off">
+                        <div class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-blue-500 transition-colors">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
                     <div id="op05UnitSuggestions"
-                        class="hidden absolute w-full top-full mt-2 bg-white rounded-3xl shadow-2xl z-50 border border-slate-100 overflow-hidden">
+                        class="hidden absolute w-full top-full mt-2 bg-white rounded-3xl shadow-2xl z-50 border border-slate-100 overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
                     </div>
                 </div>
 
@@ -604,16 +612,7 @@
 
                 <div class="lux-field">
                     <label class="lux-label">เจ้าหน้าที่ OP ที่รับผิดชอบ <span class="text-red-500">*</span></label>
-                    <select id="op05OpName" class="lux-input">
-                        <option value="">— กรุณาเลือกรายชื่อ —</option>
-                        <option>กฤติเดช ก้องชินพัฒน์ (Operations Manager)</option>
-                        <option>เสกสรรค์ ขันทองคำ (Zone Manager เขต 1)</option>
-                        <option>จักรดุลย์ ระหารนอก (Zone Manager เขต 2)</option>
-                        <option>อำนาจ (สายตรวจ เขต 1)</option>
-                        <option>หาญศึก (สายตรวจ เขต 1)</option>
-                        <option>ธีราวัฒน์ วรรณเชฐอิสรา (สายตรวจ เขต 2)</option>
-                        <option>พุทธพงษ์ (สายตรวจ)</option>
-                    </select>
+                    <input type="text" id="op05OpName" class="lux-input lux-input-readonly" readonly placeholder="กำลังโหลดชื่อผู้ใช้งาน...">
                 </div>
             </div>
 
@@ -693,7 +692,7 @@
                                 พิมพ์รายงาน</button>
                             <button type="button" onclick="resetOp05Form()"
                                 class="px-10 py-4 rounded-3xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all">เขียนรายงานใหม่</button>
-                            <button type="button" onclick="window.location.href='dashboard 10.html'"
+                            <button type="button" onclick="window.location.href='../Backend/dashboard.html'"
                                 class="px-10 py-4 rounded-3xl bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all">กลับหน้าหลัก</button>
                         </div>
                     </div>
@@ -701,6 +700,16 @@
             </div>
         </form>
 
+        <!-- Premium Footer -->
+        <div class="mt-20 pt-10 border-t border-slate-100 text-center space-y-2">
+            <p class="text-[11px] text-slate-400 font-bold tracking-[2px] uppercase">
+                NEXGEN <span class="text-blue-600">SYSTEM CENTER</span>
+            </p>
+            <p class="text-[9px] text-slate-400 font-medium tracking-widest opacity-60">
+                <span class="uppercase">&copy; 2026 &bull; NEXGEN SYSTEM CENTER</span> <span class="ml-1 uppercase-none">Ver.1.0</span>
+            </p>
+            <p class="text-[8px] text-slate-300">Developer: Ponchai Onkum</p>
+        </div>
     </div>
 
     <script>
@@ -728,20 +737,38 @@
         window.onload = async () => {
             initOp05();
             await fetchRealUnits();
+            await fetchSupervisors();
         };
+
+        async function fetchSupervisors() {
+            // ไม่ต้องดึงรายชื่อทั้งหมดแล้ว แต่ใช้ชื่อจาก User Data ที่ล็อกอินอยู่มาใส่เลย
+            if (userData && userData.name) {
+                const opInput = document.getElementById('op05OpName');
+                opInput.value = `${userData.name} (${userData.role || userData.level})`;
+                updateOp05Progress();
+            } else {
+                document.getElementById('op05OpName').value = "ไม่พบข้อมูลผู้ใช้งาน";
+            }
+        }
 
         async function fetchRealUnits() {
             try {
-                const { data, error } = await supabaseClient.from('units').select('*').order('unit_name');
+                let query = supabaseClient.from('units').select('*').order('unit_name');
+                
+                // กรองตามเขต (Zone) ถ้าพนักงานไม่ใช่ Admin/Manager
+                if (userData && userData.level !== 'Admin' && userData.level !== 'Manager') {
+                    if (userData.zone) {
+                        query = query.eq('zone', userData.zone);
+                        console.log("Filtering units for zone:", userData.zone);
+                    }
+                }
+
+                const { data, error } = await query;
                 if (error) throw error;
                 unitsData = data || [];
             } catch (e) {
                 console.error("Fetch Units Error:", e);
-                // Fallback to mock if database fails
-                unitsData = [
-                    { unit_name: "อาคารทดสอบ A", unit_code: "TEST-A", zone: "กรุงเทพ" },
-                    { unit_name: "หน่วยงานทดสอบ B", unit_code: "TEST-B", zone: "ภาคกลาง" }
-                ];
+                unitsData = [];
             }
         }
 
@@ -751,25 +778,45 @@
             initOp05Signatures();
             initOp05Progress();
 
+        function initOp05() {
+            initOp05Timestamp();
+            initOp05Checklist();
+            initOp05Signatures();
+            initOp05Progress();
+
             const now = new Date();
-            document.getElementById('op05VisitDate').value = now.toISOString().split('T')[0];
-            document.getElementById('op05VisitTime').value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const thaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
+            
+            const y = thaiTime.getFullYear();
+            const m = String(thaiTime.getMonth() + 1).padStart(2, '0');
+            const d = String(thaiTime.getDate()).padStart(2, '0');
+            const hh = String(thaiTime.getHours()).padStart(2, '0');
+            const min = String(thaiTime.getMinutes()).padStart(2, '0');
+
+            document.getElementById('op05VisitDate').value = `${y}-${m}-${d}`;
+            document.getElementById('op05VisitTime').value = `${hh}:${min}`;
         }
 
         function initOp05Timestamp() {
             const now = new Date();
-            const buddYear = now.getFullYear() + 543;
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            const hh = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            const ss = String(now.getSeconds()).padStart(2, '0');
+            const thaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
+            
+            const yyyy = thaiTime.getFullYear();
+            const mm = String(thaiTime.getMonth() + 1).padStart(2, '0');
+            const dd = String(thaiTime.getDate()).padStart(2, '0');
+            const hh = String(thaiTime.getHours()).padStart(2, '0');
+            const min = String(thaiTime.getMinutes()).padStart(2, '0');
+            const ss = String(thaiTime.getSeconds()).padStart(2, '0');
 
+            const buddYear = yyyy + 543;
             const tsStr = `${dd}/${mm}/${buddYear} ${hh}:${min}:${ss} น.`;
+            // แก้ไข Doc ID ให้ใช้รูปแบบปี พ.ศ. สองหลักท้าย
             const docId = `OP05-25${String(buddYear).slice(-2)}-${mm}${dd}-${String(Math.floor(Math.random() * 900) + 100)}`;
 
             document.getElementById('op05TsDisplay').value = tsStr;
-            document.getElementById('op05LockedTimestamp').value = now.toISOString();
+            // สร้าง ISO String สำหรับ UTC+7 โดยตรง
+            const isoStr = `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}+07:00`;
+            document.getElementById('op05LockedTimestamp').value = isoStr;
             document.getElementById('op05DocId').textContent = docId;
             document.getElementById('op05TsHeader').textContent = `${dd}/${mm}/${buddYear} ${hh}:${min}`;
         }
@@ -892,16 +939,52 @@
             document.getElementById('op05ProgressPct').textContent = pct + '%';
         }
 
-        function submitOp05() {
+        async function submitOp05() {
             const btn = document.getElementById('op05SubmitBtn');
             const success = document.getElementById('op05SuccessMsg');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...';
-            setTimeout(() => {
+            
+            // รวบรวมข้อมูลทั้งหมด
+            const reportData = {
+                doc_id: document.getElementById('op05DocId').textContent,
+                site_name: document.getElementById('op05SiteName').value,
+                visit_date: document.getElementById('op05VisitDate').value,
+                visit_time: document.getElementById('op05VisitTime').value,
+                client_name: document.getElementById('op05ClientName').value,
+                op_name: document.getElementById('op05OpName').value,
+                checklist: op05CheckState, // เก็บเป็น JSONB
+                sig_client: op05SigData.op05Sig1, // Base64 ลายเซ็นผู้ว่าจ้าง
+                sig_staff: op05SigData.op05Sig2,   // Base64 ลายเซ็นเจ้าหน้าที่
+                created_at: new Date().toISOString()
+            };
+
+            // ตรวจสอบข้อมูลบังคับ
+            if (!reportData.site_name || !reportData.client_name || !reportData.op_name) {
+                alert("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...';
+
+                // ส่งข้อมูลเข้าตาราง op05_reports
+                const { error } = await supabaseClient
+                    .from('op05_reports')
+                    .insert([reportData]);
+
+                if (error) throw error;
+
+                // แสดงข้อความสำเร็จ
                 btn.classList.add('hidden');
                 success.classList.remove('hidden');
                 success.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 1500);
+
+            } catch (error) {
+                console.error("Submission Error:", error);
+                alert("เกิดข้อผิดพลาด: " + (error.message || "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> บันทึกและส่งรายงานเข้าระบบ';
+            }
         }
 
         function resetOp05Form() {
@@ -910,13 +993,28 @@
 
         function handleOp05UnitInput(val) {
             const box = document.getElementById('op05UnitSuggestions');
-            if (!val) { box.classList.add('hidden'); return; }
-            const matches = unitsData.filter(u => u.unit_name.toLowerCase().includes(val.toLowerCase()) || u.unit_code.toLowerCase().includes(val.toLowerCase()));
+            // ถ้าค่าว่าง ให้แสดงทั้งหมด
+            const matches = !val 
+                ? unitsData 
+                : unitsData.filter(u => u.unit_name.toLowerCase().includes(val.toLowerCase()) || u.unit_code.toLowerCase().includes(val.toLowerCase()));
+            
             if (matches.length > 0) {
                 box.innerHTML = matches.map(u => `<div class="suggestion-item" onclick="selectUnit('${u.unit_name}')"><div class="suggestion-title">${u.unit_name}</div><div class="suggestion-subtitle">${u.unit_code} | ${u.zone}</div></div>`).join('');
                 box.classList.remove('hidden');
-            } else { box.classList.add('hidden'); }
+            } else { 
+                box.innerHTML = '<div class="p-5 text-center text-slate-400 text-xs">ไม่พบข้อมูลหน่วยงาน</div>';
+                box.classList.remove('hidden');
+            }
         }
+
+        // ปิดกล่องเลือกเมื่อคลิกข้างนอก
+        document.addEventListener('click', (e) => {
+            const box = document.getElementById('op05UnitSuggestions');
+            const input = document.getElementById('op05SiteName');
+            if (box && !box.contains(e.target) && e.target !== input) {
+                box.classList.add('hidden');
+            }
+        });
 
         function selectUnit(name) {
             document.getElementById('op05SiteName').value = name;
