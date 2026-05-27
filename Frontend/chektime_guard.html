@@ -37,56 +37,62 @@
         .cyber-header {
             background: var(--glass); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border);
-            padding: 20px; position: sticky; top: 0; z-index: 100;
+            padding: 12px 16px; position: sticky; top: 0; z-index: 100;
         }
 
         /* Dashboard */
-        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
-        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 15px 10px; text-align: center; }
-        .stat-label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-        .stat-val { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; }
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px 16px 8px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 6px; text-align: center; }
+        .stat-label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+        .stat-val { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; }
 
         /* Filter Tabs */
-        .filter-wrap { display: flex; gap: 8px; padding: 0 20px 15px; overflow-x: auto; scrollbar-width: none; }
+        .filter-wrap { display: flex; gap: 6px; padding: 0 16px 8px; overflow-x: auto; scrollbar-width: none; }
         .filter-wrap::-webkit-scrollbar { display: none; }
         .filter-btn {
-            padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; white-space: nowrap;
+            padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 800; white-space: nowrap;
             background: var(--card-bg); border: 1px solid var(--card-border); color: #94a3b8; transition: all 0.2s;
         }
         .filter-btn.active { background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.5); color: var(--primary); }
 
         /* Search */
-        .search-box { margin: 0 20px 20px; position: relative; }
+        .search-box { margin: 0 16px 8px; position: relative; }
         .search-box input {
-            width: 100%; padding: 14px 14px 14px 45px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
-            border-radius: 16px; font-size: 14px; color: white; outline: none; transition: border-color 0.2s;
+            width: 100%; padding: 8px 12px 8px 36px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+            border-radius: 12px; font-size: 12px; color: white; outline: none; transition: border-color: 0.2s;
         }
         .search-box input:focus { border-color: var(--primary); }
-        .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 12px; }
 
         /* Guard Cards */
-        .guard-list { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
+        .guard-list { display: flex; flex-direction: column; gap: 6px; padding: 0 16px; }
         .g-card {
-            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
-            padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden;
+            background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px;
+            padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden;
+            transition: all 0.2s ease;
         }
-        .g-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+        .g-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(14, 165, 233, 0.2);
+        }
+        .g-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
         .g-card.status-in::before { background: var(--emerald); }
         .g-card.status-out::before { background: var(--rose); }
         .g-card.status-pending::before { background: var(--amber); }
 
-        .g-info { display: flex; justify-content: space-between; align-items: flex-start; }
-        .g-name { font-size: 15px; font-weight: 800; color: white; margin-bottom: 2px; }
-        .g-id { font-size: 10px; font-weight: 800; color: var(--primary); font-family: 'Outfit', sans-serif; letter-spacing: 1px; }
+        .g-info { display: flex; justify-content: space-between; align-items: center; }
+        .g-name { font-size: 13px; font-weight: 800; color: white; margin-bottom: 0px; }
+        .g-id { font-size: 9px; font-weight: 800; color: var(--primary); font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; }
         
         .g-status-badge {
-            padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            padding: 2px 6px; border-radius: 6px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
         }
         .status-in .g-status-badge { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
         .status-out .g-status-badge { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
         .status-pending .g-status-badge { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
 
-        .g-time { font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px; display: flex; items-center; gap: 4px; }
+        .g-time { font-size: 8px; color: #64748b; font-weight: 600; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
 
         /* Action Buttons */
         .g-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--card-border); padding-top: 12px; }
@@ -120,18 +126,22 @@
 
     <header class="cyber-header">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <button onclick="window.location.href='staff.html'" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all">
-                    <i class="fas fa-arrow-left"></i>
+            <div class="flex items-center gap-3">
+                <button onclick="window.location.href='staff.html'" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all flex-shrink-0">
+                    <i class="fas fa-arrow-left text-sm"></i>
                 </button>
                 <div>
-                    <h2 class="text-lg font-black uppercase tracking-tight text-white">OP08 Time Check</h2>
-                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest" id="userZone">เขตพื้นที่: กำลังโหลด...</span>
+                    <h1 class="text-sm font-black text-white leading-tight">เช็คเวลาเข้า-ออก รปภ.</h1>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[9px] text-sky-400 font-black uppercase tracking-wider">TIME CHECK</span>
+                        <span class="text-[9px] text-slate-500">•</span>
+                        <span class="text-[9px] text-slate-400 font-bold" id="userZone">เขตพื้นที่: กำลังโหลด...</span>
+                    </div>
                 </div>
             </div>
             <div class="text-right">
-                <div class="text-xl font-black font-['Outfit'] text-sky-400" id="clockTime">--:--</div>
-                <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest" id="clockDate">--/--/----</div>
+                <div class="text-base font-black font-['Outfit'] text-sky-400 leading-none" id="clockTime">--:--</div>
+                <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5" id="clockDate">--/--/----</div>
             </div>
         </div>
     </header>
@@ -309,16 +319,20 @@
                     
                     let status = 'pending';
                     let lastTime = '--:--';
+                    let checkInTimestamp = null;
                     
                     if (latestLog) {
-                        if (latestLog.action_type === 'check_in') status = 'in';
+                        if (latestLog.action_type === 'check_in') {
+                            status = 'in';
+                            checkInTimestamp = latestLog.timestamp;
+                        }
                         else if (latestLog.action_type === 'check_out') status = 'out';
                         else status = 'pending'; // sick_leave, etc.
                         
                         lastTime = new Date(latestLog.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                     }
 
-                    return { ...guard, status, lastTime };
+                    return { ...guard, status, lastTime, checkInTimestamp };
                 });
 
                 // Sort: Pending first, then In, then Out
@@ -340,6 +354,40 @@
             document.getElementById('statTotal').innerText = guardsData.length;
             document.getElementById('statIn').innerText = guardsData.filter(g => g.status === 'in').length;
             document.getElementById('statOut').innerText = guardsData.filter(g => g.status === 'out').length;
+        }
+
+        function shouldShowForceOut(g) {
+            if (g.status !== 'in' || !g.checkInTimestamp) return false;
+            
+            const checkInTime = new Date(g.checkInTimestamp);
+            const now = new Date();
+            
+            // 1. ตรวจสอบระยะเวลาทำงานห่างกันเกิน 12 ชั่วโมง (standard shift)
+            const diffHrs = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+            if (diffHrs >= 12) return true;
+            
+            // 2. ตรวจสอบกะหมดเวลามาตรฐาน
+            const checkInHour = checkInTime.getHours();
+            const currentHour = now.getHours();
+            
+            if (checkInHour >= 5 && checkInHour < 15) {
+                // กะกลางวัน (AM): 06:00 - 18:00 (ถ้าปัจจุบันเลย 18:00 น.)
+                if (currentHour >= 18) return true;
+            } else {
+                // กะกลางคืน (PM): 18:00 - 06:00
+                const checkInDate = checkInTime.getDate();
+                const nowDate = now.getDate();
+                
+                // กรณีสแกนเมื่อวาน และเวลาปัจจุบันเช้าวันนี้เลย 06:00 น. แล้ว
+                if (nowDate !== checkInDate && currentHour >= 6) {
+                    return true;
+                }
+                // กรณีสแกนช่วงเย็น/ดึกวันเดียวกัน และปัจจุบันเลย 06:00 น. ไปแล้ว
+                if (checkInHour >= 15 && currentHour >= 6 && currentHour < 18) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function renderList() {
@@ -371,27 +419,58 @@
                     'pending': 'ยังไม่ลงเวลา'
                 };
                 
+                // คำนวณเวลาทำงานสะสม (ในกรณีที่สถานะเป็น 'in' และยังไม่สแกนออก)
+                let durationLabel = '';
+                if (g.status === 'in' && g.checkInTimestamp) {
+                    const checkInTime = new Date(g.checkInTimestamp);
+                    const now = new Date();
+                    const diffMs = now.getTime() - checkInTime.getTime();
+                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    if (diffHrs >= 12) {
+                        durationLabel = `
+                        <span class="bg-amber-500/20 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded border border-amber-500/30 flex items-center gap-1 shrink-0" style="backdrop-filter: blur(5px);">
+                            <i class="fas fa-sync fa-spin text-[8px]"></i> ควงกะแล้ว ${diffHrs} ชม. ${diffMins} นาที
+                        </span>
+                        `;
+                    } else {
+                        durationLabel = `
+                        <span class="bg-emerald-500/10 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1 shrink-0" style="backdrop-filter: blur(5px);">
+                            <i class="fas fa-stopwatch text-[8px]"></i> ทำงานมาแล้ว ${diffHrs} ชม. ${diffMins} นาที
+                        </span>
+                        `;
+                    }
+                }
+
+                const showForceOut = shouldShowForceOut(g);
+                const forceOutAction = showForceOut 
+                    ? `
+                    <div class="g-actions mt-2" style="border-top: 1px solid var(--card-border); padding-top: 12px; display: block;">
+                        <button class="btn-action btn-out w-full" style="background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.4);" onclick="recordTime('${g.emp_id}', 'check_out', true)">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> ออกงานโดยผู้ดูแล (FORCE OUT)
+                        </button>
+                    </div>
+                    ` 
+                    : '';
+                
                 return `
                 <div class="g-card status-${g.status}">
-                    <div class="g-info">
-                        <div>
-                            <div class="g-id"><i class="fas fa-id-badge mr-1"></i> ${g.emp_id}</div>
-                            <div class="g-name">${g.name}</div>
-                            <div class="text-[9px] text-slate-400 font-bold uppercase mt-1"><i class="fas fa-building mr-1"></i> ${g.unit || '-'}</div>
+                    <div class="g-info flex items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold min-w-0 flex-1">
+                            <span class="g-id text-xs shrink-0"><i class="fas fa-id-badge mr-0.5"></i>${g.emp_id}</span>
+                            <span class="text-slate-600 shrink-0 text-xs">—</span>
+                            <span class="g-name text-white font-black break-words">${g.name}</span>
+                            <span class="text-slate-600 shrink-0 text-xs">|</span>
+                            <span class="text-[11px] text-slate-400 font-medium break-words"><i class="fas fa-building mr-0.5 text-[9px] text-slate-500"></i>${g.unit || '-'}</span>
+                            ${durationLabel}
                         </div>
-                        <div class="text-right">
+                        <div class="text-right flex-shrink-0 flex flex-col items-end gap-1 ml-auto">
                             <div class="g-status-badge">${statusLabels[g.status]}</div>
                             <div class="g-time"><i class="fas fa-clock text-[8px]"></i> ล่าสุด: ${g.lastTime}</div>
                         </div>
                     </div>
-                    <div class="g-actions">
-                        <button class="btn-action btn-in" onclick="recordTime('${g.emp_id}', 'check_in')">
-                            <i class="fas fa-sign-in-alt"></i> เข้างาน (IN)
-                        </button>
-                        <button class="btn-action btn-out" onclick="recordTime('${g.emp_id}', 'check_out')">
-                            <i class="fas fa-sign-out-alt"></i> ออกงาน (OUT)
-                        </button>
-                    </div>
+                    ${forceOutAction}
                 </div>
                 `;
             }).join('');
@@ -408,25 +487,38 @@
             renderList();
         }
 
-        async function recordTime(empId, actionType) {
+        async function recordTime(empId, actionType, isForceOut = false) {
             const actionText = actionType === 'check_in' ? 'เข้างาน' : 'ออกงาน';
-            if (!confirm(`ยืนยันการลงเวลา [${actionText}] ให้กับรหัส ${empId} หรือไม่?`)) return;
+            let confirmMsg = `ยืนยันการลงเวลา [${actionText}] ให้กับรหัส ${empId} หรือไม่?`;
+            
+            if (isForceOut) {
+                const guardName = guardsData.find(g => g.emp_id === empId)?.name || empId;
+                confirmMsg = `⚠️ ยืนยันการกด [ออกงานแทน รปภ.] เนื่องจากเลยเวลาทำงานปกติให้กับ ${guardName} ใช่หรือไม่?\n(ระบบจะลงบันทึกชื่อคุณเป็นผู้ดำเนินการออกงานแทน)`;
+            }
+            
+            if (!confirm(confirmMsg)) return;
 
             try {
-                // Find guard to instantly update UI optimally
                 const guardIdx = guardsData.findIndex(g => g.emp_id === empId);
                 const guard = guardIdx !== -1 ? guardsData[guardIdx] : null;
                 
-                // Show a loading state on the card (optional, but good UX)
                 const now = new Date();
                 const isoString = now.toISOString();
+
+                // บันทึกหมายเหตุ Audit Trail ว่าใครเป็นผู้กดออกงานแทน
+                let logNote = null;
+                if (isForceOut) {
+                    const supervisorName = currentUser ? (currentUser.name || 'สายตรวจ') : 'ผู้ดูแลเขต';
+                    logNote = `ออกงานโดยผู้ดูแลเขต: ${supervisorName}`;
+                }
 
                 const { error } = await supabaseClient.from('duty_logs').insert([{
                     emp_id: empId,
                     action_type: actionType,
                     timestamp: isoString,
                     unit_name: guard ? guard.unit : null,
-                    role: 'Guard'
+                    role: 'Guard',
+                    note: logNote
                 }]);
 
                 if (error) throw error;
@@ -435,11 +527,12 @@
                 if (guardIdx !== -1) {
                     guardsData[guardIdx].status = actionType === 'check_in' ? 'in' : 'out';
                     guardsData[guardIdx].lastTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    guardsData[guardIdx].checkInTimestamp = null; // รีเซ็ตเวลาเช็คอินหลังออกงานแล้ว
                 }
 
                 updateDashboard();
                 renderList();
-                showToast(`บันทึกเวลา ${actionText} สำเร็จ`);
+                showToast(isForceOut ? `บังคับ รปภ. ออกงานสำเร็จ` : `บันทึกเวลา ${actionText} สำเร็จ`);
 
             } catch (e) {
                 console.error("Record Time Error:", e);
