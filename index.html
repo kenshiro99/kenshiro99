@@ -104,12 +104,8 @@
             max-width: 420px;
             padding: 50px 40px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(14, 165, 233, 0.05);
-            display: none;
-            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .gateway-active .login-card {
             display: block;
+            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .ai-assistant-container {
@@ -504,15 +500,10 @@
                     <i class="fas fa-shield-alt"></i>
                 </div>
 
-                <div class="hidden">
-                    <input type="radio" name="login_mode" id="mode_checkin" value="checkin">
-                    <input type="radio" name="login_mode" id="mode_report" value="report">
-                </div>
-
                 <button type="submit" class="cyber-btn mt-4" id="mainSubmitBtn">
-                    <span id="btnText">ยืนยันตัวตน</span>
+                    <span id="btnText">เข้าสู่ระบบ</span>
                     <div id="btnLoader" class="loader"></div>
-                    <i class="fas fa-satellite-dish" id="btnIcon"></i>
+                    <i class="fas fa-sign-in-alt" id="btnIcon"></i>
                 </button>
             </form>
 
@@ -534,34 +525,11 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Dynamic UI Switch based on Mode
-        document.addEventListener('DOMContentLoaded', () => {
-            const radios = document.querySelectorAll('input[name="login_mode"]');
-            const btnText = document.getElementById('btnText');
-            const btnIcon = document.getElementById('btnIcon');
-            const mainBtn = document.getElementById('mainSubmitBtn');
-
-            radios.forEach(radio => {
-                radio.addEventListener('change', function () {
-                    if (this.value === 'checkin') {
-                        btnText.innerText = 'เริ่มสแกนพิกัด';
-                        btnIcon.className = 'fas fa-satellite-dish';
-                        mainBtn.classList.remove('mode-report');
-                    } else {
-                        btnText.innerText = 'เข้าสู่แดชบอร์ด';
-                        btnIcon.className = 'fas fa-bolt';
-                        mainBtn.classList.add('mode-report');
-                    }
-                });
-            });
-        });
-
         async function handleLogin(e) {
             e.preventDefault();
             const user_id = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
-            const mode = document.querySelector('input[name="login_mode"]:checked').value;
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const btnLoader = document.getElementById('btnLoader');
@@ -593,7 +561,7 @@
                     return;
                 }
 
-                // 3. ตรวจสอบ Level (ตามความต้องการของผู้ใช้)
+                // 3. ตรวจสอบ Level
                 if (!data.level) {
                     alert('ไม่พบระดับการเข้าถึง โปรดติดต่อผู้ดูแลระบบ');
                     resetUI();
@@ -618,25 +586,40 @@
 
                 // AI Welcome Message
                 const aiText = document.getElementById('aiText');
-                document.getElementById('aiChoices').style.display = 'none';
-                document.getElementById('loginCard').style.opacity = '0.3';
-                document.getElementById('loginCard').style.pointerEvents = 'none';
-
-                aiText.innerHTML = `<span class="text-amber-400 font-bold text-lg">ยินดีต้อนรับค่ะคุณ ${fullName}!</span><br>ดิฉันตรวจสอบข้อมูลเรียบร้อยแล้ว กำลังพาคุณเข้าสู่ระบบนะคะ...`;
 
                 setTimeout(() => {
                     const level = (data.level || '').toLowerCase();
                     if (level === 'admin' || level === 'manager') {
-                        window.location.href = 'Backend/dashboard.html';
+                        // ระดับแอดมินหรือเมเนเจอร์ วิ่งตรงเข้า Dashboard ทันที!
+                        document.getElementById('loginCard').style.opacity = '0.3';
+                        document.getElementById('loginCard').style.pointerEvents = 'none';
+                        
+                        typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่หน้าจอ Dashboard อัตโนมัติค่ะ...`);
+                        
+                        setTimeout(() => {
+                            window.location.href = 'Backend/dashboard.html';
+                        }, 1800);
                     } else {
-                        // แยกการเดินทางตามปุ่มที่เลือก
-                        if (mode === 'checkin') {
-                            window.location.href = 'checkin.html';
-                        } else {
-                            window.location.href = level === 'supervisor' ? 'Frontend/staff.html' : 'Frontend/guard.html';
-                        }
+                        // ระดับหัวหน้างานหรือ รปภ. แสดงตัวเลือกหลังล็อกอินสำเร็จ
+                        document.getElementById('loginCard').style.opacity = '0.1';
+                        document.getElementById('loginCard').style.pointerEvents = 'none';
+
+                        typeText(aiText, `<span class="text-sky-400 font-bold text-lg">เข้าสู่ระบบสำเร็จ!</span><br>สวัสดีครับคุณ <b>${fullName}</b><br>วันนี้ต้องการเข้าใช้งานในส่วนใดดีครับ?`);
+                        
+                        // แสดงปุ่มทางเลือก
+                        const aiChoices = document.getElementById('aiChoices');
+                        aiChoices.innerHTML = `
+                            <button class="ai-choice-btn" onclick="postLoginRedirect('checkin', '${level}')">
+                                <i class="fas fa-location-dot mr-2 text-cyber-gold"></i> ลงเวลาเข้า-ออกงาน
+                            </button>
+                            <button class="ai-choice-btn" onclick="postLoginRedirect('report', '${level}')">
+                                <i class="fas fa-chart-line mr-2 text-cyber-gold"></i> ${level === 'supervisor' ? 'ระบบรายงานสรุปงาน (OP)' : 'ดูประวัติสแกน/รายงาน'}
+                            </button>
+                        `;
+                        aiChoices.style.setProperty('display', 'grid', 'important');
+                        aiChoices.classList.add('animate-bounce-short');
                     }
-                }, 2000);
+                }, 1000);
 
             } catch (err) {
                 console.error('Login error:', err);
@@ -645,21 +628,44 @@
             }
         }
 
+        function postLoginRedirect(mode, level) {
+            const aiText = document.getElementById('aiText');
+            const aiImage = document.getElementById('aiImage');
+            const aiChoices = document.getElementById('aiChoices');
+            
+            aiChoices.style.setProperty('display', 'none', 'important');
+            
+            // เล่นเอฟเฟกต์ควันตอนสลับรูป AI เพื่อความพรีเมียม
+            const newImgSrc = mode === 'checkin' ? 'img/avata-checkin.png?v=6' : 'img/avata-dashboard.png?v=6';
+            aiImage.classList.add('ai-smoke-out');
+            setTimeout(() => {
+                aiImage.src = newImgSrc;
+                aiImage.classList.remove('ai-smoke-out');
+                aiImage.classList.add('ai-smoke-in');
+                setTimeout(() => { aiImage.classList.remove('ai-smoke-in'); }, 500);
+            }, 450);
+
+            if (mode === 'checkin') {
+                typeText(aiText, "รับทราบครับ! กำลังเปิดหน้าจอ <b>ลงเวลาเข้า-ออกหน่วยงาน</b>...");
+                setTimeout(() => {
+                    window.location.href = 'checkin.html';
+                }, 1200);
+            } else {
+                typeText(aiText, "รับทราบครับ! กำลังเปิดหน้าจอ <b>ระบบสรุปและรายงานปฏิบัติงาน</b>...");
+                setTimeout(() => {
+                    window.location.href = level === 'supervisor' ? 'Frontend/staff.html' : 'Frontend/guard.html';
+                }, 1200);
+            }
+        }
+
         function resetUI() {
-            const mode = document.querySelector('input[name="login_mode"]:checked').value;
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const btnLoader = document.getElementById('btnLoader');
             const mainBtn = document.getElementById('mainSubmitBtn');
 
-            if (mode === 'checkin') {
-                btnText.innerText = 'เริ่มสแกนพิกัด';
-                btnIcon.className = 'fas fa-satellite-dish';
-            } else {
-                btnText.innerText = 'เข้าสู่แดชบอร์ด';
-                btnIcon.className = 'fas fa-bolt';
-            }
-
+            btnText.innerText = 'เข้าสู่ระบบ';
+            btnIcon.className = 'fas fa-sign-in-alt';
             btnLoader.style.display = 'none';
             btnIcon.style.display = 'block';
             mainBtn.style.pointerEvents = 'auto';
@@ -672,11 +678,11 @@
             console.log("System Ready. Please login.");
 
             // AI Greeting Logic
-            setTimeout(initAIGreeting, 1500);
+            setTimeout(initAIGreeting, 1000);
         }
 
         // --- SMART TYPEWRITER EFFECT ---
-        function typeText(element, html, speed = 25) {
+        function typeText(element, html, speed = 20) {
             element.innerHTML = "";
             let i = 0;
             let isTag = false;
@@ -703,7 +709,6 @@
                         type();
                     }
                 } else {
-                    // เมื่อพิมพ์เสร็จ ให้เคอร์เซอร์ยังอยู่
                     element.innerHTML = html + '<span class="ai-cursor"></span>';
                 }
             }
@@ -713,67 +718,10 @@
         function initAIGreeting() {
             const aiText = document.getElementById('aiText');
             const aiImage = document.getElementById('aiImage');
-            const aiChoices = document.getElementById('aiChoices');
-            const aiMascotWrapper = document.getElementById('aiMascotWrapper');
 
-            // 1. ท่าตะเบ๊ะเริ่มต้น
+            // ท่าตะเบ๊ะเริ่มต้น
             aiImage.src = 'img/avata-salute.png?v=3';
-            typeText(aiText, `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดี</h2><p class="text-lg opacity-80"><b>Nextgen-AI</b> ยินดีที่ได้ดูแลคุณครับ</p>`);
-
-            // 2. ดีเลย์ แล้วเปลี่ยนเป็นเมนู
-            setTimeout(() => {
-                aiMascotWrapper.classList.add('ai-flash', 'ai-glitch');
-
-                setTimeout(() => {
-                    typeText(aiText, `<p class="text-base">วันนี้ต้องการให้NexGen.AIช่วยดำเนินการในส่วนไหนดีครับ?</p>`);
-                    aiChoices.style.display = 'grid';
-                    aiChoices.classList.add('animate-bounce-short');
-
-                    setTimeout(() => {
-                        aiMascotWrapper.classList.remove('ai-flash', 'ai-glitch');
-                    }, 500);
-                }, 150);
-            }, 3500); // เพิ่มเวลาให้อ่านข้อความแรกจบก่อน
-        }
-
-        function aiChoose(mode) {
-            const checkinRadio = document.getElementById('mode_checkin');
-            const reportRadio = document.getElementById('mode_report');
-            const mainGateway = document.getElementById('mainGateway');
-            const aiText = document.getElementById('aiText');
-            const formSubtitle = document.getElementById('formSubtitle');
-            const aiChoices = document.getElementById('aiChoices');
-            const aiImage = document.getElementById('aiImage');
-            const aiMascotWrapper = document.getElementById('aiMascotWrapper');
-
-            const newImgSrc = mode === 'checkin' ? 'img/avata-checkin.png?v=6' : 'img/avata-dashboard.png?v=6';
-            const isDifferent = !aiImage.src.includes(newImgSrc.split('?')[0]);
-
-            aiChoices.style.display = 'none';
-
-            if (isDifferent) {
-                aiImage.classList.add('ai-smoke-out');
-                setTimeout(() => {
-                    aiImage.src = newImgSrc;
-                    aiImage.classList.remove('ai-smoke-out');
-                    aiImage.classList.add('ai-smoke-in');
-                    setTimeout(() => { aiImage.classList.remove('ai-smoke-in'); }, 500);
-                }, 450);
-            }
-
-            if (mode === 'checkin') {
-                checkinRadio.checked = true;
-                typeText(aiText, "รับทราบค่ะ! กำลังเปิดระบบ <b>ลงเวลาเข้า-ออกหน่วยงาน</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้า-ออกหน่วยงานนะคะ");
-                formSubtitle.innerText = "Portal: Clock-In System";
-                document.body.style.background = "radial-gradient(circle at center, #0c4a6e 0%, #020617 100%)";
-            } else {
-                reportRadio.checked = true;
-                typeText(aiText, "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ");
-                formSubtitle.innerText = "Reporting System";
-                document.body.style.background = "radial-gradient(circle at center, #1e1b4b 0%, #020617 100%)";
-            }
-
-            mainGateway.classList.add('gateway-active');
+            typeText(aiText, `<h2 class="text-3xl font-black text-amber-400 mb-2 tracking-tight animate-pulse">สวัสดีครับ</h2><p class="text-base opacity-80">ผม <b>Nextgen-AI</b> ยินดีที่ได้ดูแลคุณครับ<br>กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าสู่ระบบงานได้เลยครับ</p>`);
         }
 
         function toggleAI() {
