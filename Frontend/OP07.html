@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OP07 — รายงานการอบรมประจำเดือน | Nextgen System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../Backend/config.js"></script>
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+
+<style>
+/* ===== RESET & BASE ===== */
+:root{
+  --navy:#1B2A4A; --navy2:#243560;
+  --gold:#C9920C; --gold-l:#F0B429; --gold-ll:#FEF3C7;
+  --green:#0D7A4E; --green-bg:#E6F4EE;
+  --red:#C0392B;  --red-bg:#FDECEA;
+  --blue:#1A56DB; --blue-bg:#EEF4FF;
+  --purple:#6366f1; --purple-bg:#eef2ff;
+  --orange:#D97706; --orange-bg:#FEF3C7;
+  --gray:#F4F6F9; --gray2:#E8ECF2; --gray3:#9AABC2;
+  --white:#fff; --r:10px; --rs:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun',sans-serif;background:#edf0f7;color:var(--navy);min-height:100vh;padding-bottom:60px}
+
+/* ===== STICKY HEADER ===== */
+.hdr{background:var(--navy);position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.35)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;gap:8px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.blogo{width:34px;height:34px;background:var(--purple);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0}
+.bname{min-width:0}
+.bname .co{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.4px;white-space:nowrap}
+.bname .dt{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stamp{text-align:right;flex-shrink:0}
+.stamp .id{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold-l);font-weight:700}
+.stamp .ts{font-size:9px;color:rgba(255,255,255,.45);margin-top:2px}
+.hdr-bar{background:var(--purple);padding:4px 16px;font-size:9px;font-weight:800;color:#fff;letter-spacing:1.5px;text-transform:uppercase}
+.hdr-prog{background:var(--navy2);padding:7px 16px 9px}
+.prog-row{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.45);margin-bottom:5px}
+.prog-track{height:3px;background:rgba(255,255,255,.12);border-radius:2px}
+.prog-fill{height:100%;border-radius:2px;transition:width .35s;background:var(--gold-l);width:0%}
+
+/* ===== LAYOUT ===== */
+.main{max-width:680px;margin:0 auto;padding:14px}
+
+/* ===== CARDS ===== */
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--gray2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(27,42,74,.06)}
+.card-head{padding:10px 15px;display:flex;align-items:center;gap:9px;background:var(--navy)}
+.c-num{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.c-title{font-size:13px;font-weight:700;color:#fff}
+.c-sub{font-size:10px;color:rgba(255,255,255,.45);margin-left:auto;white-space:nowrap}
+.card-body{padding:14px 15px;display:flex;flex-direction:column;gap:11px}
+
+/* ===== FIELDS ===== */
+.field{display:flex;flex-direction:column;gap:4px}
+.gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gr-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label{font-size:10px;font-weight:700;color:var(--navy2);letter-spacing:.3px;text-transform:uppercase}
+label .req{color:var(--red);margin-left:1px}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--navy);background:var(--gray);transition:border-color .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);background:#fffdf5}
+textarea{resize:vertical;min-height:70px;line-height:1.6}
+.time-lock{display:flex;align-items:center;gap:8px;background:#f0f2f7;border:1.5px solid var(--gray2);border-radius:var(--rs);padding:9px 11px}
+.time-lock span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--navy2);font-weight:500}
+.ts-lock{display:flex;align-items:center;gap:8px;background:#f0f2f7;border:1.5px solid var(--gray2);border-radius:var(--rs);padding:9px 11px}
+.ts-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--navy2);font-weight:500}
+.ts-note{font-size:9px;color:var(--gray3);margin-top:1px}
+
+/* ===== TOPIC TAGS ===== */
+.topic-tags{display:flex;flex-wrap:wrap;gap:7px}
+.tag{display:inline-flex;align-items:center;padding:6px 12px;border-radius:20px;border:1.5px solid var(--gray2);font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:var(--navy);transition:all .15s;user-select:none}
+.tag.active{background:var(--navy);border-color:var(--navy);color:var(--gold-l)}
+
+/* ===== ATTENDANCE TABLE ===== */
+.att-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.att-table{width:100%;border-collapse:collapse;font-size:12px;min-width:420px}
+.att-table th{background:var(--navy);color:#fff;padding:7px 8px;font-size:10px;font-weight:700;text-align:center;white-space:nowrap}
+.att-table td{padding:5px 6px;border-bottom:1px solid var(--gray2);vertical-align:middle}
+.att-table tr:nth-child(even) td{background:var(--gray)}
+.att-table input,.att-table select{padding:5px 7px;font-size:12px;background:#fff;border-radius:5px}
+.att-num{text-align:center;font-size:10px;color:var(--gray3);font-weight:700;width:28px}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed var(--purple);border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;color:var(--purple);background:var(--purple-bg);cursor:pointer;margin-top:8px;transition:all .15s}
+.add-btn:hover{background:var(--purple);color:#fff}
+.att-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.att-sum-box{background:var(--gray);border-radius:var(--rs);padding:9px;text-align:center}
+.att-sum-v{font-size:22px;font-weight:800;color:var(--navy)}
+.att-sum-l{font-size:9px;color:var(--gray3);font-weight:600;margin-top:2px}
+
+/* ===== EVALUATION ===== */
+.eval-item{border:1.5px solid var(--gray2);border-radius:var(--rs);padding:10px 12px}
+.eval-label{font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.3px}
+.rating-row{display:flex;gap:6px}
+.r-btn{flex:1;padding:8px 4px;border-radius:6px;border:1.5px solid var(--gray2);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:var(--navy2);text-align:center;transition:all .15s}
+.r-btn.active-5{background:#10b981;color:#fff;border-color:#10b981}
+.r-btn.active-4{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.r-btn.active-3{background:#f59e0b;color:#fff;border-color:#f59e0b}
+.r-btn.active-2{background:#ef4444;color:#fff;border-color:#ef4444}
+.overall-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.overall-btn{padding:10px 6px;border-radius:var(--rs);border:1.5px solid var(--gray2);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:var(--navy2);text-align:center;transition:all .15s}
+.overall-btn.sel-pass{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.overall-btn.sel-warn{background:var(--gold-ll);border-color:var(--gold);color:#92400E}
+.overall-btn.sel-issue{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+/* ===== PHOTOS ===== */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pslot{aspect-ratio:4/3;border:2px dashed var(--gray2);border-radius:var(--rs);overflow:hidden;position:relative;cursor:pointer;background:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:border-color .15s}
+.pslot.has-img{border-style:solid;border-color:var(--green)}
+.pslot img{width:100%;height:100%;object-fit:cover;display:none}
+.pslot.has-img img{display:block}
+.pslot .uhint{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+.pslot.has-img .uhint{display:none}
+.uico{font-size:20px;color:var(--gray3)}
+.ulbl{font-size:9px;color:var(--gray3);font-weight:600}
+.pslot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pdel{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(192,57,43,.9);border-radius:50%;border:none;color:#fff;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;font-weight:700}
+.pslot.has-img .pdel{display:flex}
+.pcnt{font-size:11px;color:var(--gray3);text-align:right;margin-top:6px}
+
+/* ===== SUBMIT ===== */
+.sub-btn{width:100%;padding:15px;color:#fff;border:none;border-radius:var(--r);font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-top:4px;background:var(--navy)}
+.sub-btn:hover{background:var(--navy2)}
+.sub-btn:active{transform:scale(.98)}
+.sub-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ===== BACK BUTTON ===== */
+.back-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Sarabun',sans-serif;flex-shrink:0}
+
+/* ===== SUCCESS CARD ===== */
+.result-wrap{display:none;background:var(--green-bg);border:1.5px solid #A7DFC4;border-radius:var(--r);padding:20px;text-align:center;margin-top:10px}
+.result-wrap.show{display:block}
+.result-wrap h3{font-size:15px;font-weight:800;color:var(--green);margin-bottom:5px}
+.result-wrap p{font-size:12px;color:var(--green);opacity:.8;margin-bottom:10px}
+.rdid{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(13,122,78,.1);padding:4px 12px;border-radius:5px;color:var(--green);display:inline-block;margin-bottom:10px}
+.r-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.rbtn{padding:8px 18px;border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none}
+.rb-new{background:var(--navy);color:#fff}
+.rb-back{background:var(--gold);color:var(--navy)}
+
+/* ===== FOOTER ===== */
+.page-footer{text-align:center;padding:20px;font-size:10px;color:var(--gray3);font-weight:600;letter-spacing:1px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:520px){
+  .gr{grid-template-columns:1fr}
+  .gr3{grid-template-columns:1fr 1fr}
+  .photo-grid{grid-template-columns:repeat(2,1fr)}
+  .overall-row{grid-template-columns:1fr}
+  .att-sum-v{font-size:18px}
+}
+@media(max-width:360px){
+  .gr3{grid-template-columns:1fr}
+  .rating-row{gap:4px}
+  .r-btn{font-size:11px;padding:6px 2px}
+}
+
+@media print{
+  .hdr .hdr-prog,.sub-btn,.back-btn,.result-wrap{display:none!important}
+  .hdr{position:static}
+  .card{break-inside:avoid;box-shadow:none}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== STICKY HEADER ===== -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="brand">
+      <button class="back-btn" onclick="window.location.href='staff.html'">← กลับ</button>
+        <div class="bname" style="margin-left:6px">
+          <div class="dt">OP07 — รายงานการอบรมประจำเดือน</div>
+          <div class="co">MONTHLY TRAINING REPORT</div>
+        </div>
+    </div>
+    <div class="stamp">
+      <div class="id" id="docId">OP07-—</div>
+      <div class="ts" id="tsHdr">—</div>
+    </div>
+  </div>
+  <div class="hdr-bar">Monthly Operations Training Report</div>
+  <div class="hdr-prog">
+    <div class="prog-row"><span>ความคืบหน้า</span><span id="pPct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="pFill"></div></div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <form id="op07Form" onsubmit="event.preventDefault(); submitReport();">
+
+    <!-- CARD 1: ข้อมูลการจัดอบรม -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">1</div>
+        <div class="c-title">ข้อมูลการจัดอบรม</div>
+        <div class="c-sub">Training Information</div>
+      </div>
+      <div class="card-body">
+
+        <!-- เดือนที่อบรม: readonly แสดงเดือน ปี พ.ศ. -->
+        <div class="field">
+          <label>เดือนที่อบรม</label>
+          <div class="ts-lock">
+            <span style="font-size:13px">📅</span>
+            <div class="ts-val" id="trainMonthDisplay">—</div>
+          </div>
+          <input type="hidden" id="trainMonth">
+        </div>
+
+        <!-- วันที่อบรม + เวลาเริ่ม อยู่แถวเดียวกัน -->
+        <div class="gr-row">
+          <div class="field">
+            <label>วันที่อบรม<span class="req">*</span></label>
+            <input type="text" id="trainDate" placeholder="เลือกวันที่..." readonly>
+          </div>
+          <div class="field">
+            <label>เวลาเริ่ม</label>
+            <input type="text" id="tStart" placeholder="เช่น 09:00">
+          </div>
+        </div>
+
+        <!-- เขตพื้นที่: ขึ้นอัตโนมัติจากผู้ล็อกอิน -->
+        <div class="field">
+          <label>เขตพื้นที่</label>
+          <div class="ts-lock">
+            <span style="font-size:13px">📍</span>
+            <div class="ts-val" id="trainZoneDisplay">—</div>
+          </div>
+          <input type="hidden" id="trainZone">
+        </div>
+
+        <div class="field">
+          <label>สถานที่ / หน่วยงาน<span class="req">*</span></label>
+          <select id="venue" onchange="updateProgress()">
+            <option value="">กำลังโหลดหน่วยงาน...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>วิทยากรผู้ให้ความรู้<span class="req">*</span></label>
+          <select id="trainer" onchange="addTrainerFromSelect()">
+            <option value="">กำลังโหลด...</option>
+          </select>
+          <div class="topic-tags" id="trainerTags" style="margin-top:6px"></div>
+        </div>
+
+        <div class="field">
+          <label>หัวข้อการอบรม<span class="req">*</span></label>
+          <div class="topic-tags" id="topicTags"></div>
+          <input type="text" id="customTopic" placeholder="+ พิมพ์หัวข้ออื่นๆ แล้วกด Enter" style="margin-top:8px"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTopic()}">
+        </div>
+
+        <div class="field">
+          <label>สรุปเนื้อหาการอบรม</label>
+          <textarea id="trainContent" placeholder="สรุปเนื้อหาสำคัญที่ได้จากการอบรม..." rows="3"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CARD 2: ผู้เข้าร่วม -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">2</div>
+        <div class="c-title">รายชื่อผู้เข้ารับการอบรม</div>
+        <div class="c-sub">Attendees List</div>
+      </div>
+      <div class="card-body">
+
+        <!-- Summary Boxes -->
+        <div class="att-summary">
+          <div class="att-sum-box"><div class="att-sum-v" id="sumTotal">0</div><div class="att-sum-l">ทั้งหมด</div></div>
+          <div class="att-sum-box"><div class="att-sum-v" id="sumPresent" style="color:var(--green)">0</div><div class="att-sum-l">มาเข้าร่วม</div></div>
+          <div class="att-sum-box"><div class="att-sum-v" id="sumAbsent" style="color:var(--red)">0</div><div class="att-sum-l">ขาด/ลา</div></div>
+        </div>
+
+        <div class="att-scroll">
+          <table class="att-table">
+            <thead>
+              <tr>
+                <th style="width:28px">#</th>
+                <th style="min-width:130px">ชื่อ-นามสกุล</th>
+                <th style="min-width:100px">ตำแหน่ง</th>
+                <th style="width:80px">สถานะ</th>
+                <th style="width:70px">คะแนน Pre</th>
+                <th style="width:70px">คะแนน Post</th>
+              </tr>
+            </thead>
+            <tbody id="attBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="add-btn" onclick="addRow()">+ เพิ่มรายชื่อพนักงาน</button>
+
+      </div>
+    </div>
+
+    <!-- CARD 3: ประเมินผล -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">3</div>
+        <div class="c-title">สรุปผลและการประเมิน</div>
+        <div class="c-sub">Evaluation</div>
+      </div>
+      <div class="card-body">
+
+        <div id="evalGrid" style="display:flex;flex-direction:column;gap:10px"></div>
+
+        <div class="field">
+          <label>ผลการอบรมโดยรวม<span class="req">*</span></label>
+          <div class="overall-row">
+            <button type="button" class="overall-btn" id="ob-pass" onclick="setOverall('pass',this)">✓ บรรลุวัตถุประสงค์</button>
+            <button type="button" class="overall-btn" id="ob-warn" onclick="setOverall('warn',this)">⚙ บรรลุบางส่วน</button>
+            <button type="button" class="overall-btn" id="ob-issue" onclick="setOverall('issue',this)">⚠ ต้องปรับปรุง</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>ข้อเสนอแนะเพิ่มเติม</label>
+          <textarea id="evalNote" placeholder="ระบุสิ่งที่ควรปรับปรุงในการอบรมครั้งต่อไป..." rows="3"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CARD 4: ภาพถ่าย -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">4</div>
+        <div class="c-title">ภาพประกอบการอบรม</div>
+        <div class="c-sub">Training Photos (Max 6)</div>
+      </div>
+      <div class="card-body">
+        <div class="photo-grid" id="photoGrid"></div>
+        <div class="pcnt" id="photoCnt">0 / 6 รูป</div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="sub-btn" id="submitBtn">
+      <div class="spin" id="subSpin"></div>
+      <span id="subTxt">บันทึกรายงาน OP07 ลงระบบ</span>
+    </button>
+
+    <!-- Success Card -->
+    <div class="result-wrap" id="resultCard">
+      <div style="font-size:36px;margin-bottom:8px">✅</div>
+      <h3>บันทึกรายงานการอบรมสำเร็จ!</h3>
+      <p>ข้อมูลบันทึกลงระบบแล้ว</p>
+      <div class="rdid" id="finalDocId">—</div>
+      <div class="r-acts">
+        <button class="rbtn rb-back" onclick="window.location.href='staff.html'">กลับหน้าหลัก</button>
+        <button class="rbtn rb-new" onclick="location.reload()">+ ทำรายงานใหม่</button>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<div class="page-footer">© 2026 NEXTGEN SYSTEM CENTER. ALL RIGHTS RESERVED.</div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const TOPICS_LIST = [
+  "กฎหมายและระเบียบ รปภ.", "การปฏิบัติตาม SOP", "การป้องกันอัคคีภัย",
+  "การปฐมพยาบาล", "การจราจรและความปลอดภัย", "การใช้วิทยุสื่อสาร",
+  "จริยธรรมและบุคลิกภาพ", "การตรวจตราและลาดตระเวน", "การรายงานเหตุการณ์"
+];
+const EVAL_LABELS = [
+  "เนื้อหาเหมาะสมกับงาน", "วิทยากรถ่ายทอดได้ดี",
+  "พนักงานมีความเข้าใจ", "สถานที่ / อุปกรณ์พร้อม", "นำไปใช้งานได้จริง"
+];
+
+let selectedTopics = new Set();
+let selectedTrainers = new Set();
+let evalScores = {};
+let photos = Array(6).fill(null);
+let photoFiles = Array(6).fill(null);
+let overallResult = '';
+const userData = JSON.parse(localStorage.getItem('nextgen_user') || '{}');
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  initDocInfo();
+  renderTopics();
+  renderEval();
+  renderPhotoSlots();
+  initFlatpickr();
+  initTrainerDropdown();
+  await fetchVenuesByZone();
+  for (let i = 0; i < 3; i++) addRow();
+  updateProgress();
+});
+
+// ============================================================
+// DOC ID & TIMESTAMP
+// ============================================================
+function initDocInfo() {
+  const now = new Date();
+  const y  = now.getFullYear() + 543;
+  const m  = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  const h  = String(now.getHours()).padStart(2, '0');
+  const mn = String(now.getMinutes()).padStart(2, '0');
+
+  document.getElementById('docId').textContent = `OP07-${y}-${m}${d}`;
+  document.getElementById('tsHdr').textContent = `${d}/${m}/${y} ${h}:${mn}`;
+
+  // เดือนที่อบรม: แสดงเป็น ชื่อเดือนภาษาไทย + ปี พ.ศ.
+  const thaiMonths = [
+    'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
+  ];
+  const monthName = thaiMonths[now.getMonth()];
+  document.getElementById('trainMonthDisplay').textContent = `${monthName} ${y}`;
+  // เก็บค่า YYYY-MM สำหรับ DB
+  document.getElementById('trainMonth').value = now.toISOString().slice(0, 7);
+
+  // เขตพื้นที่: ดึงจากผู้ล็อกอิน
+  const myZone = (userData && (userData.zone || userData.area || '')).trim();
+  document.getElementById('trainZoneDisplay').textContent = myZone || 'ไม่พบข้อมูลเขต';
+  document.getElementById('trainZone').value = myZone;
+
+  // เพิ่มผู้ใช้งานล็อกอินเป็นวิทยากรคนแรกโดยอัตโนมัติ
+  if (userData && userData.name) {
+    const userRole = userData.role || userData.level || '';
+    const userLabel = `${userData.name}${userRole ? ' (' + userRole + ')' : ''}`;
+    selectedTrainers.add(userLabel);
+  }
+  renderTrainerTags();
+}
+
+function generateDocId() {
+  const now = new Date();
+  const y  = now.getFullYear() + 543;
+  const m  = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  const h  = String(now.getHours()).padStart(2, '0');
+  const mn = String(now.getMinutes()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  return `OP07-${y}-${m}${d}-${h}${mn}${ms}`;
+}
+
+// ============================================================
+// FLATPICKR — วันที่ พ.ศ. + เวลา 24ชม.
+// ============================================================
+function initFlatpickr() {
+  const today = new Date();
+  // วันที่อบรม — แสดงเป็น พ.ศ.
+  flatpickr('#trainDate', {
+    locale: 'th',
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'd/m/Y',
+    defaultDate: today,
+    disableMobile: true,
+    formatDate: function(date, format) {
+      if (format === 'd/m/Y') {
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yy = date.getFullYear() + 543;
+        return `${dd}/${mm}/${yy}`;
+      }
+      return flatpickr.formatDate(date, format);
+    },
+    onChange: updateProgress
+  });
+
+  // เวลาเริ่ม 24ชม. แสดงแบบไทย น.
+  flatpickr('#tStart', {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: 'H:i',
+    altInput: true,
+    altFormat: 'H:i น.',
+    time_24hr: true,
+    defaultDate: today,
+    disableMobile: true
+  });
+}
+
+// ============================================================
+// TRAINER DROPDOWN — ขึ้นชื่อผู้ล็อกอินก่อน
+// ============================================================
+function initTrainerDropdown() {
+  const sel = document.getElementById('trainer');
+  sel.innerHTML = '';
+
+  // รายชื่อมาตรฐาน
+  const stdTrainers = [
+    'กฤติเดช ก้องชินพัฒน์ (Ops Manager)',
+    'เสกสรรค์ ขันทองคำ (Zone 1)',
+    'จักรดุลย์ ระหารนอก (Zone 2)',
+    'อื่นๆ'
+  ];
+
+  sel.add(new Option('— คลิกเพื่อเลือกวิทยากรเพิ่มเติม —', ''));
+
+  // เพิ่มรายชื่อมาตรฐาน (ไม่ซ้ำกับชื่อผู้ใช้งานล็อกอินที่เป็นวิทยากรหลักอยู่แล้ว)
+  stdTrainers.forEach(name => {
+    if (userData && userData.name && name.startsWith(userData.name)) return;
+    sel.add(new Option(name, name));
+  });
+
+  updateProgress();
+}
+
+function addTrainerFromSelect() {
+  const sel = document.getElementById('trainer');
+  const val = sel.value;
+  if (!val) return;
+  
+  if (val === 'อื่นๆ') {
+    const otherName = prompt('ระบุชื่อวิทยากรผู้ให้ความรู้เพิ่มเติม:');
+    if (otherName && otherName.trim()) {
+      selectedTrainers.add(otherName.trim());
+    }
+  } else {
+    selectedTrainers.add(val);
+  }
+  
+  sel.value = ''; // Reset select to first empty option
+  renderTrainerTags();
+  updateProgress();
+}
+
+function renderTrainerTags() {
+  const wrap = document.getElementById('trainerTags');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  
+  selectedTrainers.forEach(t => {
+    const tag = document.createElement('div');
+    tag.className = 'tag active';
+    tag.textContent = t + ' ×';
+    tag.onclick = () => {
+      selectedTrainers.delete(t);
+      renderTrainerTags();
+      updateProgress();
+    };
+    wrap.appendChild(tag);
+  });
+}
+
+// ============================================================
+// FETCH VENUES BY ZONE — สถานที่ในเขตผู้ล็อกอิน
+// ============================================================
+async function fetchVenuesByZone() {
+  const sel = document.getElementById('venue');
+  try {
+    let query = supabaseClient.from('units').select('unit_name, zone').eq('status', 'เปิด').order('unit_name');
+
+    // กรองตามเขตของผู้ล็อกอิน
+    const lvl = userData && userData.level ? userData.level.toLowerCase() : '';
+    const myZone = (userData && (userData.zone || userData.area || '')).trim();
+    if (lvl !== 'admin' && myZone) {
+      query = query.eq('zone', myZone);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    sel.innerHTML = '<option value="">— เลือกหน่วยงาน —</option>';
+    (data || []).forEach(u => {
+      sel.add(new Option(u.unit_name, u.unit_name));
+    });
+
+    // ถ้าไม่มีข้อมูล
+    if (!data || data.length === 0) {
+      sel.innerHTML = '<option value="">ไม่พบหน่วยงานในเขตนี้</option>';
+    }
+  } catch (e) {
+    console.error('Fetch venue error:', e);
+    sel.innerHTML = '<option value="">ไม่สามารถโหลดสถานที่ได้</option>';
+  }
+  updateProgress();
+}
+
+// ============================================================
+// TOPIC TAGS
+// ============================================================
+function renderTopics() {
+  const wrap = document.getElementById('topicTags');
+  TOPICS_LIST.forEach(t => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.textContent = t;
+    tag.onclick = () => {
+      tag.classList.toggle('active');
+      selectedTopics.has(t) ? selectedTopics.delete(t) : selectedTopics.add(t);
+      updateProgress();
+    };
+    wrap.appendChild(tag);
+  });
+}
+
+function addCustomTopic() {
+  const input = document.getElementById('customTopic');
+  const val = input.value.trim();
+  if (!val) return;
+  selectedTopics.add(val);
+  const tag = document.createElement('div');
+  tag.className = 'tag active';
+  tag.textContent = val;
+  tag.onclick = () => { tag.remove(); selectedTopics.delete(val); updateProgress(); };
+  document.getElementById('topicTags').appendChild(tag);
+  input.value = '';
+  updateProgress();
+}
+
+// ============================================================
+// ATTENDANCE TABLE
+// ============================================================
+function addRow() {
+  const tbody = document.getElementById('attBody');
+  const idx = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="att-num">${idx}</td>
+    <td><input type="text" placeholder="ชื่อ-นามสกุล" oninput="calcAtt()" style="min-width:110px"></td>
+    <td><select onchange="calcAtt()" style="min-width:90px">
+      <option value="รปภ.">รปภ.</option>
+      <option value="หัวหน้าชุด">หัวหน้าชุด</option>
+      <option value="สายตรวจ">สายตรวจ</option>
+      <option value="Manager">Manager</option>
+    </select></td>
+    <td><select onchange="calcAtt()" style="min-width:70px">
+      <option value="present">มา ✓</option>
+      <option value="absent">ขาด ✗</option>
+      <option value="leave">ลา</option>
+    </select></td>
+    <td><input type="number" placeholder="—" min="0" max="100" style="width:65px;text-align:center"></td>
+    <td><input type="number" placeholder="—" min="0" max="100" style="width:65px;text-align:center"></td>
+  `;
+  tbody.appendChild(tr);
+  calcAtt();
+}
+
+function calcAtt() {
+  const rows = document.getElementById('attBody').rows;
+  let total = 0, present = 0, absent = 0;
+  Array.from(rows).forEach(r => {
+    const name = r.cells[1].querySelector('input').value.trim();
+    if (!name) return;
+    total++;
+    const st = r.cells[3].querySelector('select').value;
+    if (st === 'present') present++; else absent++;
+  });
+  document.getElementById('sumTotal').textContent   = total;
+  document.getElementById('sumPresent').textContent = present;
+  document.getElementById('sumAbsent').textContent  = absent;
+}
+
+// ============================================================
+// EVALUATION
+// ============================================================
+function renderEval() {
+  const grid = document.getElementById('evalGrid');
+  EVAL_LABELS.forEach((label, i) => {
+    evalScores[i] = 0;
+    const div = document.createElement('div');
+    div.className = 'eval-item';
+    div.innerHTML = `
+      <div class="eval-label">${label}</div>
+      <div class="rating-row">
+        ${[5, 4, 3, 2].map(s => `<button type="button" class="r-btn" onclick="setScore(${i},${s},this)">${s} ★</button>`).join('')}
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function setScore(idx, score, btn) {
+  evalScores[idx] = score;
+  btn.closest('.rating-row').querySelectorAll('.r-btn').forEach(b => {
+    b.className = 'r-btn';
+  });
+  btn.classList.add(`active-${score}`);
+  updateProgress();
+}
+
+function setOverall(type, btn) {
+  overallResult = type;
+  document.querySelectorAll('.overall-btn').forEach(b => b.className = 'overall-btn');
+  btn.classList.add(`sel-${type}`);
+  updateProgress();
+}
+
+// ============================================================
+// PHOTOS
+// ============================================================
+function renderPhotoSlots() {
+  const grid = document.getElementById('photoGrid');
+  for (let i = 0; i < 6; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'pslot';
+    slot.id = `ps-${i}`;
+    slot.innerHTML = `
+      <div class="uhint">
+        <div class="uico">📷</div>
+        <div class="ulbl">รูปที่ ${i + 1}</div>
+      </div>
+      <img id="img-${i}" alt="">
+      <input type="file" accept="image/*" onchange="handlePhoto(${i},this)">
+      <button type="button" class="pdel" onclick="delPhoto(event,${i})">×</button>
+    `;
+    grid.appendChild(slot);
+  }
+}
+
+async function handlePhoto(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  photoFiles[i] = file;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(`img-${i}`).src = e.target.result;
+    document.getElementById(`ps-${i}`).classList.add('has-img');
+    updatePhotoCnt();
+  };
+  reader.readAsDataURL(file);
+}
+
+function delPhoto(e, i) {
+  e.stopPropagation();
+  photos[i] = null;
+  photoFiles[i] = null;
+  document.getElementById(`img-${i}`).src = '';
+  document.getElementById(`ps-${i}`).classList.remove('has-img');
+  updatePhotoCnt();
+}
+
+function updatePhotoCnt() {
+  const c = photoFiles.filter(Boolean).length;
+  document.getElementById('photoCnt').textContent = `${c} / 6 รูป`;
+}
+
+// ============================================================
+// PROGRESS
+// ============================================================
+function updateProgress() {
+  let filled = 0;
+  const total = 6; // trainMonth, trainZone, trainDate, venue, trainer, topics, overall
+  if (document.getElementById('trainMonth').value) filled++;
+  if (document.getElementById('trainZone').value)  filled++;
+  if (document.getElementById('trainDate').value)  filled++;
+  if (document.getElementById('venue').value.trim()) filled++;
+  if (selectedTrainers.size > 0)                  filled++;
+  if (selectedTopics.size > 0)                     filled++;
+  // overall result bonus
+  const pct = Math.min(Math.round(((filled + (overallResult ? 1 : 0)) / 7) * 100), 100);
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pPct').textContent  = pct + '%';
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+async function submitReport() {
+  // Validate required fields
+  const trainMonth = document.getElementById('trainMonth').value;
+  const trainDate  = document.getElementById('trainDate').value;
+  const trainZone  = document.getElementById('trainZone').value;
+  const venue      = document.getElementById('venue').value.trim();
+  const trainer    = [...selectedTrainers].join(', ');
+
+  if (!trainMonth || !trainDate || !trainZone || !venue || selectedTrainers.size === 0) {
+    alert('กรุณากรอกข้อมูลที่มีเครื่องหมาย (*) ให้ครบถ้วน และเพิ่มวิทยากรอย่างน้อย 1 ท่าน');
+    return;
+  }
+  if (selectedTopics.size === 0) {
+    alert('กรุณาเลือกหัวข้อการอบรมอย่างน้อย 1 หัวข้อ');
+    return;
+  }
+  if (!overallResult) {
+    alert('กรุณาเลือกผลการอบรมโดยรวม');
+    return;
+  }
+
+  const btn  = document.getElementById('submitBtn');
+  const spin = document.getElementById('subSpin');
+  const txt  = document.getElementById('subTxt');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+  txt.textContent = 'กำลังอัปโหลดรูปภาพ...';
+
+  // Upload photos
+  const photoUrls = [];
+  for (let i = 0; i < photoFiles.length; i++) {
+    const file = photoFiles[i];
+    if (!file) continue;
+    try {
+      txt.textContent = `กำลังอัปโหลดรูปที่ ${photoUrls.length + 1}...`;
+      const ext = file.name.split('.').pop();
+      const fileName = `op07_${Date.now()}_${i}.${ext}`;
+      const { data, error } = await supabaseClient.storage.from('op07-photos').upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabaseClient.storage.from('op07-photos').getPublicUrl(data.path);
+      photoUrls.push(urlData.publicUrl);
+    } catch (err) {
+      console.warn(`Photo ${i} upload failed:`, err.message);
+      // Continue without this photo
+    }
+  }
+
+  txt.textContent = 'กำลังบันทึกลงฐานข้อมูล...';
+
+  // Build attendance data
+  const attData = Array.from(document.getElementById('attBody').rows).map(r => ({
+    name:   r.cells[1].querySelector('input').value.trim(),
+    role:   r.cells[2].querySelector('select').value,
+    status: r.cells[3].querySelector('select').value,
+    pre:    r.cells[4].querySelector('input').value || null,
+    post:   r.cells[5].querySelector('input').value || null,
+  })).filter(a => a.name);
+
+  const newDocId = generateDocId();
+  document.getElementById('docId').textContent = newDocId;
+
+  const payload = {
+    doc_id:         newDocId,
+    train_month:    trainMonth,
+    visit_date:     trainDate,
+    zone:           trainZone,
+    time_start:     document.getElementById('tStart').value || null,
+    venue:          venue,
+    trainer:        trainer,
+    topics:         [...selectedTopics].join(', '),
+    content:        document.getElementById('trainContent').value,
+    attendance:     attData,
+    eval_scores:    evalScores,
+    overall_result: overallResult,
+    eval_note:      document.getElementById('evalNote').value,
+    photo_urls:     photoUrls,
+    inspector:      userData.name || 'Anonymous',
+    created_at:     new Date().toISOString(),
+  };
+
+  try {
+    const { error } = await supabaseClient.from('op07_reports').insert([payload]);
+    if (error) throw error;
+
+    document.getElementById('finalDocId').textContent = newDocId;
+    btn.style.display = 'none';
+    document.getElementById('resultCard').classList.add('show');
+    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (e) {
+    console.error('Save error:', e);
+    alert('ไม่สามารถบันทึกข้อมูลได้: ' + e.message);
+    btn.disabled = false;
+    spin.style.display = 'none';
+    txt.textContent = 'บันทึกรายงาน OP07 ลงระบบ';
+  }
+}
+</script>
+</body>
+</html>

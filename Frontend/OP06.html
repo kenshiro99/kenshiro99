@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OP06 — รายงานการรวมแถว | Nextgen System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#1B2A4A;--navy2:#243560;--gold:#C9920C;--gold-l:#F0B429;--gold-ll:#FEF3C7;--green:#0D7A4E;--green-bg:#E6F4EE;--red:#C0392B;--red-bg:#FDECEA;--blue:#1A56DB;--blue-bg:#EEF4FF;--orange:#D97706;--orange-bg:#FEF3C7;--gray:#F4F6F9;--gray2:#E8ECF2;--gray3:#9AABC2;--white:#fff;--r:10px;--rs:7px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun',sans-serif;background:#edf0f7;color:var(--navy);min-height:100vh;padding-bottom:48px}
+
+.hdr{background:var(--navy);position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.35)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px}
+.brand{display:flex;align-items:center;gap:10px}
+.blogo{width:34px;height:34px;background:var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.bname .co{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.4px}
+.bname .dt{font-size:13px;font-weight:600;color:#fff}
+.stamp .id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold-l);text-align:right}
+.stamp .ts{font-size:9px;color:rgba(255,255,255,.45);text-align:right;margin-top:2px}
+.hdr-bar{padding:4px 16px;font-size:10px;font-weight:700;letter-spacing:.6px}
+.bar-am{background:#1A56DB;color:#fff}
+.bar-pm{background:#D97706;color:#fff}
+.hdr-prog{background:var(--navy2);padding:8px 16px 10px}
+.prog-row{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.45);margin-bottom:5px}
+.prog-track{height:3px;background:rgba(255,255,255,.12);border-radius:2px}
+.prog-fill{height:100%;border-radius:2px;transition:width .35s,background .3s}
+
+.main{max-width:680px;margin:0 auto;padding:14px}
+
+/* SHIFT TOGGLE */
+.shift-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:var(--r);overflow:hidden;border:2px solid var(--gray2);margin-bottom:14px;box-shadow:0 1px 4px rgba(27,42,74,.08)}
+.shift-btn{padding:14px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;border:none;font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px}
+.shift-btn .sb-ico{font-size:24px}
+.shift-btn .sb-title{font-size:13px;font-weight:700;color:var(--gray3)}
+.shift-btn .sb-sub{font-size:10px;color:var(--gray3)}
+.shift-btn.am.active{background:#1A56DB;color:#fff}
+.shift-btn.am.active .sb-title,.shift-btn.am.active .sb-sub{color:#fff}
+.shift-btn.pm.active{background:#D97706;color:#fff}
+.shift-btn.pm.active .sb-title,.shift-btn.pm.active .sb-sub{color:#fff}
+.shift-divider{width:2px;background:var(--gray2)}
+
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--gray2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(27,42,74,.06)}
+.card-head{padding:10px 15px;display:flex;align-items:center;gap:9px}
+.ch-am{background:var(--navy)}
+.ch-pm{background:#92400E}
+.c-num{width:22px;height:22px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.num-am{background:var(--blue)}
+.num-pm{background:var(--orange)}
+.c-title{font-size:13px;font-weight:600;color:#fff}
+.c-sub{font-size:10px;color:rgba(255,255,255,.5);margin-left:auto}
+.card-body{padding:14px 15px;display:flex;flex-direction:column;gap:11px}
+
+.field{display:flex;flex-direction:column;gap:4px}
+.gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:10px;font-weight:600;color:var(--navy2);letter-spacing:.3px;text-transform:uppercase}
+label .req{color:var(--red);margin-left:1px}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--navy);background:var(--gray);transition:border-color .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);background:#fffdf5}
+textarea{resize:vertical;min-height:60px;line-height:1.6}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 5 5-5' stroke='%239AABC2' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:28px}
+.ts-lock{display:flex;align-items:center;gap:8px;background:#f0f2f7;border:1.5px solid var(--gray2);border-radius:var(--rs);padding:9px 11px}
+.ts-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--navy2);font-weight:500}
+.ts-note{font-size:9px;color:var(--gray3);margin-top:1px}
+
+/* SUMMARY */
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sum-card{background:var(--gray);border-radius:var(--rs);padding:9px 8px;text-align:center}
+.sv{font-size:20px;font-weight:700;color:var(--navy)}
+.sl{font-size:9px;color:var(--gray3);font-weight:600;letter-spacing:.2px;margin-top:1px}
+.sv-p{color:var(--green)}.sv-a{color:var(--red)}.sv-l{color:var(--orange)}
+
+/* ATT TABLE */
+.att-table{width:100%;border-collapse:collapse;font-size:12px}
+.att-table th{background:var(--navy);color:#fff;padding:7px 8px;font-size:10px;font-weight:600;text-align:center}
+.att-table td{padding:5px 6px;border-bottom:1px solid var(--gray2);vertical-align:middle}
+.att-table tr:nth-child(even) td{background:var(--gray)}
+.att-table input,.att-table select{padding:5px 7px;font-size:12px;background:#fff;border-radius:5px}
+.att-num{text-align:center;font-size:11px;color:var(--gray3);font-weight:600}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;border:1.5px dashed;border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;transition:all .15s}
+.add-btn-am{background:var(--blue-bg);border-color:var(--blue);color:var(--blue)}
+.add-btn-pm{background:var(--orange-bg);border-color:var(--orange);color:var(--orange)}
+
+/* CHECKLIST */
+.chk-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);border:1.5px solid var(--gray2);cursor:pointer;transition:all .15s;background:#fff}
+.chk-item.ck-am.checked{background:var(--blue-bg);border-color:#93C5FD}
+.chk-item.ck-pm.checked{background:var(--orange-bg);border-color:#FCD34D}
+.chk-box{width:20px;height:20px;border-radius:5px;border:2px solid var(--gray2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;background:#fff;color:#fff;transition:all .15s}
+.ck-am.checked .chk-box{background:var(--blue);border-color:var(--blue)}
+.ck-pm.checked .chk-box{background:var(--orange);border-color:var(--orange)}
+.chk-text{font-size:13px;color:var(--navy);flex:1}
+
+/* RESULT BTNS */
+.res-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.res-btn{padding:9px;border-radius:var(--rs);border:1.5px solid var(--gray2);font-family:'Sarabun',sans-serif;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:var(--navy2);text-align:center;transition:all .15s}
+.res-btn.r-ok{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.res-btn.r-warn{background:var(--gold-ll);border-color:var(--gold);color:#92400E}
+.res-btn.r-issue{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+/* PHOTOS */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pslot{aspect-ratio:4/3;border:2px dashed var(--gray2);border-radius:var(--rs);overflow:hidden;position:relative;cursor:pointer;background:var(--gray);transition:border-color .15s;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pslot.has-img{border-style:solid;border-color:var(--green);background:#000}
+.pslot img{width:100%;height:100%;object-fit:cover;display:none}
+.pslot.has-img img{display:block}
+.pslot .uhint{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+.pslot.has-img .uhint{display:none}
+.uico{font-size:20px;color:var(--gray3)}.ulbl{font-size:9px;color:var(--gray3);font-weight:600}
+.pslot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pdel{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(192,57,43,.85);border-radius:50%;border:none;color:#fff;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;font-weight:700}
+.pslot.has-img .pdel{display:flex}
+.pcnt{font-size:11px;color:var(--gray3);text-align:right;margin-top:4px}
+
+/* DUAL FORM TABS */
+.tab-bar{display:grid;grid-template-columns:1fr 1fr;border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(27,42,74,.1)}
+.tab{padding:12px;text-align:center;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;transition:all .2s;border:none}
+.tab-am{background:#E0EDFF;color:#1A56DB}
+.tab-am.active{background:#1A56DB;color:#fff}
+.tab-pm{background:#FEF3C7;color:#D97706}
+.tab-pm.active{background:#D97706;color:#fff}
+
+.form-section{display:none}
+.form-section.active{display:block}
+
+/* SUB */
+.sub-btn{width:100%;padding:15px;color:#fff;border:none;border-radius:var(--r);font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-top:4px}
+.sub-am{background:var(--blue)}.sub-am:hover{background:#1349B8}
+.sub-pm{background:var(--orange)}.sub-pm:hover{background:#B45309}
+.sub-btn:active{transform:scale(.98)}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.result-wrap{display:none;background:var(--green-bg);border:1.5px solid #A7DFC4;border-radius:var(--r);padding:18px;text-align:center;margin-top:10px}
+.result-wrap.show{display:block}
+.result-wrap h3{font-size:15px;font-weight:700;color:var(--green);margin-bottom:5px}
+.result-wrap p{font-size:12px;color:var(--green);opacity:.85;margin-bottom:10px}
+.rdid{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(13,122,78,.1);padding:4px 12px;border-radius:5px;color:var(--green);display:inline-block;margin-bottom:10px}
+.r-acts{display:flex;gap:8px;justify-content:center}
+.rbtn{padding:8px 16px;border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none}
+.rb-pdf{background:var(--red);color:#fff}.rb-new{background:var(--navy);color:#fff}
+
+.field-error input,.field-error select{border-color:var(--red)!important}
+.back-btn{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;items-center:center;gap:6px}
+
+@media(max-width:480px){.gr{grid-template-columns:1fr}.photo-grid{grid-template-columns:repeat(2,1fr)}.sum-row{grid-template-columns:1fr 1fr}}
+@media print{.hdr .hdr-prog,.tab-bar,.sub-btn,.result-wrap,.back-btn{display:none!important}.form-section{display:block!important}.hdr{position:static}.card{break-inside:avoid;box-shadow:none}}
+</style>
+</head>
+<body>
+
+<div class="hdr" id="mainHdr">
+  <div class="hdr-top">
+    <div class="brand">
+      <button class="back-btn" onclick="window.location.href='staff.html'">← กลับ</button>
+      <div class="bname" style="margin-left:10px">
+        <div class="co">NEXTGEN SYSTEM CENTER</div>
+        <div class="dt">OP06 — รายงานการรวมแถว</div>
+      </div>
+    </div>
+    <div class="stamp">
+      <div class="id" id="docId">OP06-2569-—</div>
+      <div class="ts" id="tsHdr">—</div>
+    </div>
+  </div>
+  <div class="hdr-bar bar-am" id="shiftBar">🌅 ผลัดเช้า · MORNING FORMATION</div>
+  <div class="hdr-prog">
+    <div class="prog-row"><span>ความคืบหน้า</span><span id="pPct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="pFill" style="width:0%;background:var(--blue)"></div></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SHIFT TOGGLE -->
+  <div class="shift-toggle">
+    <button class="shift-btn am active" id="btnAM" onclick="switchShift('am')">
+      <div class="sb-ico">🌅</div>
+      <div class="sb-title">ผลัดเช้า</div>
+      <div class="sb-sub">06:00 – 18:00 น.</div>
+    </button>
+    <button class="shift-btn pm" id="btnPM" onclick="switchShift('pm')">
+      <div class="sb-ico">🌙</div>
+      <div class="sb-title">ผลัดเย็น</div>
+      <div class="sb-sub">18:00 – 06:00 น.</div>
+    </button>
+  </div>
+
+  <!-- TAB BAR (AM/PM ผลัดแยก) -->
+  <div class="tab-bar">
+    <button class="tab tab-am active" id="tabAM" onclick="switchTab('am')">☀️ รวมแถวเช้า</button>
+    <button class="tab tab-pm" id="tabPM" onclick="switchTab('pm')">🌙 รวมแถวเย็น</button>
+  </div>
+
+  <!-- ===== AM FORM ===== -->
+  <div class="form-section active" id="sec-am">
+
+    <div class="card">
+      <div class="card-head ch-am"><div class="c-num num-am">1</div><div class="c-title">ข้อมูลพื้นฐาน — ผลัดเช้า</div><div class="c-sub">AM Basic Info</div></div>
+      <div class="card-body">
+        <div class="field">
+          <label>วันเวลาบันทึก (ล็อกอัตโนมัติ)</label>
+          <div class="ts-lock"><span style="font-size:13px">🔒</span><div><div class="ts-val" id="tsAM">—</div><div class="ts-note">ล็อกตั้งแต่เปิดฟอร์ม</div></div></div>
+          <input type="hidden" id="tsISO">
+        </div>
+        <div class="gr">
+          <div class="field" id="fam-site">
+            <label>ชื่อหน่วยงาน<span class="req">*</span></label>
+            <input type="text" id="am-site" placeholder="ชื่อไซต์งาน">
+          </div>
+          <div class="field" id="fam-zone">
+            <label>เขต<span class="req">*</span></label>
+            <select id="am-zone"><option value="">— เลือก —</option><option>เขต 1</option><option>เขต 2</option></select>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="field" id="fam-date">
+            <label>วันที่<span class="req">*</span></label>
+            <input type="date" id="am-date">
+          </div>
+          <div class="field">
+            <label>เวลาเริ่ม–สิ้นสุด</label>
+            <div style="display:flex;gap:6px">
+              <input type="time" id="am-ts" value="06:00">
+              <input type="time" id="am-te" value="06:30">
+            </div>
+          </div>
+        </div>
+        <div class="field" id="fam-cmd">
+          <label>ผู้นำแถว<span class="req">*</span></label>
+          <select id="am-cmd"><option value="">— เลือก —</option>
+            <option>เสกสรรค์ ขันทองคำ (Zone 1)</option><option>จักรดุลย์ ระหารนอก (Zone 2)</option>
+            <option>อำนาจ</option><option>หาญศึก</option><option>ธีราวัฒน์</option><option>พุทธพงษ์</option>
+            <option>กฤติเดช ก้องชินพัฒน์ (Ops)</option><option>อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-am"><div class="c-num num-am">2</div><div class="c-title">รายชื่อผู้เข้าร่วมรวมแถว — เช้า</div><div class="c-sub">AM Attendance</div></div>
+      <div class="card-body">
+        <div class="sum-row">
+          <div class="sum-card"><div class="sv" id="am-total">0</div><div class="sl">ทั้งหมด</div></div>
+          <div class="sum-card"><div class="sv sv-p" id="am-present">0</div><div class="sl">มาปฏิบัติงาน</div></div>
+          <div class="sum-card"><div class="sv sv-a" id="am-absent">0</div><div class="sl">ขาด</div></div>
+          <div class="sum-card"><div class="sv sv-l" id="am-leave">0</div><div class="sl">ลา</div></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="att-table">
+            <thead><tr><th style="width:26px">#</th><th style="min-width:140px">ชื่อ-สกุล</th><th style="min-width:110px">ตำแหน่ง</th><th style="width:90px">สถานะ</th><th style="width:60px">หมายเหตุ</th></tr></thead>
+            <tbody id="am-att"></tbody>
+          </table>
+        </div>
+        <button class="add-btn add-btn-am" onclick="addRow('am')">+ เพิ่มรายชื่อ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-am"><div class="c-num num-am">3</div><div class="c-title">รายการตรวจสอบ — เช้า</div><div class="c-sub">AM Checklist</div></div>
+      <div class="card-body" id="am-chk"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-am"><div class="c-num num-am">4</div><div class="c-title">ผลและคำสั่งการ — เช้า</div><div class="c-sub">AM Result</div></div>
+      <div class="card-body">
+        <div class="field">
+          <label>ผลการรวมแถว</label>
+          <div class="res-row">
+            <button class="res-btn" id="am-r-ok"    onclick="setResult('am','ok',this)">✓ ปกติ</button>
+            <button class="res-btn" id="am-r-warn"  onclick="setResult('am','warn',this)">⚙ มีกำชับ</button>
+            <button class="res-btn" id="am-r-issue" onclick="setResult('am','issue',this)">⚠ พบปัญหา</button>
+          </div>
+          <input type="hidden" id="am-result">
+        </div>
+        <div class="field"><label>คำสั่งการ / กำชับในการรวมแถว</label><textarea id="am-order" placeholder="คำสั่งการ กำชับ หรือแจ้งข้อมูลสำคัญ"></textarea></div>
+        <div class="field"><label>หมายเหตุ</label><textarea id="am-remark" placeholder="ปัญหาที่พบ ข้อสังเกต"></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-am"><div class="c-num num-am">5</div><div class="c-title">ภาพถ่ายการรวมแถว — เช้า</div><div class="c-sub">4–6 รูป</div></div>
+      <div class="card-body">
+        <div class="photo-grid" id="am-photos"></div>
+        <div class="pcnt" id="am-pcnt">0 / 6 รูป</div>
+      </div>
+    </div>
+
+    <button class="sub-btn sub-am" id="am-sub" onclick="submitForm('am')">
+      <div class="spin" id="am-spin" style="display:none"></div>
+      <span id="am-sub-txt">บันทึกรายงานรวมแถวเช้า OP06-AM</span>
+    </button>
+    <div class="result-wrap" id="am-result-card">
+      <div style="font-size:32px;margin-bottom:6px">✅</div>
+      <h3>บันทึกรายงานรวมแถวเช้าสำเร็จ!</h3>
+      <p>ข้อมูลบันทึกลงระบบแล้ว</p>
+      <div class="rdid" id="am-rdid">—</div>
+      <div class="r-acts">
+        <button id="am-view-btn" class="rbtn rb-pdf" style="background:#C9920C !important; color:#1B2A4A !important;">📄 ดูใบรายงาน / พิมพ์</button>
+        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+      </div>
+    </div>
+
+  </div><!-- /am -->
+
+  <!-- ===== PM FORM ===== -->
+  <div class="form-section" id="sec-pm">
+
+    <div class="card">
+      <div class="card-head ch-pm"><div class="c-num num-pm">1</div><div class="c-title">ข้อมูลพื้นฐาน — ผลัดเย็น</div><div class="c-sub">PM Basic Info</div></div>
+      <div class="card-body">
+        <div class="gr">
+          <div class="field" id="fpm-site">
+            <label>ชื่อหน่วยงาน<span class="req">*</span></label>
+            <input type="text" id="pm-site" placeholder="ชื่อไซต์งาน">
+          </div>
+          <div class="field" id="fpm-zone">
+            <label>เขต<span class="req">*</span></label>
+            <select id="pm-zone"><option value="">— เลือก —</option><option>เขต 1</option><option>เขต 2</option></select>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="field" id="fpm-date">
+            <label>วันที่<span class="req">*</span></label>
+            <input type="date" id="pm-date">
+          </div>
+          <div class="field">
+            <label>เวลาเริ่ม–สิ้นสุด</label>
+            <div style="display:flex;gap:6px">
+              <input type="time" id="pm-ts" value="18:00">
+              <input type="time" id="pm-te" value="18:30">
+            </div>
+          </div>
+        </div>
+        <div class="field" id="fpm-cmd">
+          <label>ผู้นำแถว<span class="req">*</span></label>
+          <select id="pm-cmd"><option value="">— เลือก —</option>
+            <option>เสกสรรค์ ขันทองคำ (Zone 1)</option><option>จักรดุลย์ ระหารนอก (Zone 2)</option>
+            <option>อำนาจ</option><option>หาญศึก</option><option>ธีราวัฒน์</option><option>พุทธพงษ์</option>
+            <option>กฤติเดช ก้องชินพัฒน์ (Ops)</option><option>อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-pm"><div class="c-num num-pm">2</div><div class="c-title">รายชื่อผู้เข้าร่วมรวมแถว — เย็น</div><div class="c-sub">PM Attendance</div></div>
+      <div class="card-body">
+        <div class="sum-row">
+          <div class="sum-card"><div class="sv" id="pm-total">0</div><div class="sl">ทั้งหมด</div></div>
+          <div class="sum-card"><div class="sv sv-p" id="pm-present">0</div><div class="sl">มาปฏิบัติงาน</div></div>
+          <div class="sum-card"><div class="sv sv-a" id="pm-absent">0</div><div class="sl">ขาด</div></div>
+          <div class="sum-card"><div class="sv sv-l" id="pm-leave">0</div><div class="sl">ลา</div></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="att-table">
+            <thead><tr><th style="width:26px">#</th><th style="min-width:140px">ชื่อ-สกุล</th><th style="min-width:110px">ตำแหน่ง</th><th style="width:90px">สถานะ</th><th style="width:60px">หมายเหตุ</th></tr></thead>
+            <tbody id="pm-att"></tbody>
+          </table>
+        </div>
+        <button class="add-btn add-btn-pm" onclick="addRow('pm')">+ เพิ่มรายชื่อ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-pm"><div class="c-num num-pm">3</div><div class="c-title">รายการตรวจสอบ — เย็น</div><div class="c-sub">PM Checklist</div></div>
+      <div class="card-body" id="pm-chk"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-pm"><div class="c-num num-pm">4</div><div class="c-title">ผลและคำสั่งการ — เย็น</div><div class="c-sub">PM Result</div></div>
+      <div class="card-body">
+        <div class="field">
+          <label>ผลการรวมแถว</label>
+          <div class="res-row">
+            <button class="res-btn" id="pm-r-ok"    onclick="setResult('pm','ok',this)">✓ ปกติ</button>
+            <button class="res-btn" id="pm-r-warn"  onclick="setResult('pm','warn',this)">⚙ มีกำชับ</button>
+            <button class="res-btn" id="pm-r-issue" onclick="setResult('pm','issue',this)">⚠ พบปัญหา</button>
+          </div>
+          <input type="hidden" id="pm-result">
+        </div>
+        <div class="field"><label>คำสั่งการ / กำชับในการรวมแถว</label><textarea id="pm-order" placeholder="คำสั่งการ กำชับ หรือแจ้งข้อมูลสำคัญ"></textarea></div>
+        <div class="field"><label>หมายเหตุ</label><textarea id="pm-remark" placeholder="ปัญหาที่พบ ข้อสังเกต"></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head ch-pm"><div class="c-num num-pm">5</div><div class="c-title">ภาพถ่ายการรวมแถว — เย็น</div><div class="c-sub">4–6 รูป</div></div>
+      <div class="card-body">
+        <div class="photo-grid" id="pm-photos"></div>
+        <div class="pcnt" id="pm-pcnt">0 / 6 รูป</div>
+      </div>
+    </div>
+
+    <button class="sub-btn sub-pm" id="pm-sub" onclick="submitForm('pm')">
+      <div class="spin" id="pm-spin" style="display:none"></div>
+      <span id="pm-sub-txt">บันทึกรายงานรวมแถวเย็น OP06-PM</span>
+    </button>
+    <div class="result-wrap" id="pm-result-card">
+      <div style="font-size:32px;margin-bottom:6px">✅</div>
+      <h3>บันทึกรายงานรวมแถวเย็นสำเร็จ!</h3>
+      <p>ข้อมูลบันทึกลงระบบแล้ว</p>
+      <div class="rdid" id="pm-rdid">—</div>
+      <div class="r-acts">
+        <button id="pm-view-btn" class="rbtn rb-pdf" style="background:#C9920C !important; color:#1B2A4A !important;">📄 ดูใบรายงาน / พิมพ์</button>
+        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+      </div>
+    </div>
+
+  </div><!-- /pm -->
+
+</div><!-- /main -->
+
+<div style="text-align:center; padding: 20px; font-size: 10px; color: var(--gray3); font-weight: 600; letter-spacing: 1px;">
+    &copy; 2026 NEXTGEN SYSTEM CENTER. ALL RIGHTS RESERVED.
+</div>
+
+<script>
+// --- SUPABASE CONFIG ---
+const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CHK_ITEMS = [
+  "การแต่งกายและเครื่องแบบ",
+  "อุปกรณ์ประจำกาย (วิทยุ, ไฟฉาย, กุญแจ)",
+  "การตรวจนับกำลังพลครบตามสัญญา",
+  "การรับ-ส่งมอบงานจากกะก่อน",
+  "การชี้แจงคำสั่งและจุดสังเกต",
+  "ความพร้อมในการปฏิบัติงาน",
+];
+
+const BUCKET_NAME = 'op06-photos';
+
+const state = {
+  am: { chk: {}, result: '', photos: Array(6).fill(null), photoFiles: Array(6).fill(null) },
+  pm: { chk: {}, result: '', photos: Array(6).fill(null), photoFiles: Array(6).fill(null) },
+};
+let currentShift = 'am';
+let currentTab = 'am';
+let userData = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPortal();
+  initTS();
+  ['am','pm'].forEach(s => {
+    initRows(s, 5);
+    initChk(s);
+    initPhotos(s);
+  });
+  setDefaults();
+});
+
+function initPortal() {
+  const session = localStorage.getItem('nextgen_user');
+  if (session) {
+    userData = JSON.parse(session);
+    // Auto fill commander if it's a supervisor
+    ['am','pm'].forEach(s => {
+        const cmdSelect = document.getElementById(`${s}-cmd`);
+        const userName = userData.name + (userData.lastname ? ' ' + userData.lastname : '');
+        // Check if name already in options, if not add it
+        let exists = Array.from(cmdSelect.options).some(o => o.text.includes(userData.name));
+        if (!exists) {
+            const opt = new Option(userName, userName);
+            cmdSelect.add(opt);
+            cmdSelect.value = userName;
+        } else {
+            // Find and select
+            for(let i=0; i<cmdSelect.options.length; i++) {
+                if(cmdSelect.options[i].text.includes(userData.name)) {
+                    cmdSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        // Auto fill zone/site if available
+        if (userData.zone) document.getElementById(`${s}-zone`).value = userData.zone;
+        if (userData.unit) document.getElementById(`${s}-site`).value = userData.unit;
+    });
+  }
+}
+
+function generateDocId(shift) {
+  // สร้าง doc_id ที่ไม่ซ้ำโดยใช้ timestamp ละเอียด (milliseconds)
+  const now = new Date();
+  const by = now.getFullYear() + 543;
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mn = String(now.getMinutes()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  return `OP06-${String(by).slice(-4)}-${mm}${dd}-${hh}${mn}${ms}-${shift.toUpperCase()}`;
+}
+
+function initTS() {
+  const now = new Date();
+  const by = now.getFullYear()+543;
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mn = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  // แสดง doc_id ชั่วคราวบน header (จะถูกสร้างใหม่จริงตอน submit)
+  const previewId = `OP06-${String(by).slice(-4)}-${mm}${dd}`;
+  const tsStr = `${dd}/${mm}/${by}  ${hh}:${mn}:${ss} น.`;
+  document.getElementById('tsAM').textContent = tsStr;
+  document.getElementById('tsISO').value = now.toISOString();
+  document.getElementById('docId').textContent = previewId;
+  document.getElementById('tsHdr').textContent = `${dd}/${mm}/${by} ${hh}:${mn}`;
+}
+
+function setDefaults() {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  ['am','pm'].forEach(s => {
+    document.getElementById(`${s}-date`).value = today;
+  });
+}
+
+function switchShift(shift) {
+  currentShift = shift;
+  ['am','pm'].forEach(s => document.getElementById(`btn${s.toUpperCase()}`).classList.toggle('active', s===shift));
+  const bar = document.getElementById('shiftBar');
+  const fill = document.getElementById('pFill');
+  if (shift === 'am') {
+    bar.className = 'hdr-bar bar-am';
+    bar.textContent = '🌅 ผลัดเช้า · MORNING FORMATION';
+    fill.style.background = 'var(--blue)';
+  } else {
+    bar.className = 'hdr-bar bar-pm';
+    bar.textContent = '🌙 ผลัดเย็น · EVENING FORMATION';
+    fill.style.background = 'var(--orange)';
+  }
+  switchTab(shift);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['am','pm'].forEach(s => {
+    document.getElementById(`tab${s.toUpperCase()}`).classList.toggle('active', s===tab);
+    document.getElementById(`sec-${s}`).classList.toggle('active', s===tab);
+  });
+}
+
+function initRows(shift, n) {
+  for (let i=0;i<n;i++) addRow(shift);
+}
+
+function addRow(shift) {
+  const tbody = document.getElementById(`${shift}-att`);
+  const idx = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="att-num">${idx}</td>
+    <td><input type="text" placeholder="ชื่อ-สกุล" onchange="calcSum('${shift}')" style="min-width:110px"></td>
+    <td><select onchange="calcSum('${shift}')" style="min-width:90px">
+      <option value="">ตำแหน่ง</option>
+      <option>รปภ.</option><option>หัวหน้าชุด</option><option>สายตรวจ</option><option>Zone Manager</option>
+    </select></td>
+    <td><select onchange="calcSum('${shift}')" style="min-width:80px">
+      <option value="present">มา ✓</option>
+      <option value="absent">ขาด ✗</option>
+      <option value="leave">ลา</option>
+      <option value="late">สาย ⏰</option>
+    </select></td>
+    <td><input type="text" placeholder="—" style="width:55px;font-size:11px"></td>`;
+  tbody.appendChild(tr);
+  calcSum(shift);
+}
+
+function calcSum(shift) {
+  const rows = document.getElementById(`${shift}-att`).rows;
+  let total=0, present=0, absent=0, leave=0;
+  Array.from(rows).forEach(r => {
+    const name = r.cells[1].querySelector('input').value.trim();
+    if (!name) return;
+    total++;
+    const st = r.cells[3].querySelector('select').value;
+    if (st==='present'||st==='late') present++;
+    else if (st==='absent') absent++;
+    else if (st==='leave') leave++;
+  });
+  document.getElementById(`${shift}-total`).textContent = total;
+  document.getElementById(`${shift}-present`).textContent = present;
+  document.getElementById(`${shift}-absent`).textContent = absent;
+  document.getElementById(`${shift}-leave`).textContent = leave;
+}
+
+function initChk(shift) {
+  const body = document.getElementById(`${shift}-chk`);
+  CHK_ITEMS.forEach((label, i) => {
+    state[shift].chk[i] = false;
+    const div = document.createElement('div');
+    div.className = `chk-item ck-${shift}`;
+    div.id = `${shift}-chk-${i}`;
+    div.innerHTML = `<div class="chk-box" id="${shift}-cb-${i}"></div><div class="chk-text">${label}</div>`;
+    div.onclick = () => {
+      state[shift].chk[i] = !state[shift].chk[i];
+      div.classList.toggle('checked', state[shift].chk[i]);
+      document.getElementById(`${shift}-cb-${i}`).textContent = state[shift].chk[i] ? '✓' : '';
+    };
+    body.appendChild(div);
+  });
+}
+
+function setResult(shift, type, btn) {
+  state[shift].result = type;
+  document.getElementById(`${shift}-result`).value = type;
+  ['ok','warn','issue'].forEach(t => document.getElementById(`${shift}-r-${t}`).className='res-btn');
+  const cls = type==='ok'?'r-ok':type==='warn'?'r-warn':'r-issue';
+  btn.classList.add(cls);
+}
+
+function initPhotos(shift) {
+  const grid = document.getElementById(`${shift}-photos`);
+  for (let i=0;i<6;i++) {
+    const slot = document.createElement('div');
+    slot.className = 'pslot';
+    slot.id = `${shift}-ps-${i}`;
+    slot.innerHTML = `
+      <div class="uhint"><div class="uico">📷</div><div class="ulbl">รูปที่ ${i+1}</div></div>
+      <img id="${shift}-pi-${i}" alt="">
+      <input type="file" accept="image/*" onchange="loadPhoto('${shift}',${i},this)">
+      <button class="pdel" onclick="delPhoto(event,'${shift}',${i})">×</button>`;
+    grid.appendChild(slot);
+  }
+}
+
+function loadPhoto(shift, i, input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  state[shift].photoFiles[i] = file; // Store raw file for upload
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    state[shift].photos[i] = e.target.result;
+    document.getElementById(`${shift}-pi-${i}`).src = e.target.result;
+    document.getElementById(`${shift}-ps-${i}`).classList.add('has-img');
+    updatePCnt(shift);
+  };
+  reader.readAsDataURL(file);
+}
+
+function delPhoto(e, shift, i) {
+  e.stopPropagation();
+  state[shift].photos[i] = null;
+  state[shift].photoFiles[i] = null;
+  document.getElementById(`${shift}-pi-${i}`).src = '';
+  document.getElementById(`${shift}-ps-${i}`).classList.remove('has-img');
+  updatePCnt(shift);
+}
+
+function updatePCnt(shift) {
+  const c = state[shift].photos.filter(Boolean).length;
+  document.getElementById(`${shift}-pcnt`).textContent = `${c} / 6 รูป`;
+}
+
+function getAtt(shift) {
+  return Array.from(document.getElementById(`${shift}-att`).rows).map(r => ({
+    name: r.cells[1].querySelector('input').value.trim(),
+    position: r.cells[2].querySelector('select').value,
+    status: r.cells[3].querySelector('select').value,
+    note: r.cells[4].querySelector('input').value,
+  })).filter(r => r.name);
+}
+
+async function submitForm(shift) {
+  const reqs = shift==='am'
+    ? [{id:'am-site',fid:'fam-site'},{id:'am-zone',fid:'fam-zone'},{id:'am-date',fid:'fam-date'},{id:'am-cmd',fid:'fam-cmd'}]
+    : [{id:'pm-site',fid:'fpm-site'},{id:'pm-zone',fid:'fpm-zone'},{id:'pm-date',fid:'fpm-date'},{id:'pm-cmd',fid:'fpm-cmd'}];
+  let ok = true;
+  reqs.forEach(({id,fid}) => {
+    const el = document.getElementById(id);
+    const wrap = document.getElementById(fid);
+    if (!el||!el.value.trim()) { wrap?.classList.add('field-error'); ok=false; }
+    else { wrap?.classList.remove('field-error'); }
+  });
+  if (!ok) { document.querySelector('.field-error')?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+
+  const btn = document.getElementById(`${shift}-sub`);
+  const spin = document.getElementById(`${shift}-spin`);
+  const txt = document.getElementById(`${shift}-sub-txt`);
+
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+  txt.innerText = 'กำลังบันทึกลง Supabase...';
+
+  // สร้าง doc_id ใหม่ทุกครั้งที่ submit เพื่อป้องกัน duplicate
+  const fullDocId = generateDocId(shift);
+  document.getElementById(`${shift}-rdid`).textContent = fullDocId;
+  
+  // --- PHOTO UPLOAD LOGIC ---
+  const photoUrls = [];
+  try {
+    for (let i = 0; i < state[shift].photoFiles.length; i++) {
+        const file = state[shift].photoFiles[i];
+        if (file) {
+            txt.innerText = `กำลังอัปโหลดรูปที่ ${photoUrls.length + 1}...`;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${fullDocId}_${i}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = fileName; // อัปโหลดไปที่ Root ของ Bucket op06-photos โดยตรง
+
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                .from(BUCKET_NAME)
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+            photoUrls.push(urlData.publicUrl);
+        }
+    }
+  } catch (uploadErr) {
+    console.error("Upload error:", uploadErr);
+    alert("เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: " + uploadErr.message);
+    btn.disabled = false; spin.style.display = 'none'; txt.innerText = 'ลองใหม่อีกครั้ง';
+    return;
+  }
+
+  txt.innerText = 'กำลังบันทึกลง Database...';
+
+  const data = {
+    doc_id: fullDocId,
+    shift: shift==='am' ? 'ผลัดเช้า' : 'ผลัดเย็น',
+    timestamp: document.getElementById('tsISO').value,
+    site_name: document.getElementById(`${shift}-site`).value.trim(),
+    zone: document.getElementById(`${shift}-zone`).value,
+    form_date: document.getElementById(`${shift}-date`).value,
+    time_start: document.getElementById(`${shift}-ts`).value,
+    time_end: document.getElementById(`${shift}-te`).value,
+    commander: document.getElementById(`${shift}-cmd`).value,
+    attendance: getAtt(shift),
+    checklist: CHK_ITEMS.map((label,i) => ({ label, checked: state[shift].chk[i]||false })),
+    overall_result: state[shift].result,
+    order_text: document.getElementById(`${shift}-order`).value,
+    remark_text: document.getElementById(`${shift}-remark`).value,
+    photo_count: photoUrls.length + ' รูป',
+    photo_urls: photoUrls // ลิงก์ข้อมูลรูปภาพ
+  };
+
+  try {
+    const { data: insertData, error } = await supabaseClient.from('op06_reports').insert([data]).select();
+    if (error) throw error;
+    
+    // Setup View Button
+    if (insertData && insertData[0]) {
+        document.getElementById(`${shift}-view-btn`).onclick = () => {
+            window.location.href = `OP06-View.html?id=${insertData[0].id}&print=true`;
+        };
+    }
+    
+    document.getElementById(`${shift}-result-card`).classList.add('show');
+    document.getElementById(`${shift}-result-card`).scrollIntoView({behavior:'smooth'});
+    btn.style.display = 'none';
+  } catch(e) { 
+    console.error(e); 
+    alert('เกิดข้อผิดพลาดในการบันทึกฐานข้อมูล: ' + e.message);
+    btn.disabled = false;
+    spin.style.display = 'none';
+    txt.innerText = 'ลองใหม่อีกครั้ง';
+  }
+}
+</script>
+</body>
+</html>

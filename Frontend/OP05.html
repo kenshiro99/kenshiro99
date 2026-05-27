@@ -1,1028 +1,718 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OP05 — รายงานการเข้าพบผู้ว่าจ้าง | NEXGEN SYSTEM CENTER</title>
-
-    <!-- Dependencies -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="../Backend/config.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-    <style>
-        /* --- ULTRA-PREMIUM THAI LUXURY DESIGN --- */
-        :root {
-            --lux-navy: #0f172a;
-            --lux-gold: #bf953f;
-            --lux-blue: #3b82f6;
-            --lux-border: #e2e8f0;
-            --lux-radius: 30px;
-        }
-
-        body {
-            background: #fdfdfd;
-            background-image: radial-gradient(#e2e8f0 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
-            color: #0f172a;
-            font-family: 'Prompt', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .report-container {
-            max-width: 850px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        /* Luxury Document Header */
-        .lux-header {
-            background: white;
-            border-radius: var(--lux-radius);
-            padding: 35px;
-            margin-bottom: 35px;
-            box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--lux-border);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .lux-header::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(135deg, transparent 50%, #f1f5f9 50%);
-            opacity: 0.5;
-        }
-
-        .lux-brand-wrap {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .lux-logo-box {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .lux-logo {
-            width: 55px;
-            height: 55px;
-            background: var(--lux-navy);
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 800;
-            color: white;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
-        }
-
-        .lux-logo i {
-            color: #bf953f;
-        }
-
-        .lux-title h1 {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--lux-navy);
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-
-        .lux-title p {
-            font-size: 12px;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 600;
-        }
-
-        .lux-doc-meta {
-            display: flex;
-            gap: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .lux-meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .lux-meta-label {
-            font-size: 10px;
-            color: #94a3b8;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .lux-meta-value {
-            font-size: 13px;
-            color: var(--lux-navy);
-            font-weight: 600;
-        }
-
-        /* Progress Bar Luxury */
-        .lux-progress-wrap {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 35px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--lux-border);
-        }
-
-        .lux-progress-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .lux-progress-text {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--lux-navy);
-        }
-
-        .lux-progress-pct {
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--lux-blue);
-        }
-
-        .lux-bar-bg {
-            height: 10px;
-            background: #f1f5f9;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .lux-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #2dd4bf);
-            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            width: 0%;
-        }
-
-        /* Luxury Cards */
-        .lux-card {
-            background: white;
-            border-radius: var(--lux-radius);
-            padding: 35px;
-            margin-bottom: 30px;
-            border: 1px solid var(--lux-border);
-            box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s;
-        }
-
-        .lux-card-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-
-        .lux-section-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .lux-badge {
-            width: 40px;
-            height: 40px;
-            background: #f8fafc;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            color: var(--lux-navy);
-            font-size: 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .lux-card-head h2 {
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--lux-navy);
-        }
-
-        /* Luxury Inputs */
-        .lux-field {
-            margin-bottom: 25px;
-        }
-
-        .lux-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #475569;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .lux-input {
-            width: 100%;
-            padding: 16px 20px;
-            background: #f8fafc !important;
-            border: 2px solid transparent !important;
-            border-radius: 20px;
-            font-size: 15px;
-            color: var(--lux-navy) !important;
-            transition: all 0.3s;
-        }
-
-        .lux-input:focus {
-            background: white !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
-            outline: none;
-        }
-
-        .lux-input-readonly {
-            background: #f1f5f9 !important;
-            color: #64748b !important;
-            border: none !important;
-        }
-
-        /* Checklist - Luxury Thai */
-        .lux-check-item {
-            background: #f8fafc;
-            border-radius: 25px;
-            margin-bottom: 15px;
-            border: 1px solid #f1f5f9;
-            transition: all 0.3s;
-        }
-
-        .lux-check-item.active {
-            background: white;
-            border-color: #e2e8f0;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .lux-check-head {
-            padding: 20px 25px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            cursor: pointer;
-        }
-
-        .lux-check-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
-        }
-
-        .lux-check-info h4 {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--lux-navy);
-        }
-
-        .lux-check-info p {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .lux-status-tag {
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 12px;
-            border-radius: 20px;
-            background: #f1f5f9;
-            color: #94a3b8;
-        }
-
-        .tag-pass {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .tag-discuss {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .tag-issue {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .lux-expand {
-            padding: 0 25px 25px 25px;
-            display: none;
-        }
-
-        .lux-expand.open {
-            display: block;
-        }
-
-        .lux-opt-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .lux-opt-btn {
-            padding: 15px;
-            border-radius: 15px;
-            font-size: 13px;
-            font-weight: 600;
-            background: white;
-            border: 1.5px solid #f1f5f9;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-
-        .lux-opt-btn.active-pass {
-            background: #15803d !important;
-            color: white !important;
-            border-color: #15803d !important;
-        }
-
-        .lux-opt-btn.active-discuss {
-            background: #d97706 !important;
-            color: white !important;
-            border-color: #d97706 !important;
-        }
-
-        .lux-opt-btn.active-issue {
-            background: #dc2626 !important;
-            color: white !important;
-            border-color: #dc2626 !important;
-        }
-
-        /* Luxury Signature */
-        .lux-sig-box {
-            background: #f8fafc;
-            border-radius: 25px;
-            border: 2px dashed #e2e8f0;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .lux-sig-tool {
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #f1f5f9;
-            background: white;
-        }
-
-        .lux-sig-tool span {
-            font-size: 12px;
-            font-weight: 700;
-            color: #94a3b8;
-        }
-
-        .lux-sig-clear {
-            font-size: 11px;
-            font-weight: 800;
-            color: #dc2626;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        /* Submit Button Ultra-Luxury */
-        .lux-submit-btn {
-            width: 100%;
-            padding: 25px;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: var(--lux-radius);
-            color: white;
-            font-weight: 800;
-            font-size: 18px;
-            letter-spacing: 1px;
-            box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .lux-submit-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.4);
-        }
-
-        /* Success Card Ultra */
-        .lux-success-card {
-            background: white;
-            border-radius: 40px;
-            padding: 60px 40px;
-            text-align: center;
-            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--lux-border);
-        }
-
-        .lux-success-icon {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #2dd4bf, #3b82f6);
-            color: white;
-            border-radius: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            margin: 0 auto 30px;
-            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
-        }
-
-        /* Suggestions */
-        .suggestion-item {
-            padding: 15px 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 1px solid #f8fafc;
-        }
-
-        .suggestion-item:hover {
-            background: #f1f5f9;
-        }
-
-        .suggestion-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .suggestion-subtitle {
-            font-size: 11px;
-            color: #64748b;
-        }
-
-        @media print {
-
-            .lux-submit-btn,
-            .lux-progress-wrap,
-            .lux-sig-clear,
-            .quick-pass-btn {
-                display: none !important;
-            }
-
-            body {
-                background: white;
-            }
-
-            .report-container {
-                padding: 0;
-                max-width: 100%;
-            }
-
-            .lux-card {
-                box-shadow: none;
-                border: 1px solid #eee;
-                break-inside: avoid;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OP05 — รายงานการเข้าพบผู้ว่าจ้าง | Nextgen System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="../Backend/config.js"></script>
+
+<!-- Flatpickr (Thai Date/Time Picker) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+
+<style>
+:root{--navy:#1B2A4A;--navy2:#243560;--gold:#C9920C;--gold-l:#F0B429;--gold-ll:#FEF3C7;--green:#0D7A4E;--green-bg:#E6F4EE;--red:#C0392B;--red-bg:#FDECEA;--blue:#1A56DB;--blue-bg:#EEF4FF;--orange:#D97706;--orange-bg:#FEF3C7;--gray:#F4F6F9;--gray2:#E8ECF2;--gray3:#9AABC2;--white:#fff;--r:10px;--rs:7px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun',sans-serif;background:#edf0f7;color:var(--navy);min-height:100vh;padding-bottom:48px}
+
+/* ========== HEADER ========== */
+.hdr{background:var(--navy);position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.35)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px}
+.brand{display:flex;align-items:center;gap:10px}
+.blogo{width:34px;height:34px;background:var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.bname .co{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.4px}
+.bname .dt{font-size:13px;font-weight:600;color:#fff}
+.stamp .id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold-l);text-align:right}
+.stamp .ts{font-size:9px;color:rgba(255,255,255,.45);text-align:right;margin-top:2px}
+.hdr-prog{background:var(--navy2);padding:8px 16px 10px}
+.prog-row{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.45);margin-bottom:5px}
+.prog-track{height:3px;background:rgba(255,255,255,.12);border-radius:2px}
+.prog-fill{height:100%;border-radius:2px;transition:width .35s,background .3s;background:var(--gold-l)}
+
+/* ========== LAYOUT ========== */
+.main{max-width:680px;margin:0 auto;padding:14px}
+
+/* ========== CARDS ========== */
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--gray2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(27,42,74,.06)}
+.card-head{padding:10px 15px;display:flex;align-items:center;gap:9px;background:var(--navy)}
+.c-num{width:22px;height:22px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--gold)}
+.c-title{font-size:13px;font-weight:600;color:#fff}
+.c-sub{font-size:10px;color:rgba(255,255,255,.5);margin-left:auto}
+.card-body{padding:14px 15px;display:flex;flex-direction:column;gap:11px}
+
+/* ========== FIELDS ========== */
+.field{display:flex;flex-direction:column;gap:4px}
+.gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:10px;font-weight:600;color:var(--navy2);letter-spacing:.3px;text-transform:uppercase}
+label .req{color:var(--red);margin-left:1px}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--gray2);border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--navy);background:var(--gray);transition:border-color .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);background:#fffdf5}
+input[readonly]{background:#f0f2f7;color:var(--gray3);cursor:default}
+textarea{resize:vertical;min-height:70px;line-height:1.6}
+.ts-lock{display:flex;align-items:center;gap:8px;background:#f0f2f7;border:1.5px solid var(--gray2);border-radius:var(--rs);padding:9px 11px}
+.ts-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--navy2);font-weight:500}
+.ts-note{font-size:9px;color:var(--gray3);margin-top:1px}
+
+/* ========== AUTOCOMPLETE ========== */
+.field-relative{position:relative}
+.unit-suggestions{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border-radius:var(--rs);border:1.5px solid var(--gray2);box-shadow:0 8px 24px rgba(27,42,74,.12);z-index:50;max-height:280px;overflow-y:auto;display:none}
+.unit-suggestions.open{display:block}
+.sug-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray2);transition:background .1s}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover{background:var(--gray)}
+.sug-name{font-size:13px;font-weight:600;color:var(--navy)}
+.sug-code{font-size:10px;color:var(--gray3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+
+/* ========== CHECKLIST ========== */
+.chk-block{border:1.5px solid var(--gray2);border-radius:var(--rs);overflow:hidden;transition:border-color .2s}
+.chk-block.status-pass{border-color:#A7DFC4}
+.chk-block.status-discuss{border-color:#FCD34D}
+.chk-block.status-issue{border-color:#F5A3A0}
+.chk-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:#fff;transition:background .15s}
+.chk-head:hover{background:var(--gray)}
+.chk-icon{width:34px;height:34px;border-radius:8px;background:var(--gray2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.chk-info{flex:1}
+.chk-info h4{font-size:12px;font-weight:700;color:var(--navy)}
+.chk-info p{font-size:10px;color:var(--gray3);margin-top:2px}
+.chk-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--gray2);color:var(--gray3);white-space:nowrap;flex-shrink:0}
+.chk-badge.b-pass{background:var(--green-bg);color:var(--green)}
+.chk-badge.b-discuss{background:var(--gold-ll);color:#92400E}
+.chk-badge.b-issue{background:var(--red-bg);color:var(--red)}
+.chk-expand{display:none;padding:12px;border-top:1px solid var(--gray2);background:var(--gray);gap:10px;flex-direction:column}
+.chk-expand.open{display:flex}
+.res-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.res-btn{padding:8px;border-radius:var(--rs);border:1.5px solid var(--gray2);font-family:'Sarabun',sans-serif;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:var(--navy2);text-align:center;transition:all .15s}
+.res-btn.r-ok{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.res-btn.r-discuss{background:var(--gold-ll);border-color:var(--gold);color:#92400E}
+.res-btn.r-issue{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.quick-all-btn{font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--green-bg);color:var(--green);border:1px solid #A7DFC4;cursor:pointer;transition:all .15s;margin-left:auto}
+.quick-all-btn:hover{background:var(--green);color:#fff}
+
+/* ========== SIGNATURE ========== */
+.sig-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sig-box{border:1.5px solid var(--gray2);border-radius:var(--rs);overflow:hidden}
+.sig-label-bar{padding:8px 12px;background:var(--gray);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray2)}
+.sig-label-bar span{font-size:10px;font-weight:700;color:var(--navy2);text-transform:uppercase;letter-spacing:.3px}
+.sig-clear{font-size:10px;font-weight:700;color:var(--red);background:none;border:none;cursor:pointer}
+canvas{display:block;width:100%;height:130px;background:#fff;cursor:crosshair;touch-action:none}
+
+/* ========== SUBMIT ========== */
+.sub-btn{width:100%;padding:15px;color:#fff;border:none;border-radius:var(--r);font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;background:var(--navy);margin-top:4px}
+.sub-btn:hover{background:var(--navy2)}
+.sub-btn:active{transform:scale(.98)}
+.sub-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ========== SUCCESS CARD ========== */
+.result-wrap{display:none;background:var(--green-bg);border:1.5px solid #A7DFC4;border-radius:var(--r);padding:18px;text-align:center;margin-top:10px}
+.result-wrap.show{display:block}
+.result-wrap h3{font-size:15px;font-weight:700;color:var(--green);margin-bottom:5px}
+.result-wrap p{font-size:12px;color:var(--green);opacity:.85;margin-bottom:10px}
+.rdid{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(13,122,78,.1);padding:4px 12px;border-radius:5px;color:var(--green);display:inline-block;margin-bottom:10px}
+.r-acts{display:flex;gap:8px;justify-content:center}
+.rbtn{padding:8px 16px;border-radius:var(--rs);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none}
+.rb-view{background:var(--gold);color:var(--navy)}.rb-new{background:var(--navy);color:#fff}
+
+/* ========== BACK BUTTON ========== */
+.back-btn{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Sarabun',sans-serif}
+
+/* ========== FOOTER ========== */
+.page-footer{text-align:center;padding:20px;font-size:10px;color:var(--gray3);font-weight:600;letter-spacing:1px}
+
+/* ========== ERROR ========== */
+.field-error input,.field-error select,.field-error textarea{border-color:var(--red)!important}
+
+@media(max-width:480px){
+  .gr{grid-template-columns:1fr}
+  .sig-wrap{grid-template-columns:1fr}
+  .res-row{grid-template-columns:1fr 1fr 1fr}
+}
+
+@media print{
+  .hdr .hdr-prog,.sub-btn,.result-wrap,.back-btn,.quick-all-btn{display:none!important}
+  .hdr{position:static}
+  .card{break-inside:avoid;box-shadow:none}
+  body{background:#fff}
+}
+</style>
 </head>
-
 <body>
 
-    <div class="report-container">
+<!-- ========== STICKY HEADER ========== -->
+<div class="hdr" id="mainHdr">
+  <div class="hdr-top">
+    <div class="brand">
+      <button class="back-btn" onclick="window.location.href='staff.html'">← กลับ</button>
+      <div class="bname" style="margin-left:10px">
+        <div class="co">NEXTGEN SYSTEM CENTER</div>
+        <div class="dt">OP05 — รายงานการเข้าพบผู้ว่าจ้าง</div>
+      </div>
+    </div>
+    <div class="stamp">
+      <div class="id" id="op05DocId">OP05-—</div>
+      <div class="ts" id="op05TsHeader">—</div>
+    </div>
+  </div>
+  <div class="hdr-prog">
+    <div class="prog-row"><span>ความคืบหน้า</span><span id="pPct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="pFill" style="width:0%"></div></div>
+  </div>
+</div>
 
-        <!-- Luxury Document Header -->
-        <div class="lux-header">
-            <div class="lux-brand-wrap">
-                <div class="lux-logo-box">
-                    <div class="lux-logo overflow-hidden border-2 border-amber-500/20 shadow-xl">
-                        <img src="../Backend/logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=OP&background=0f172a&color=fff'" class="w-full h-full object-cover">
-                    </div>
-                    <div class="lux-title">
-                        <p>Operational Excellence</p>
-                        <h1>OP05 — รายงานการเข้าพบผู้ว่าจ้าง</h1>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="lux-meta-label">เลขที่เอกสาร</div>
-                    <div class="lux-meta-value text-blue-600" id="op05DocId">OP05-LOADING</div>
-                </div>
-            </div>
+<!-- ========== MAIN ========== -->
+<div class="main">
+  <form id="op05Form" onsubmit="event.preventDefault(); submitOp05();">
 
-            <div class="flex justify-between items-center mb-[-10px]">
-                <button onclick="window.location.href='portal.html'" class="text-[11px] font-bold text-slate-400 hover:text-amber-500 transition-all flex items-center gap-2">
-                    <i class="fas fa-arrow-left"></i> กลับสู่หน้าพอร์ทัล
-                </button>
-            </div>
+    <!-- CARD 1: ข้อมูลพื้นฐาน -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">1</div>
+        <div class="c-title">ข้อมูลการเข้าพบและสถานที่</div>
+        <div class="c-sub">Basic Info</div>
+      </div>
+      <div class="card-body">
 
-            <div class="lux-doc-meta">
-                <div class="lux-meta-item">
-                    <span class="lux-meta-label">วันเวลาที่บันทึก</span>
-                    <span class="lux-meta-value" id="op05TsHeader">กำลังโหลด...</span>
-                </div>
-                <div class="lux-meta-item">
-                    <span class="lux-meta-label">หน่วยงานต้นสังกัด</span>
-                    <span class="lux-meta-value">NEXGEN SYSTEM CENTER</span>
-                </div>
+        <!-- Timestamp Lock -->
+        <div class="field">
+          <label>วันเวลาบันทึก (ล็อกอัตโนมัติ)</label>
+          <div class="ts-lock">
+            <span style="font-size:13px">🔒</span>
+            <div>
+              <div class="ts-val" id="op05TsDisplay">—</div>
+              <div class="ts-note">ล็อกตั้งแต่เปิดฟอร์ม</div>
             </div>
+          </div>
+          <input type="hidden" id="op05LockedTimestamp">
         </div>
 
-        <!-- Progress Luxury -->
-        <div class="lux-progress-wrap">
-            <div class="lux-progress-info">
-                <span class="lux-progress-text">ความสมบูรณ์ของรายงาน</span>
-                <span class="lux-progress-pct" id="op05ProgressPct">0%</span>
-            </div>
-            <div class="lux-bar-bg">
-                <div class="lux-bar-fill" id="op05ProgressFill"></div>
-            </div>
+        <!-- Site Name with Autocomplete -->
+        <div class="field field-relative" id="fSiteName">
+          <label>ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน<span class="req">*</span></label>
+          <input type="text" id="op05SiteName"
+            placeholder="เลือกหรือพิมพ์ชื่อหน่วยงาน..."
+            oninput="handleUnitInput(this.value)"
+            onfocus="handleUnitInput(this.value)"
+            autocomplete="off">
+          <div id="op05UnitSuggestions" class="unit-suggestions"></div>
         </div>
 
-        <form id="op05Form" onsubmit="event.preventDefault(); submitOp05();">
-            <!-- SECTION 1: Identity -->
-            <div class="lux-card">
-                <div class="lux-card-head">
-                    <div class="lux-section-title">
-                        <div class="lux-badge">01</div>
-                        <h2>ข้อมูลการเข้าพบและสถานที่</h2>
-                    </div>
-                </div>
-
-                <div class="lux-field">
-                    <label class="lux-label">วันเวลาที่ระบบล็อกข้อมูลอัตโนมัติ</label>
-                    <input type="text" id="op05TsDisplay" class="lux-input lux-input-readonly" readonly value="—">
-                    <input type="hidden" id="op05LockedTimestamp">
-                </div>
-
-                <div class="lux-field relative">
-                    <label class="lux-label">ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน <span class="text-red-500">*</span></label>
-                    <div class="relative group">
-                        <input type="text" id="op05SiteName" class="lux-input pr-12" 
-                            placeholder="เลือกหรือพิมพ์ชื่อหน่วยงาน..."
-                            oninput="handleOp05UnitInput(this.value)" 
-                            onfocus="handleOp05UnitInput(this.value)"
-                            onclick="handleOp05UnitInput(this.value)"
-                            autocomplete="off">
-                        <div class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-blue-500 transition-colors">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    <div id="op05UnitSuggestions"
-                        class="hidden absolute w-full top-full mt-2 bg-white rounded-3xl shadow-2xl z-50 border border-slate-100 overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div class="lux-field">
-                        <label class="lux-label">วันที่เข้าพบจริง</label>
-                        <input type="date" id="op05VisitDate" class="lux-input">
-                    </div>
-                    <div class="lux-field">
-                        <label class="lux-label">เวลาที่เข้าพบจริง</label>
-                        <input type="time" id="op05VisitTime" class="lux-input">
-                    </div>
-                </div>
-
-                <div class="lux-field">
-                    <label class="lux-label">ชื่อผู้ว่าจ้าง / ตัวแทนที่ให้ข้อมูล <span
-                            class="text-red-500">*</span></label>
-                    <input type="text" id="op05ClientName" class="lux-input" placeholder="ระบุชื่อ-สกุล และตำแหน่ง">
-                </div>
-
-                <div class="lux-field">
-                    <label class="lux-label">เจ้าหน้าที่ OP ที่รับผิดชอบ <span class="text-red-500">*</span></label>
-                    <input type="text" id="op05OpName" class="lux-input lux-input-readonly" readonly placeholder="กำลังโหลดชื่อผู้ใช้งาน...">
-                </div>
-            </div>
-
-            <!-- SECTION 2: Checklist -->
-            <div class="lux-card">
-                <div class="lux-card-head">
-                    <div class="lux-section-title">
-                        <div class="lux-badge">02</div>
-                        <h2>รายการตรวจสอบและประเด็นหารือ</h2>
-                    </div>
-                    <button type="button"
-                        class="quick-pass-btn text-[11px] font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-2xl hover:bg-blue-100 transition-all"
-                        onclick="op05QuickPass()">
-                        <i class="fas fa-check-circle mr-2"></i> ปกติทั้งหมด
-                    </button>
-                </div>
-                <div id="op05ChecklistBody">
-                    <!-- Content via JS -->
-                </div>
-            </div>
-
-            <!-- SECTION 3: Signatures -->
-            <div class="lux-card">
-                <div class="lux-card-head">
-                    <div class="lux-section-title">
-                        <div class="lux-badge">03</div>
-                        <h2>การลงนามรับรองรายงาน</h2>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="lux-field">
-                        <label class="lux-label text-center block w-full">ลายเซ็นผู้ว่าจ้าง / ตัวแทน</label>
-                        <div class="lux-sig-box">
-                            <div class="lux-sig-tool">
-                                <span>Client Signature</span>
-                                <button type="button" class="lux-sig-clear"
-                                    onclick="clearOp05Sig('op05Sig1')">ล้างข้อมูล</button>
-                            </div>
-                            <canvas id="op05Sig1" class="w-full h-[150px] bg-white cursor-crosshair" width="600"
-                                height="150"></canvas>
-                        </div>
-                    </div>
-                    <div class="lux-field">
-                        <label class="lux-label text-center block w-full">ลายเซ็นเจ้าหน้าที่ OP</label>
-                        <div class="lux-sig-box">
-                            <div class="lux-sig-tool">
-                                <span>Staff Signature</span>
-                                <button type="button" class="lux-sig-clear"
-                                    onclick="clearOp05Sig('op05Sig2')">ล้างข้อมูล</button>
-                            </div>
-                            <canvas id="op05Sig2" class="w-full h-[150px] bg-white cursor-crosshair" width="600"
-                                height="150"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Submission -->
-            <div class="mt-15 pb-40">
-                <button type="submit" id="op05SubmitBtn" class="lux-submit-btn">
-                    <i class="fas fa-paper-plane"></i>
-                    <span>บันทึกและส่งรายงานเข้าระบบ</span>
-                </button>
-
-                <div id="op05SuccessMsg" class="hidden mt-12">
-                    <div class="lux-success-card">
-                        <div class="lux-success-icon">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-slate-900 mb-3">บันทึกข้อมูลเรียบร้อยแล้ว</h3>
-                        <p class="text-slate-500 mb-10">รายงาน OP05 ถูกจัดเก็บเข้าสู่ฐานข้อมูลกลางของบริษัท V.A.N.
-                            Security เรียบร้อยแล้ว</p>
-                        <div class="flex gap-5 justify-center">
-                            <button type="button" onclick="window.print()"
-                                class="px-10 py-4 rounded-3xl bg-slate-900 text-white font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">📄
-                                พิมพ์รายงาน</button>
-                            <button type="button" onclick="resetOp05Form()"
-                                class="px-10 py-4 rounded-3xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-500 transition-all">เขียนรายงานใหม่</button>
-                            <button type="button" onclick="window.location.href='../Backend/dashboard.html'"
-                                class="px-10 py-4 rounded-3xl bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all">กลับหน้าหลัก</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        <!-- Premium Footer -->
-        <div class="mt-20 pt-10 border-t border-slate-100 text-center space-y-2">
-            <p class="text-[11px] text-slate-400 font-bold tracking-[2px] uppercase">
-                NEXGEN <span class="text-blue-600">SYSTEM CENTER</span>
-            </p>
-            <p class="text-[9px] text-slate-400 font-medium tracking-widest opacity-60">
-                <span class="uppercase">&copy; 2026 &bull; NEXGEN SYSTEM CENTER</span> <span class="ml-1 uppercase-none">Ver.1.0</span>
-            </p>
-            <p class="text-[8px] text-slate-300">Developer: Ponchai Onkum</p>
+        <!-- Visit Date & Time -->
+        <div class="gr">
+          <div class="field" id="fVisitDate">
+            <label>วันที่เข้าพบจริง<span class="req">*</span></label>
+            <input type="text" id="op05VisitDate" placeholder="เลือกวันที่...">
+          </div>
+          <div class="field">
+            <label>เวลาที่เข้าพบ (24 ชม.)</label>
+            <input type="text" id="op05VisitTime" placeholder="เช่น 09:30">
+          </div>
         </div>
+
+        <!-- Client Name -->
+        <div class="field" id="fClientName">
+          <label>ชื่อผู้ว่าจ้าง / ตัวแทนที่ให้ข้อมูล<span class="req">*</span></label>
+          <input type="text" id="op05ClientName" placeholder="ระบุชื่อ-สกุล และตำแหน่ง">
+        </div>
+
+        <!-- OP Officer -->
+        <div class="field" id="fOpName">
+          <label>เจ้าหน้าที่ OP ที่รับผิดชอบ<span class="req">*</span></label>
+          <input type="text" id="op05OpName" readonly placeholder="กำลังโหลดชื่อผู้ใช้งาน...">
+        </div>
+
+      </div>
     </div>
 
-    <script>
-        // --- Session Guard ---
-        const userData = JSON.parse(localStorage.getItem('nexgen_user'));
-        if (!userData || (userData.level !== 'Admin' && userData.level !== 'Supervisor')) {
-            window.location.href = '../index.html'; // Redirect to root login
-        }
+    <!-- CARD 2: Checklist -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">2</div>
+        <div class="c-title">รายการตรวจสอบและประเด็นหารือ</div>
+        <button type="button" class="quick-all-btn" onclick="op05QuickPass()">✓ ปกติทั้งหมด</button>
+      </div>
+      <div class="card-body" id="op05ChecklistBody" style="gap:8px;padding:12px 15px"></div>
+    </div>
 
-        const OP05_CHECKLIST = [
-            { id: "manpower", icon: "👮", title: "ด้านกำลังพล", hint: "จำนวน ตำแหน่ง กะ ความพร้อม" },
-            { id: "discipline", icon: "📋", title: "ด้านระเบียบวินัย", hint: "การแต่งกาย ความประพฤติ เวลา" },
-            { id: "quality", icon: "⭐", title: "ด้านคุณภาพการปฏิบัติงาน", hint: "มาตรฐาน SOP ประสิทธิภาพ" },
-            { id: "equipment", icon: "🔧", title: "ด้านอุปกรณ์และเทคโนโลยี", hint: "วิทยุ กล้อง ระบบ GPS" },
-            { id: "personnel", icon: "📁", title: "ด้านข้อมูลและประวัติพนักงาน", hint: "ทะเบียนประวัติ ใบอนุญาต ธภ.7" },
-            { id: "inspection", icon: "🔍", title: "ด้านการตรวจ / ความถี่การเข้าตรวจ", hint: "รอบการตรวจ รายงาน feedback" },
-            { id: "complaint", icon: "⚠️", title: "ข้อร้องเรียนอื่นๆ", hint: "ปัญหาหรือเรื่องร้องเรียนจากผู้ว่าจ้าง" },
-            { id: "suggestion", icon: "💡", title: "คำแนะนำและความต้องการเพิ่มเติม", hint: "ข้อเสนอแนะ / สิ่งที่ต้องการจากผู้ว่าจ้าง" },
-        ];
+    <!-- CARD 3: Signatures -->
+    <div class="card">
+      <div class="card-head">
+        <div class="c-num">3</div>
+        <div class="c-title">การลงนามรับรองรายงาน</div>
+        <div class="c-sub">Signatures</div>
+      </div>
+      <div class="card-body">
+        <div class="sig-wrap">
+          <div class="field">
+            <label style="text-align:center;display:block">ลายเซ็นผู้ว่าจ้าง / ตัวแทน</label>
+            <div class="sig-box">
+              <div class="sig-label-bar">
+                <span>Client Signature</span>
+                <button type="button" class="sig-clear" onclick="clearSig('op05Sig1')">ล้างข้อมูล</button>
+              </div>
+              <canvas id="op05Sig1" width="600" height="130"></canvas>
+            </div>
+          </div>
+          <div class="field">
+            <label style="text-align:center;display:block">ลายเซ็นเจ้าหน้าที่ OP</label>
+            <div class="sig-box">
+              <div class="sig-label-bar">
+                <span>Staff Signature</span>
+                <button type="button" class="sig-clear" onclick="clearSig('op05Sig2')">ล้างข้อมูล</button>
+              </div>
+              <canvas id="op05Sig2" width="600" height="130"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        let op05CheckState = {};
-        let op05SigData = { op05Sig1: null, op05Sig2: null };
-        let unitsData = [];
+    <!-- Submit -->
+    <button type="submit" class="sub-btn" id="op05SubmitBtn">
+      <div class="spin" id="op05Spin"></div>
+      <span id="op05SubTxt">บันทึกรายงานการเข้าพบ OP05</span>
+    </button>
 
-        window.onload = async () => {
-            initOp05();
-            await fetchRealUnits();
-            await fetchSupervisors();
-        };
+    <!-- Success Card -->
+    <div class="result-wrap" id="op05SuccessMsg">
+      <div style="font-size:32px;margin-bottom:6px">✅</div>
+      <h3>บันทึกรายงานการเข้าพบสำเร็จ!</h3>
+      <p>ข้อมูลบันทึกลงระบบแล้ว</p>
+      <div class="rdid" id="op05ResultDocId">—</div>
+      <div class="r-acts">
+        <button class="rbtn rb-view" id="op05ViewBtn" onclick="viewGeneratedReport()">📄 ดูใบรายงาน / พิมพ์</button>
+        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+      </div>
+    </div>
 
-        async function fetchSupervisors() {
-            // ไม่ต้องดึงรายชื่อทั้งหมดแล้ว แต่ใช้ชื่อจาก User Data ที่ล็อกอินอยู่มาใส่เลย
-            if (userData && userData.name) {
-                const opInput = document.getElementById('op05OpName');
-                opInput.value = `${userData.name} (${userData.role || userData.level})`;
-                updateOp05Progress();
-            } else {
-                document.getElementById('op05OpName').value = "ไม่พบข้อมูลผู้ใช้งาน";
-            }
-        }
+  </form>
+</div>
 
-        async function fetchRealUnits() {
-            try {
-                let query = supabaseClient.from('units').select('*').order('unit_name');
-                
-                // กรองตามเขต (Zone) ถ้าพนักงานไม่ใช่ Admin/Manager
-                if (userData && userData.level !== 'Admin' && userData.level !== 'Manager') {
-                    if (userData.zone) {
-                        query = query.eq('zone', userData.zone);
-                        console.log("Filtering units for zone:", userData.zone);
-                    }
-                }
+<!-- Footer -->
+<div class="page-footer">© 2026 NEXTGEN SYSTEM CENTER. ALL RIGHTS RESERVED.</div>
 
-                const { data, error } = await query;
-                if (error) throw error;
-                unitsData = data || [];
-            } catch (e) {
-                console.error("Fetch Units Error:", e);
-                unitsData = [];
-            }
-        }
+<script>
+// ============================================================
+// SESSION GUARD
+// ============================================================
+const userData = JSON.parse(localStorage.getItem('nextgen_user'));
+const userLevel = userData && userData.level ? userData.level.toLowerCase() : '';
+if (!userData || (userLevel !== 'admin' && userLevel !== 'supervisor')) {
+  window.location.href = '../index.html';
+}
 
-        function initOp05() {
-            initOp05Timestamp();
-            initOp05Checklist();
-            initOp05Signatures();
-            initOp05Progress();
+// ============================================================
+// CONSTANTS
+// ============================================================
+const OP05_CHECKLIST = [
+  { id: "manpower",   icon: "👮", title: "ด้านกำลังพล",                       hint: "จำนวน ตำแหน่ง กะ ความพร้อม" },
+  { id: "discipline", icon: "📋", title: "ด้านระเบียบวินัย",                  hint: "การแต่งกาย ความประพฤติ เวลา" },
+  { id: "quality",    icon: "⭐", title: "ด้านคุณภาพการปฏิบัติงาน",           hint: "มาตรฐาน SOP ประสิทธิภาพ" },
+  { id: "equipment",  icon: "🔧", title: "ด้านอุปกรณ์และเทคโนโลยี",          hint: "วิทยุ กล้อง ระบบ GPS" },
+  { id: "personnel",  icon: "📁", title: "ด้านข้อมูลและประวัติพนักงาน",       hint: "ทะเบียนประวัติ ใบอนุญาต ธภ.7" },
+  { id: "inspection", icon: "🔍", title: "ด้านการตรวจ / ความถี่การเข้าตรวจ", hint: "รอบการตรวจ รายงาน feedback" },
+  { id: "complaint",  icon: "⚠️", title: "ข้อร้องเรียนอื่นๆ",                hint: "ปัญหาหรือเรื่องร้องเรียนจากผู้ว่าจ้าง" },
+  { id: "suggestion", icon: "💡", title: "คำแนะนำและความต้องการเพิ่มเติม",    hint: "ข้อเสนอแนะ / สิ่งที่ต้องการจากผู้ว่าจ้าง" },
+];
 
-        function initOp05() {
-            initOp05Timestamp();
-            initOp05Checklist();
-            initOp05Signatures();
-            initOp05Progress();
+let op05CheckState = {};
+let op05SigData = { op05Sig1: null, op05Sig2: null };
+let unitsData = [];
 
-            const now = new Date();
-            const thaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
-            
-            const y = thaiTime.getFullYear();
-            const m = String(thaiTime.getMonth() + 1).padStart(2, '0');
-            const d = String(thaiTime.getDate()).padStart(2, '0');
-            const hh = String(thaiTime.getHours()).padStart(2, '0');
-            const min = String(thaiTime.getMinutes()).padStart(2, '0');
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  initTimestamp();
+  initChecklist();
+  initSignatures();
+  initFlatpickr();
+  initProgressListeners();
+  autoFillUser();
+  await fetchUnits();
+  updateProgress();
+});
 
-            document.getElementById('op05VisitDate').value = `${y}-${m}-${d}`;
-            document.getElementById('op05VisitTime').value = `${hh}:${min}`;
-        }
+// ============================================================
+// TIMESTAMP & DOC ID (preview only)
+// ============================================================
+function initTimestamp() {
+  const now = new Date();
+  const tz  = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const yy  = tz.getFullYear();
+  const by  = yy + 543;
+  const mm  = String(tz.getMonth() + 1).padStart(2, '0');
+  const dd  = String(tz.getDate()).padStart(2, '0');
+  const hh  = String(tz.getHours()).padStart(2, '0');
+  const mn  = String(tz.getMinutes()).padStart(2, '0');
+  const ss  = String(tz.getSeconds()).padStart(2, '0');
 
-        function initOp05Timestamp() {
-            const now = new Date();
-            const thaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
-            
-            const yyyy = thaiTime.getFullYear();
-            const mm = String(thaiTime.getMonth() + 1).padStart(2, '0');
-            const dd = String(thaiTime.getDate()).padStart(2, '0');
-            const hh = String(thaiTime.getHours()).padStart(2, '0');
-            const min = String(thaiTime.getMinutes()).padStart(2, '0');
-            const ss = String(thaiTime.getSeconds()).padStart(2, '0');
+  const tsStr = `${dd}/${mm}/${by}  ${hh}:${mn}:${ss} น.`;
+  const isoStr = `${yy}-${mm}-${dd}T${hh}:${mn}:${ss}+07:00`;
+  const previewId = `OP05-${by}-${mm}${dd}`;
 
-            const buddYear = yyyy + 543;
-            const tsStr = `${dd}/${mm}/${buddYear} ${hh}:${min}:${ss} น.`;
-            // แก้ไข Doc ID ให้ใช้รูปแบบปี พ.ศ. สองหลักท้าย
-            const docId = `OP05-25${String(buddYear).slice(-2)}-${mm}${dd}-${String(Math.floor(Math.random() * 900) + 100)}`;
+  document.getElementById('op05TsDisplay').textContent  = tsStr;
+  document.getElementById('op05LockedTimestamp').value   = isoStr;
+  document.getElementById('op05DocId').textContent       = previewId;
+  document.getElementById('op05TsHeader').textContent    = `${dd}/${mm}/${by} ${hh}:${mn}`;
+}
 
-            document.getElementById('op05TsDisplay').value = tsStr;
-            // สร้าง ISO String สำหรับ UTC+7 โดยตรง
-            const isoStr = `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}+07:00`;
-            document.getElementById('op05LockedTimestamp').value = isoStr;
-            document.getElementById('op05DocId').textContent = docId;
-            document.getElementById('op05TsHeader').textContent = `${dd}/${mm}/${buddYear} ${hh}:${min}`;
-        }
+// สร้าง doc_id ใหม่ทุกครั้งที่ submit เพื่อป้องกัน duplicate
+function generateDocId() {
+  const now = new Date();
+  const tz  = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const by  = tz.getFullYear() + 543;
+  const mm  = String(tz.getMonth() + 1).padStart(2, '0');
+  const dd  = String(tz.getDate()).padStart(2, '0');
+  const hh  = String(tz.getHours()).padStart(2, '0');
+  const mn  = String(tz.getMinutes()).padStart(2, '0');
+  const ms  = String(tz.getMilliseconds()).padStart(3, '0');
+  return `OP05-${by}-${mm}${dd}-${hh}${mn}${ms}`;
+}
 
-        function initOp05Checklist() {
-            const body = document.getElementById('op05ChecklistBody');
-            body.innerHTML = '';
-            OP05_CHECKLIST.forEach((item, idx) => {
-                op05CheckState[item.id] = { status: '', note: '' };
-                const div = document.createElement('div');
-                div.className = 'lux-check-item';
-                div.id = `op05-block-${item.id}`;
-                div.innerHTML = `
-                    <div class="lux-check-head" onclick="toggleOp05Check('${item.id}')">
-                        <div class="lux-check-icon" id="op05-icon-${item.id}">${item.icon}</div>
-                        <div class="lux-check-info flex-1">
-                            <h4>${item.title}</h4>
-                            <p>${item.hint}</p>
-                        </div>
-                        <div class="lux-status-tag" id="op05-badge-${item.id}">รอการตรวจสอบ</div>
-                    </div>
-                    <div class="lux-expand" id="op05-expand-${item.id}">
-                        <div class="lux-opt-grid">
-                            <button type="button" class="lux-opt-btn" id="op05-opt-${item.id}-pass" onclick="setOp05Status('${item.id}','pass',this)">ปกติ</button>
-                            <button type="button" class="lux-opt-btn" id="op05-opt-${item.id}-discuss" onclick="setOp05Status('${item.id}','discuss',this)">หารือ</button>
-                            <button type="button" class="lux-opt-btn" id="op05-opt-${item.id}-issue" onclick="setOp05Status('${item.id}','issue',this)">พบปัญหา</button>
-                        </div>
-                        <div class="lux-field mb-0">
-                            <label class="lux-label">บันทึกรายละเอียดเพิ่มเติม</label>
-                            <textarea id="op05-note-${item.id}" class="lux-input min-h-[100px]" placeholder="ระบุรายละเอียดสิ่งที่ตรวจพบหรือข้อหารือ..." oninput="updateOp05Progress()"></textarea>
-                        </div>
-                    </div>
-                `;
-                body.appendChild(div);
-            });
-        }
+// ============================================================
+// FLATPICKR
+// ============================================================
+function initFlatpickr() {
+  const now = new Date();
+  const thaiTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
 
-        function op05QuickPass() {
-            OP05_CHECKLIST.forEach(item => {
-                const opt = document.getElementById(`op05-opt-${item.id}-pass`);
-                if (opt) setOp05Status(item.id, 'pass', opt);
-            });
-        }
+  flatpickr("#op05VisitDate", {
+    locale: "th",
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d/m/Y",
+    defaultDate: thaiTime,
+    disableMobile: true,
+    formatDate: function(date, format) {
+      if (format === "d/m/Y") {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear() + 543;
+        return `${d}/${m}/${y}`;
+      }
+      return flatpickr.formatDate(date, format);
+    },
+    onChange: updateProgress
+  });
 
-        function toggleOp05Check(id) {
-            const expand = document.getElementById(`op05-expand-${id}`);
-            const block = document.getElementById(`op05-block-${id}`);
-            const isOpen = expand.classList.contains('open');
-            document.querySelectorAll('.lux-expand.open').forEach(el => el.classList.remove('open'));
-            document.querySelectorAll('.lux-check-item.active').forEach(el => el.classList.remove('active'));
-            if (!isOpen) {
-                expand.classList.add('open');
-                block.classList.add('active');
-            }
-        }
+  flatpickr("#op05VisitTime", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true,
+    defaultDate: thaiTime,
+    onChange: updateProgress
+  });
+}
 
-        function setOp05Status(id, status, el) {
-            op05CheckState[id].status = status;
-            const block = document.getElementById(`op05-block-${id}`);
-            const badge = document.getElementById(`op05-badge-${id}`);
-            block.className = `lux-check-item active status-${status}`;
-            const textMap = { pass: 'ปกติ', discuss: 'หารือ', issue: 'พบปัญหา' };
-            badge.textContent = textMap[status];
-            badge.className = `lux-status-tag tag-${status}`;
-            el.closest('.lux-opt-grid').querySelectorAll('.lux-opt-btn').forEach(opt => {
-                opt.classList.remove('active-pass', 'active-issue', 'active-discuss');
-            });
-            el.classList.add(`active-${status}`);
-            updateOp05Progress();
-        }
+// ============================================================
+// AUTO-FILL USER
+// ============================================================
+function autoFillUser() {
+  if (userData && userData.name) {
+    const role = userData.role || userData.level || '';
+    document.getElementById('op05OpName').value = `${userData.name} (${role})`;
+  }
+  updateProgress();
+}
 
-        function initOp05Signatures() {
-            ['op05Sig1', 'op05Sig2'].forEach(id => {
-                const canvas = document.getElementById(id);
-                const ctx = canvas.getContext('2d');
-                let drawing = false, lastX = 0, lastY = 0;
-                function getPos(e) {
-                    const rect = canvas.getBoundingClientRect();
-                    const scaleX = canvas.width / rect.width;
-                    const scaleY = canvas.height / rect.height;
-                    if (e.touches) return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
-                    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-                }
-                function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; ctx.beginPath(); ctx.moveTo(lastX, lastY); }
-                function draw(e) { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a'; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; }
-                function stop() { drawing = false; op05SigData[id] = canvas.toDataURL('image/png'); updateOp05Progress(); }
-                canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stop);
-                canvas.addEventListener('touchstart', start, { passive: false }); canvas.addEventListener('touchmove', draw, { passive: false }); canvas.addEventListener('touchend', stop);
-            });
-        }
+// ============================================================
+// FETCH UNITS
+// ============================================================
+async function fetchUnits() {
+  try {
+    let query = supabaseClient.from('units').select('*').order('unit_name');
+    const lvl = userData && userData.level ? userData.level.toLowerCase() : '';
+    if (lvl !== 'admin' && lvl !== 'manager') {
+      const myZone = (userData.zone || userData.area || '').trim();
+      if (myZone) query = query.eq('zone', myZone);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    unitsData = data || [];
+  } catch (e) {
+    console.error("Fetch Units Error:", e);
+    unitsData = [];
+  }
+}
 
-        function clearOp05Sig(id) {
-            const canvas = document.getElementById(id);
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            op05SigData[id] = null;
-            updateOp05Progress();
-        }
+// ============================================================
+// AUTOCOMPLETE
+// ============================================================
+function handleUnitInput(val) {
+  const box = document.getElementById('op05UnitSuggestions');
+  const matches = !val
+    ? unitsData
+    : unitsData.filter(u =>
+        u.unit_name.toLowerCase().includes(val.toLowerCase()) ||
+        (u.unit_code && u.unit_code.toLowerCase().includes(val.toLowerCase()))
+      );
 
-        function initOp05Progress() {
-            const inputs = ['op05SiteName', 'op05ClientName', 'op05VisitDate', 'op05VisitTime', 'op05OpName'];
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) { el.addEventListener('input', updateOp05Progress); el.addEventListener('change', updateOp05Progress); }
-            });
-        }
+  if (matches.length > 0) {
+    box.innerHTML = matches.map(u => `
+      <div class="sug-item" onclick="selectUnit('${u.unit_name.replace(/'/g,"\\'")}')">
+        <div class="sug-name">${u.unit_name}</div>
+        <div class="sug-code">${u.unit_code || ''} ${u.zone ? '| ' + u.zone : ''}</div>
+      </div>
+    `).join('');
+    box.classList.add('open');
+  } else {
+    box.innerHTML = '<div style="padding:12px;text-align:center;color:#9AABC2;font-size:12px">ไม่พบข้อมูลหน่วยงาน</div>';
+    box.classList.add('open');
+  }
+}
 
-        function updateOp05Progress() {
-            let filled = 0, total = 15;
-            if (document.getElementById('op05SiteName').value.trim()) filled++;
-            if (document.getElementById('op05ClientName').value.trim()) filled++;
-            if (document.getElementById('op05VisitDate').value) filled++;
-            if (document.getElementById('op05VisitTime').value) filled++;
-            if (document.getElementById('op05OpName').value) filled++;
-            OP05_CHECKLIST.forEach(item => { if (op05CheckState[item.id].status) filled++; });
-            if (op05SigData.op05Sig1) filled++;
-            if (op05SigData.op05Sig2) filled++;
-            const pct = Math.round((filled / total) * 100);
-            document.getElementById('op05ProgressFill').style.width = pct + '%';
-            document.getElementById('op05ProgressPct').textContent = pct + '%';
-        }
+function selectUnit(name) {
+  document.getElementById('op05SiteName').value = name;
+  document.getElementById('op05UnitSuggestions').classList.remove('open');
+  updateProgress();
+}
 
-        async function submitOp05() {
-            const btn = document.getElementById('op05SubmitBtn');
-            const success = document.getElementById('op05SuccessMsg');
-            
-            // รวบรวมข้อมูลทั้งหมด
-            const reportData = {
-                doc_id: document.getElementById('op05DocId').textContent,
-                site_name: document.getElementById('op05SiteName').value,
-                visit_date: document.getElementById('op05VisitDate').value,
-                visit_time: document.getElementById('op05VisitTime').value,
-                client_name: document.getElementById('op05ClientName').value,
-                op_name: document.getElementById('op05OpName').value,
-                checklist: op05CheckState, // เก็บเป็น JSONB
-                sig_client: op05SigData.op05Sig1, // Base64 ลายเซ็นผู้ว่าจ้าง
-                sig_staff: op05SigData.op05Sig2,   // Base64 ลายเซ็นเจ้าหน้าที่
-                created_at: new Date().toISOString()
-            };
+document.addEventListener('click', (e) => {
+  const box   = document.getElementById('op05UnitSuggestions');
+  const input = document.getElementById('op05SiteName');
+  if (box && !box.contains(e.target) && e.target !== input) {
+    box.classList.remove('open');
+  }
+});
 
-            // ตรวจสอบข้อมูลบังคับ
-            if (!reportData.site_name || !reportData.client_name || !reportData.op_name) {
-                alert("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
-                return;
-            }
+// ============================================================
+// CHECKLIST
+// ============================================================
+function initChecklist() {
+  const body = document.getElementById('op05ChecklistBody');
+  body.innerHTML = '';
+  OP05_CHECKLIST.forEach((item) => {
+    op05CheckState[item.id] = { status: '', note: '' };
+    const div = document.createElement('div');
+    div.className = 'chk-block';
+    div.id = `op05-block-${item.id}`;
+    div.innerHTML = `
+      <div class="chk-head" onclick="toggleChk('${item.id}')">
+        <div class="chk-icon">${item.icon}</div>
+        <div class="chk-info">
+          <h4>${item.title}</h4>
+          <p>${item.hint}</p>
+        </div>
+        <div class="chk-badge" id="op05-badge-${item.id}">รอตรวจสอบ</div>
+      </div>
+      <div class="chk-expand" id="op05-expand-${item.id}">
+        <div class="res-row">
+          <button type="button" class="res-btn" onclick="setChkStatus('${item.id}','pass',this)">✓ ปกติ</button>
+          <button type="button" class="res-btn" onclick="setChkStatus('${item.id}','discuss',this)">⚙ หารือ</button>
+          <button type="button" class="res-btn" onclick="setChkStatus('${item.id}','issue',this)">⚠ พบปัญหา</button>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>บันทึกรายละเอียดเพิ่มเติม</label>
+          <textarea id="op05-note-${item.id}" placeholder="ระบุรายละเอียดสิ่งที่ตรวจพบหรือข้อหารือ..." oninput="op05CheckState['${item.id}'].note=this.value; updateProgress()"></textarea>
+        </div>
+      </div>
+    `;
+    body.appendChild(div);
+  });
+}
 
-            try {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...';
+function toggleChk(id) {
+  const expand = document.getElementById(`op05-expand-${id}`);
+  const isOpen = expand.classList.contains('open');
+  document.querySelectorAll('.chk-expand.open').forEach(el => el.classList.remove('open'));
+  if (!isOpen) expand.classList.add('open');
+}
 
-                // ส่งข้อมูลเข้าตาราง op05_reports
-                const { error } = await supabaseClient
-                    .from('op05_reports')
-                    .insert([reportData]);
+function setChkStatus(id, status, btn) {
+  op05CheckState[id].status = status;
+  const block = document.getElementById(`op05-block-${id}`);
+  const badge = document.getElementById(`op05-badge-${id}`);
+  block.className = `chk-block status-${status}`;
+  const textMap = { pass: 'ปกติ', discuss: 'หารือ', issue: 'พบปัญหา' };
+  const clsMap  = { pass: 'b-pass', discuss: 'b-discuss', issue: 'b-issue' };
+  badge.textContent = textMap[status];
+  badge.className   = `chk-badge ${clsMap[status]}`;
+  // Reset all buttons in this group then highlight selected
+  btn.closest('.res-row').querySelectorAll('.res-btn').forEach(b => b.className = 'res-btn');
+  const btnClsMap = { pass: 'r-ok', discuss: 'r-discuss', issue: 'r-issue' };
+  btn.classList.add(btnClsMap[status]);
+  updateProgress();
+}
 
-                if (error) throw error;
+function op05QuickPass() {
+  OP05_CHECKLIST.forEach(item => {
+    const btn = document.querySelector(`#op05-block-${item.id} .res-row .res-btn`);
+    if (btn) setChkStatus(item.id, 'pass', btn);
+  });
+}
 
-                // แสดงข้อความสำเร็จ
-                btn.classList.add('hidden');
-                success.classList.remove('hidden');
-                success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+// ============================================================
+// SIGNATURES
+// ============================================================
+function initSignatures() {
+  ['op05Sig1', 'op05Sig2'].forEach(id => {
+    const canvas = document.getElementById(id);
+    const ctx    = canvas.getContext('2d');
+    let drawing = false, lastX = 0, lastY = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            } catch (error) {
-                console.error("Submission Error:", error);
-                alert("เกิดข้อผิดพลาด: " + (error.message || "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"));
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> บันทึกและส่งรายงานเข้าระบบ';
-            }
-        }
+    function getPos(e) {
+      const rect   = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      if (e.touches) return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+      return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    }
+    function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; }
+    function draw(e)  {
+      if (!drawing) return; e.preventDefault();
+      const p = getPos(e);
+      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1B2A4A';
+      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+      lastX = p.x; lastY = p.y;
+    }
+    function stop() { drawing = false; op05SigData[id] = canvas.toDataURL('image/png'); updateProgress(); }
 
-        function resetOp05Form() {
-            location.reload();
-        }
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stop);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', draw,  { passive: false });
+    canvas.addEventListener('touchend', stop);
+  });
+}
 
-        function handleOp05UnitInput(val) {
-            const box = document.getElementById('op05UnitSuggestions');
-            // ถ้าค่าว่าง ให้แสดงทั้งหมด
-            const matches = !val 
-                ? unitsData 
-                : unitsData.filter(u => u.unit_name.toLowerCase().includes(val.toLowerCase()) || u.unit_code.toLowerCase().includes(val.toLowerCase()));
-            
-            if (matches.length > 0) {
-                box.innerHTML = matches.map(u => `<div class="suggestion-item" onclick="selectUnit('${u.unit_name}')"><div class="suggestion-title">${u.unit_name}</div><div class="suggestion-subtitle">${u.unit_code} | ${u.zone}</div></div>`).join('');
-                box.classList.remove('hidden');
-            } else { 
-                box.innerHTML = '<div class="p-5 text-center text-slate-400 text-xs">ไม่พบข้อมูลหน่วยงาน</div>';
-                box.classList.remove('hidden');
-            }
-        }
+function clearSig(id) {
+  const canvas = document.getElementById(id);
+  const ctx    = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  op05SigData[id] = null;
+  updateProgress();
+}
 
-        // ปิดกล่องเลือกเมื่อคลิกข้างนอก
-        document.addEventListener('click', (e) => {
-            const box = document.getElementById('op05UnitSuggestions');
-            const input = document.getElementById('op05SiteName');
-            if (box && !box.contains(e.target) && e.target !== input) {
-                box.classList.add('hidden');
-            }
-        });
+// ============================================================
+// PROGRESS
+// ============================================================
+function initProgressListeners() {
+  ['op05SiteName','op05ClientName','op05VisitDate','op05VisitTime','op05OpName'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', updateProgress); el.addEventListener('change', updateProgress); }
+  });
+}
 
-        function selectUnit(name) {
-            document.getElementById('op05SiteName').value = name;
-            document.getElementById('op05UnitSuggestions').classList.add('hidden');
-            updateOp05Progress();
-        }
+function updateProgress() {
+  let filled = 0;
+  const total = 5 + OP05_CHECKLIST.length + 2; // 5 fields + 8 checklist + 2 sigs = 15
 
-    </script>
+  if (document.getElementById('op05SiteName').value.trim())  filled++;
+  if (document.getElementById('op05ClientName').value.trim()) filled++;
+  if (document.getElementById('op05VisitDate').value)         filled++;
+  if (document.getElementById('op05VisitTime').value)         filled++;
+  if (document.getElementById('op05OpName').value)            filled++;
+
+  OP05_CHECKLIST.forEach(item => { if (op05CheckState[item.id].status) filled++; });
+  if (op05SigData.op05Sig1) filled++;
+  if (op05SigData.op05Sig2) filled++;
+
+  const pct = Math.round((filled / total) * 100);
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pPct').textContent  = pct + '%';
+}
+
+// ============================================================
+// VALIDATION HELPER
+// ============================================================
+function markError(fieldId, wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.classList.add('field-error');
+}
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+async function submitOp05() {
+  clearErrors();
+  let valid = true;
+  const siteName   = document.getElementById('op05SiteName').value.trim();
+  const clientName = document.getElementById('op05ClientName').value.trim();
+  const opName     = document.getElementById('op05OpName').value.trim();
+
+  if (!siteName)   { document.getElementById('fSiteName').classList.add('field-error');   valid = false; }
+  if (!clientName) { document.getElementById('fClientName').classList.add('field-error'); valid = false; }
+  if (!opName)     { document.getElementById('fOpName').classList.add('field-error');     valid = false; }
+
+  if (!valid) {
+    document.querySelector('.field-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const btn  = document.getElementById('op05SubmitBtn');
+  const spin = document.getElementById('op05Spin');
+  const txt  = document.getElementById('op05SubTxt');
+
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+  txt.textContent = 'กำลังบันทึกลง Supabase...';
+
+  // สร้าง doc_id ใหม่ตอน submit เพื่อป้องกัน duplicate
+  const newDocId = generateDocId();
+  document.getElementById('op05DocId').textContent = newDocId;
+  document.getElementById('op05ResultDocId').textContent = newDocId;
+
+  const reportData = {
+    doc_id:       newDocId,
+    site_name:    siteName,
+    visit_date:   document.getElementById('op05VisitDate').value,
+    visit_time:   document.getElementById('op05VisitTime').value,
+    client_name:  clientName,
+    op_name:      opName,
+    checklist:    op05CheckState,
+    sig_client:   op05SigData.op05Sig1,
+    sig_staff:    op05SigData.op05Sig2,
+    created_at:   document.getElementById('op05LockedTimestamp').value || new Date().toISOString(),
+  };
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('op05_reports')
+      .insert([reportData])
+      .select();
+
+    if (error) throw error;
+
+    if (data && data[0]) {
+      window.lastSavedReportId = data[0].id;
+    }
+
+    // แสดงผลสำเร็จ
+    btn.style.display = 'none';
+    document.getElementById('op05SuccessMsg').classList.add('show');
+    document.getElementById('op05SuccessMsg').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    console.error("Submit Error:", err);
+    alert('เกิดข้อผิดพลาดในการบันทึกฐานข้อมูล: ' + err.message);
+    btn.disabled = false;
+    spin.style.display = 'none';
+    txt.textContent = 'ลองใหม่อีกครั้ง';
+  }
+}
+
+// ============================================================
+// VIEW REPORT
+// ============================================================
+function viewGeneratedReport() {
+  if (window.lastSavedReportId) {
+    window.location.href = `OP05-View.html?id=${window.lastSavedReportId}&print=true`;
+  } else {
+    alert('ไม่พบรหัสเอกสารรายงาน กรุณาลองใหม่อีกครั้ง');
+  }
+}
+</script>
 </body>
-
 </html>

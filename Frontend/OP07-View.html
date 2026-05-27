@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAN Security — พิมพ์รายงานการอบรมประจำเดือน (OP07)</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="../Backend/config.js"></script>
+  <style>
+    :root {
+      --navy: #1B2A4A;
+      --navy-mid: #243560;
+      --gold: #C9920C;
+      --gold-light: #F0B429;
+      --blue: #1A56DB;
+      --gray-100: #F4F6F9;
+      --gray-200: #E8ECF2;
+      --gray-400: #9AABC2;
+      --gray-600: #5A6E8C;
+      --white: #FFFFFF;
+      --green: #0D7A4E;
+      --green-bg: #E6F4EE;
+      --red: #C0392B;
+      --red-bg: #FDECEA;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Sarabun', sans-serif; background: var(--gray-100); color: var(--navy); min-height: 100vh; padding: 24px 16px; }
+
+    @page { size: A4 portrait; margin: 10mm; }
+    @media print {
+      body { background: white; padding: 0 !important; margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page { box-shadow: none !important; border: none !important; max-width: 100% !important; width: 100% !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; }
+      .top-bar { padding: 10px 20px !important; }
+      .section { padding: 12px 20px !important; }
+    }
+
+    .top-bar { display: flex; align-items: center; justify-content: space-between; background: var(--navy); border-radius: 12px 12px 0 0; padding: 14px 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; }
+    .brand-text { color: white; }
+    .brand-text .company { font-size: 11px; opacity: 0.7; letter-spacing: 0.5px; }
+    .brand-text .doc-type { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+    .doc-meta { text-align: right; color: rgba(255, 255, 255, 0.8); font-size: 11px; }
+    .doc-id { font-family: 'IBM Plex Mono', monospace; color: var(--gold-light); font-size: 12px; font-weight: 500; }
+
+    .page { background: white; max-width: 720px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 24px rgba(27, 42, 74, 0.10); overflow: hidden; }
+    .form-body { padding: 0; }
+    .section { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); }
+    .section:last-child { border-bottom: none; }
+    .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; font-weight: 600; color: var(--gray-600); }
+    .field .value { font-size: 13px; font-weight: 500; color: var(--navy); background: var(--gray-100); border: 1.5px solid var(--gray-200); border-radius: 7px; padding: 8px 12px; min-height: 36px; line-height: 1.4; display: flex; align-items: center; }
+    .field .value.highlight { font-family: 'IBM Plex Mono', monospace; color: var(--blue); font-weight: 600; background: #EEF4FF; border-color: transparent; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .badge.ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(13,122,78,0.2); }
+    .badge.warn { background: #FEF3C7; color: #92400E; border: 1px solid rgba(146,64,14,0.2); }
+    .badge.fail { background: var(--red-bg); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+
+    .staff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .staff-table th { background: var(--navy); color: white; font-size: 10px; padding: 8px 12px; text-align: left; }
+    .staff-table td { padding: 8px 12px; border-bottom: 1px solid var(--gray-200); }
+    .staff-table tr:nth-child(even) td { background: var(--gray-100); }
+
+    .remark-box { background: var(--gray-100); border: 1.5px solid var(--gray-200); border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.6; min-height: 50px; white-space: pre-wrap; color: var(--navy-mid); }
+    
+    .img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .img-box { aspect-ratio: 4/3; border: 1.5px solid var(--gray-200); border-radius: 8px; background: var(--gray-100); overflow: hidden; }
+    .img-box img { width: 100%; height: 100%; object-fit: cover; }
+
+    .doc-footer { background: var(--navy); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 12px 12px; }
+    .doc-footer .left { font-size: 10px; color: rgba(255, 255, 255, 0.4); font-weight: 600; }
+    .doc-footer .right { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gold-light); }
+
+    .actions { max-width: 720px; margin: 16px auto 0; display: flex; gap: 10px; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-outline { background: white; color: var(--navy); border: 1.5px solid var(--gray-200); }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="top-bar">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="../img/logo-1.jpg" onerror="this.src='../Backend/logo-1.jpg'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        </div>
+        <div class="brand-text">
+          <div class="company">NEXTGEN SYSTEM CENTER</div>
+          <div class="doc-type">รายงานการอบรมประจำเดือน (OP07)</div>
+        </div>
+      </div>
+      <div class="doc-meta">
+        <div class="doc-id" id="v-docId">กำลังโหลด...</div>
+        <div style="margin-top:2px;" id="v-docDate">...</div>
+      </div>
+    </div>
+
+    <div class="form-body">
+      <!-- ข้อมูลพื้นฐาน -->
+      <div class="section">
+        <div class="section-label">ข้อมูลพื้นฐาน (General Information)</div>
+        <div class="field-row three">
+          <div class="field"><label>เดือนที่อบรม</label><div class="value highlight" id="v-month">-</div></div>
+          <div class="field"><label>วันที่รายงาน</label><div class="value highlight" id="v-formDate">-</div></div>
+          <div class="field"><label>เวลาอบรม</label><div class="value" id="v-time">-</div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>สถานที่ / หน่วยงาน (Site Name)</label><div class="value" id="v-venue">-</div></div>
+          <div class="field"><label>วิทยากร (Trainer)</label><div class="value" style="font-weight:700;" id="v-trainer">-</div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>เขตพื้นที่ (Zone)</label><div class="value" id="v-zone">-</div></div>
+          <div class="field"><label>ผลการอบรมภาพรวม</label><div id="v-overallResult" style="padding: 4px 0;">-</div></div>
+        </div>
+      </div>
+
+      <!-- หัวข้อการอบรม -->
+      <div class="section">
+        <div class="section-label">หัวข้อการอบรม (Training Topics)</div>
+        <div class="remark-box" id="v-topics" style="font-weight:600; color:var(--navy-mid);">...</div>
+      </div>
+
+      <!-- ผู้เข้าร่วม -->
+      <div class="section">
+        <div class="section-label">รายชื่อผู้เข้าร่วมและผลการทดสอบ (Attendees)</div>
+        <div style="border: 1.5px solid var(--gray-200); border-radius: 8px; overflow: hidden;">
+          <table class="staff-table">
+            <thead>
+              <tr>
+                <th style="width: 8%; text-align: center;">ลำดับ</th>
+                <th style="width: 42%">รายชื่อกำลังพล</th>
+                <th style="width: 15%; text-align:center;">Pre-Test</th>
+                <th style="width: 15%; text-align:center;">Post-Test</th>
+                <th style="width: 20%; text-align: center;">พัฒนาการ</th>
+              </tr>
+            </thead>
+            <tbody id="v-staffTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- สรุปเนื้อหา -->
+      <div class="section">
+        <div class="section-label">สรุปเนื้อหาและผลการประเมิน (Summary)</div>
+        <div class="remark-box" id="v-content" style="margin-bottom:12px;">-</div>
+        <div id="v-evalArea" class="grid grid-cols-2 gap-x-12 gap-y-2"></div>
+      </div>
+
+      <!-- รูปภาพ -->
+      <div class="section">
+        <div class="section-label">รูปภาพประกอบ (Images)</div>
+        <div class="img-grid" id="v-imgGrid"></div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <div class="left">NEXTGEN SYSTEM CENTER &copy; 2026</div>
+      <div class="right">OP07 REPORT | FORM v1.0</div>
+    </div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn btn-outline" style="flex:1" onclick="window.close()">ปิดหน้านี้</button>
+    <button class="btn btn-primary" style="flex:2" onclick="window.print()">🖨️ พิมพ์รายงาน / บันทึก PDF</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const docId = urlParams.get('id');
+
+    window.onload = async () => {
+      if (!docId) { alert('ไม่พบรหัสเอกสาร'); return; }
+      await fetchDoc();
+      if (urlParams.get('print') === 'true') {
+        setTimeout(() => window.print(), 1000);
+      }
+    };
+
+    async function fetchDoc() {
+      const { data, error } = await supabaseClient.from('op07_reports').select('*').eq('id', docId).single();
+      if (error || !data) { alert('ไม่พบข้อมูลเอกสาร'); return; }
+
+      document.getElementById('v-docId').innerText = data.doc_id || '-';
+      document.getElementById('v-docDate').innerText = 'วันที่ทำรายการ: ' + new Date(data.created_at).toLocaleString('th-TH');
+
+      document.getElementById('v-month').innerText = data.train_month || '-';
+      document.getElementById('v-formDate').innerText = formatThaiDate(data.visit_date);
+      document.getElementById('v-time').innerText = `${data.time_start || '-'} ถึง ${data.time_end || '-'} น.`;
+      document.getElementById('v-venue').innerText = data.venue || '-';
+      document.getElementById('v-trainer').innerText = data.trainer || '-';
+      document.getElementById('v-zone').innerText = data.zone || '-';
+      document.getElementById('v-topics').innerText = data.topics || '-';
+      document.getElementById('v-content').innerText = data.content || '-';
+
+      let resBadge = '<span class="badge ok">บรรลุผล</span>';
+      if(data.overall_result === 'warn') resBadge = '<span class="badge warn">บางส่วน</span>';
+      else if(data.overall_result === 'issue') resBadge = '<span class="badge fail">ปรับปรุง</span>';
+      document.getElementById('v-overallResult').innerHTML = resBadge;
+
+      const att = data.attendance || [];
+      document.getElementById('v-staffTable').innerHTML = att.map((a, i) => {
+        const diff = (parseInt(a.post) || 0) - (parseInt(a.pre) || 0);
+        return `<tr><td style="text-align:center;">${i+1}</td><td style="font-weight:600;">${a.name}</td><td style="text-align:center;">${a.pre || 0}</td><td style="text-align:center; font-weight:700; color:var(--blue);">${a.post || 0}</td><td style="text-align:center; font-weight:700; color:${diff >= 0 ? 'var(--green)' : 'var(--red)'}">${diff >= 0 ? '+'+diff : diff}</td></tr>`;
+      }).join('') || '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--gray-400);">ไม่มีข้อมูล</td></tr>';
+
+      const evals = data.eval_scores || {};
+      const labels = ["เนื้อหาเหมาะสม", "วิทยากรถ่ายทอดได้ดี", "พนักงานมีความเข้าใจ", "สถานที่/อุปกรณ์พร้อม", "นำไปใช้งานได้จริง"];
+      document.getElementById('v-evalArea').innerHTML = labels.map((l, i) => `
+        <div style="display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px dotted var(--gray-200);">
+          <span style="color:var(--gray-600);">${l}</span>
+          <span style="color:var(--gold); font-weight:700;">${'★'.repeat(evals[i] || 0)}${'☆'.repeat(5 - (evals[i] || 0))}</span>
+        </div>
+      `).join('');
+
+      // Photos Loading with Fallback & Debug
+      const photos = data.photo_urls || data.photos || [];
+      const imgGrid = document.getElementById('v-imgGrid');
+      
+      if (!imgGrid) {
+          console.error("Critical Error: 'v-imgGrid' element not found!");
+          return;
+      }
+
+      if (photos.length === 0) {
+        imgGrid.innerHTML = '<div style="grid-column:1/-1; padding:20px; text-align:center; color:var(--gray-400); border:1.5px dashed var(--gray-200); border-radius:8px;">ไม่มีรูปภาพแนบในรายงานนี้ (No Photos Found)</div>';
+      } else {
+        imgGrid.innerHTML = photos.map(url => `
+          <div class="img-box">
+            <img src="${url}" onerror="this.src='../img/no-image.png'; this.style.opacity=0.3;">
+          </div>
+        `).join('');
+      }
+    }
+
+    function formatThaiDate(dateStr) {
+      if(!dateStr) return '-';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${parseInt(y) + 543}`;
+    }
+  </script>
+</body>
+</html>

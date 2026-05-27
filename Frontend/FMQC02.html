@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAN Security — แบบฟอร์มรายงานการตรวจเยี่ยมหน่วยงาน (FMQC-02)</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../Backend/config.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --navy-mid: #243560;
+            --gold: #C9920C;
+            --gold-light: #F0B429;
+            --blue: #1A56DB;
+            --gray-100: #F4F6F9;
+            --gray-200: #E8ECF2;
+            --gray-400: #9AABC2;
+            --gray-600: #5A6E8C;
+            --white: #FFFFFF;
+            --green: #0D7A4E;
+            --green-bg: #E6F4EE;
+            --red: #C0392B;
+            --red-bg: #FDECEA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--gray-100);
+            color: var(--navy);
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        /* ===== PAGE ===== */
+        .page {
+            background: white;
+            max-width: 720px;
+            margin: 0 auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(27, 42, 74, 0.10);
+            overflow: hidden;
+        }
+
+        /* ===== HEADER BAR ===== */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--navy);
+            padding: 14px 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            background: var(--gold);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .brand-text {
+            color: white;
+        }
+
+        .brand-text .company {
+            font-size: 11px;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-text .doc-type {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .doc-meta {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+        }
+
+        .doc-id {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--gold-light);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* ===== FORM BODY ===== */
+        .section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .field-row.three {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .field-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .field label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+
+        .input-box {
+            width: 100%;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--navy);
+            background: var(--gray-100);
+            border: 1.5px solid var(--gray-200);
+            border-radius: 7px;
+            padding: 8px 12px;
+            min-height: 38px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-box:focus {
+            border-color: var(--blue);
+            background: #EEF4FF;
+        }
+
+        .input-readonly {
+            background: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Checklist */
+        .check-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1.5px solid var(--gray-200);
+            margin-bottom: 8px;
+        }
+
+        .check-item.active-pass {
+            background: var(--green-bg);
+            border-color: #A7DFC4;
+        }
+
+        .check-item.active-warn {
+            background: #FEF3C7;
+            border-color: #FBBF24;
+        }
+
+        .check-item.active-fail {
+            background: var(--red-bg);
+            border-color: #FABBB6;
+        }
+
+        .opt-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .opt-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--gray-200);
+            background: white;
+            color: var(--gray-600);
+        }
+
+        .opt-btn.active-pass {
+            background: var(--green);
+            color: white;
+            border-color: var(--green);
+        }
+
+        .opt-btn.active-warn {
+            background: #D97706;
+            color: white;
+            border-color: #D97706;
+        }
+
+        .opt-btn.active-fail {
+            background: var(--red);
+            color: white;
+            border-color: var(--red);
+        }
+
+        /* Table */
+        .staff-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .staff-table th {
+            background: var(--navy);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .staff-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .btn-add-row {
+            width: 100%;
+            padding: 10px;
+            border: 1.5px dashed var(--gray-400);
+            border-radius: 8px;
+            color: var(--gray-600);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            background: none;
+        }
+
+        /* Photos */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .pslot {
+            aspect-ratio: 4/3;
+            border: 1.5px dashed var(--gray-400);
+            border-radius: 8px;
+            background: var(--gray-100);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .pslot i {
+            font-size: 20px;
+            color: var(--gray-400);
+            margin-bottom: 4px;
+        }
+
+        .pslot span {
+            font-size: 10px;
+            color: var(--gray-600);
+            font-weight: 700;
+        }
+
+        .pslot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .pslot input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* Signature */
+        .sig-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .sig-box {
+            border: 1.5px dashed var(--gray-400);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .sig-canvas {
+            width: 100%;
+            height: 80px;
+            background: #fafafa;
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        .sig-tool {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .sig-clear {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--red);
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        /* Actions */
+        .actions {
+            max-width: 720px;
+            margin: 24px auto 40px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: var(--navy);
+            color: white;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(27, 42, 74, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(27, 42, 74, 0.3);
+        }
+
+        .btn-submit:disabled {
+            background: var(--gray-400);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Success Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--green-bg);
+            color: var(--green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin: 0 auto 20px;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-back {
+            color: white;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .nav-back:hover {
+            background: var(--gold);
+            color: var(--navy);
+            transform: translateX(-3px);
+            border-color: var(--gold);
+        }
+
+        .nav-brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-brand .main {
+            color: white;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .nav-brand .sub {
+            color: var(--gold);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .cancel-btn {
+            background: rgba(241, 245, 249, 0.8);
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 14px 15px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .cancel-btn:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            border-color: #fca5a5;
+            transform: translateY(-2px);
+        }
+
+        .home-btn {
+            background: #1e293b;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 15px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .home-btn:hover {
+            background: #334155;
+            transform: translateY(-2px);
+            border-color: var(--gold);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 15px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+            filter: brightness(1.1);
+        }
+
+        /* Suggestions */
+        .suggestions {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 13px;
+        }
+
+        .suggestion-item:hover {
+            background: var(--gray-100);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top Nav Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <a href="staff.html" class="nav-back">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="nav-brand">
+                <span class="main">NEXTGEN SYSTEM</span>
+                <span class="sub">Inspection Module</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <img src="../img/logo-1.jpg" style="height: 35px; border-radius: 6px;" alt="Logo">
+        </div>
+    </nav>
+
+    <div class="page" style="margin-top: 80px; margin-bottom: 30px;">
+        <!-- HEADER -->
+        <div class="top-bar">
+            <div class="brand">
+                <img src="../img/logo-1.jpg" style="width: 38px; height: 38px; border-radius: 8px;" alt="NEXTGEN">
+                <div class="brand-text">
+                    <div class="company">NEXTGEN SYSTEM CENTER</div>
+                    <div class="doc-type">รายงานการตรวจเยี่ยมหน่วยงาน (FMQC-02)</div>
+                </div>
+            </div>
+            <div class="doc-meta">
+                <div style="opacity: 0.7;">เลขที่เอกสาร</div>
+                <div class="doc-id" id="docId">FMQC-02-LOADING</div>
+            </div>
+        </div>
+
+        <form id="fmqcForm" onsubmit="event.preventDefault(); submitForm();">
+            <!-- SECTION 1: BASIC INFO -->
+            <div class="section">
+                <div class="section-label">ข้อมูลพื้นฐาน</div>
+                <div class="field-row full relative">
+                    <div class="field" style="position:relative;">
+                        <label>ชื่อหน่วยงาน (Site Name) <span style="color:var(--red);">*</span></label>
+                        <div style="position:relative; width:100%;">
+                            <input type="text" id="siteName" class="input-box" placeholder="คลิกเพื่อเลือกหรือค้นหารหัส..."
+                                onclick="handleUnitSearch(this.value)" onfocus="handleUnitSearch(this.value)" oninput="handleUnitSearch(this.value)" autocomplete="off">
+                            <i class="fas fa-chevron-down" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--gray-400); pointer-events:none;"></i>
+                        </div>
+                        <div id="unitSuggestions" class="suggestions"></div>
+                        <div id="searchDebug" style="font-size:9px; color:var(--gray-400); margin-top:4px;"></div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label>วันที่ตรวจ</label>
+                        <input type="text" id="visitDateDisplay" class="input-box input-readonly" readonly>
+                        <input type="hidden" id="visitDate">
+                    </div>
+                    <div class="field">
+                        <label>เวลาเข้าตรวจ</label>
+                        <input type="text" id="timeIn" class="input-box input-readonly" readonly>
+                    </div>
+                </div>
+                <div class="field-row three">
+                    <div class="field">
+                        <label>เขต (Zone)</label>
+                        <input type="text" id="zone" class="input-box input-readonly" readonly value="-">
+                    </div>
+                    <div class="field">
+                        <label>ผู้ตรวจ (Inspector)</label>
+                        <input type="text" id="inspector" class="input-box input-readonly" readonly value="-">
+                    </div>
+                    <div class="field">
+                        <label>ตำแหน่ง (Role)</label>
+                        <input type="text" id="role" class="input-box input-readonly" readonly value="-">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label>กำลังพลตามสัญญา</label>
+                        <input type="number" id="reqStaff" class="input-box" placeholder="จำนวนนาย">
+                    </div>
+                    <div class="field">
+                        <label>กำลังพลที่ปฏิบัติงานจริง</label>
+                        <input type="number" id="actStaff" class="input-box" placeholder="จำนวนนาย">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: CHECKLIST -->
+            <div class="section">
+                <div class="section-label">รายการตรวจสอบ (Inspection Checklist)</div>
+                <div id="checklistBody">
+                    <!-- JS generated items -->
+                </div>
+            </div>
+
+            <!-- SECTION 3: STAFF TABLE -->
+            <div class="section">
+                <div class="section-label">ข้อมูลกำลังพล (Personnel on Duty)</div>
+                <table class="staff-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">ชื่อ-นามสกุล</th>
+                            <th style="width: 25%;">ตำแหน่ง</th>
+                            <th style="width: 20%;">ผลัด</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffTableBody">
+                        <!-- JS generated rows -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn-add-row" onclick="addStaffRow()">
+                    <i class="fas fa-plus mr-1"></i> เพิ่มรายชื่อพนักงาน
+                </button>
+            </div>
+
+            <!-- SECTION 4: PHOTOS & REMARKS -->
+            <div class="section">
+                <div class="section-label">รูปถ่ายและหมายเหตุ</div>
+                <div class="field" style="margin-bottom:15px;">
+                    <label>รูปถ่ายหน้างาน (สูงสุด 3 รูป)</label>
+                    <div class="photo-grid">
+                        <div class="pslot" id="pslot1">
+                            <i class="fas fa-camera"></i><span>PHOTO 1</span>
+                            <img id="pimg1" style="display:none;">
+                            <input type="file" accept="image/*" onchange="handlePhoto(1, this)">
+                        </div>
+                        <div class="pslot" id="pslot2">
+                            <i class="fas fa-camera"></i><span>PHOTO 2</span>
+                            <img id="pimg2" style="display:none;">
+                            <input type="file" accept="image/*" onchange="handlePhoto(2, this)">
+                        </div>
+                        <div class="pslot" id="pslot3">
+                            <i class="fas fa-camera"></i><span>PHOTO 3</span>
+                            <img id="pimg3" style="display:none;">
+                            <input type="file" accept="image/*" onchange="handlePhoto(3, this)">
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>หมายเหตุ / สิ่งที่ต้องติดตาม</label>
+                    <textarea id="remarks" class="input-box" style="min-height:80px; resize: none;"
+                        placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+            </div>
+
+            <!-- SECTION 5: SIGNATURES -->
+            <div class="section">
+                <div class="section-label">ลงนามรับรอง</div>
+                <div class="sig-row">
+                    <div class="sig-box">
+                        <div class="sig-tool">
+                            <span style="font-size:10px; font-weight:700; color:var(--gray-600);">ผู้เข้าตรวจ</span>
+                            <button type="button" class="sig-clear" onclick="clearSig('sig1')">ลบ</button>
+                        </div>
+                        <canvas id="sig1" class="sig-canvas" width="300" height="80"></canvas>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-tool">
+                            <span style="font-size:10px; font-weight:700; color:var(--gray-600);">ผู้รับทราบ
+                                (Manager)</span>
+                            <button type="button" class="sig-clear" onclick="clearSig('sig2')">ลบ</button>
+                        </div>
+                        <canvas id="sig2" class="sig-canvas" width="300" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+
+        <!-- FOOTER BAR -->
+        <div style="background: var(--navy); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 12px 12px;">
+            <div style="font-size: 10px; color: rgba(255, 255, 255, 0.4); font-weight: 600;">NEXTGEN SYSTEM CENTER &copy; 2026</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gold-light);">FMQC-02 REPORT | FORM v1.0</div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS (Outside Paper) -->
+    <div style="max-width: 720px; margin: 25px auto 80px; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; padding: 0 15px;">
+        <button type="button" onclick="location.href='staff.html'" class="cancel-btn">
+            <i class="fas fa-times mr-1"></i> ยกเลิก
+        </button>
+        <button type="button" onclick="location.href='staff.html'" class="home-btn">
+            <i class="fas fa-home mr-1"></i> เมนูหลัก
+        </button>
+        <button type="button" id="submitBtn" onclick="document.getElementById('fmqcForm').requestSubmit()" class="submit-btn">
+            <i class="fas fa-check-circle mr-1"></i> บันทึกรายงาน
+        </button>
+    </div>
+
+    <!-- SUCCESS OVERLAY -->
+    <div id="successOverlay" class="overlay">
+        <div class="success-card">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2 style="font-weight:800; margin-bottom:10px;">ส่งรายงานสำเร็จ!</h2>
+            <p style="color:var(--gray-600); font-size:14px; margin-bottom:30px;">ข้อมูลรายงาน FMQC-02 ถูกบันทึกแล้ว</p>
+            
+            <button id="viewReportBtn" style="width:100%; padding:14px; background:var(--gold); color:var(--navy); border-radius:10px; border:none; font-weight:800; margin-bottom:10px; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fas fa-file-invoice"></i> ดูใบรายงาน / พิมพ์ PDF
+            </button>
+            
+            <button onclick="location.reload()"
+                style="width:100%; padding:14px; background:var(--navy); color:white; border-radius:10px; border:none; font-weight:700; margin-bottom:10px; cursor:pointer;">เขียนรายงานใหม่</button>
+            
+            <button onclick="window.location.href='staff.html'"
+                style="width:100%; padding:14px; background:var(--gray-100); color:var(--navy); border-radius:10px; border:none; font-weight:700; cursor:pointer;">กลับหน้าหลัก</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State & Config ---
+        const userData = JSON.parse(localStorage.getItem('nextgen_user'));
+        if (!userData) window.location.href = '../index.html';
+
+        const CHECKLIST_KEYS = [
+            'กำลังพลตามสัญญา',
+            'การแต่งกาย',
+            'การตรวจช่วงวันหยุด',
+            'การจราจร',
+            'การเดินตรวจพื้นที่'
+        ];
+
+        let unitsData = [];
+        let checklistState = {};
+        let photoFiles = [null, null, null];
+
+        window.onload = async () => {
+            await syncUserSession();
+            initForm();
+            await fetchUnits();
+            initSignatures();
+        };
+
+        async function syncUserSession() {
+            if (!userData) return window.location.href = '../index.html';
+            try {
+                const { data, error } = await supabaseClient
+                    .from('staff')
+                    .select('*')
+                    .eq('emp_id', userData.emp_id)
+                    .single();
+                if (!error && data) {
+                    Object.assign(userData, data);
+                    localStorage.setItem('nextgen_user', JSON.stringify(userData));
+                }
+            } catch (e) { console.error("Sync Error:", e); }
+        }
+
+        function initForm() {
+            // Set Default Values
+            const now = new Date();
+            const thai = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+            const y = thai.getFullYear();
+            const m = String(thai.getMonth() + 1).padStart(2, '0');
+            const d = String(thai.getDate()).padStart(2, '0');
+            const hh = String(thai.getHours()).padStart(2, '0');
+            const mm = String(thai.getMinutes()).padStart(2, '0');
+
+            document.getElementById('visitDate').value = `${y}-${m}-${d}`;
+            document.getElementById('visitDateDisplay').value = `${parseInt(d)} ${getMonthThai(parseInt(m))} ${y + 543}`;
+            document.getElementById('timeIn').value = `${hh}:${mm} น.`;
+            document.getElementById('inspector').value = userData.name;
+            document.getElementById('role').value = userData.role || userData.level;
+            
+            const myZone = userData.zone || userData.area || '-';
+            document.getElementById('zone').value = myZone;
+
+            // Generate Doc ID
+            const docId = `FMQC-02-${y + 543}-${m}${d}-${Math.floor(Math.random() * 900) + 100}`;
+            document.getElementById('docId').textContent = docId;
+
+            // Render Checklist
+            const body = document.getElementById('checklistBody');
+            body.innerHTML = CHECKLIST_KEYS.map(key => {
+                checklistState[key] = 'pass';
+                return `
+                    <div class="check-item active-pass" id="item-${key}">
+                        <div style="font-size:13px; font-weight:600; color:var(--navy);">${key}</div>
+                        <div class="opt-group">
+                            <button type="button" class="opt-btn active-pass" onclick="setCheck('${key}', 'pass')" id="btn-${key}-pass">ผ่าน</button>
+                            <button type="button" class="opt-btn" onclick="setCheck('${key}', 'warn')" id="btn-${key}-warn">กำชับ</button>
+                            <button type="button" class="opt-btn" onclick="setCheck('${key}', 'fail')" id="btn-${key}-fail">พบปัญหา</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            addStaffRow();
+        }
+
+        async function fetchUnits() {
+            try {
+                const { data, error } = await supabaseClient.from('units').select('*');
+                if (error) throw error;
+                unitsData = data || [];
+                console.log("Total Units Fetched:", unitsData.length);
+                const debugEl = document.getElementById('searchDebug');
+                if (debugEl) debugEl.innerText = `ระบบโหลดข้อมูลหน่วยงาน ${unitsData.length} รายการ (เขต: ${userData.zone || userData.area || 'ไม่ระบุ'})`;
+                
+                if (unitsData.length === 0) {
+                    alert("⚠️ คำเตือน: ไม่พบข้อมูลหน่วยงานในระบบ กรุณาตรวจสอบตาราง units");
+                }
+            } catch (e) { 
+                console.error("Fetch Units Error:", e);
+                alert("❌ เกิดข้อผิดพลาดในการดึงข้อมูลหน่วยงาน: " + e.message);
+                unitsData = [];
+            }
+        }
+
+        function handleUnitSearch(val) {
+            const box = document.getElementById('unitSuggestions');
+            const searchVal = val.toLowerCase().trim();
+            const myZone = (userData.zone || userData.area || '').trim().toLowerCase();
+            const userLevel = (userData.level || '').toLowerCase();
+
+            // 1. ลองกรองตามเขตเท่านั้น (Strict Zone Filter with Mismatch Handling)
+            let matches = unitsData.filter(u => {
+                const searchMatch = !searchVal || 
+                                   (u.unit_name || '').toLowerCase().includes(searchVal) ||
+                                   (u.unit_code || '').toLowerCase().includes(searchVal);
+                
+                const uZone = (u.zone || '').trim().toLowerCase();
+                const myZoneClean = myZone.replace('เขต', '').trim();
+                const uZoneClean = uZone.replace('เขต', '').trim();
+                
+                // ตรวจสอบว่าเขตตรงกัน (รองรับทั้ง "เขต 1" และ "1")
+                const zoneMatch = (userLevel === 'admin' || !myZone || 
+                                  uZone === myZone || 
+                                  uZoneClean === myZoneClean ||
+                                  uZone.includes(myZone) || 
+                                  myZone.includes(uZone));
+                                  
+                return searchMatch && zoneMatch;
+            });
+
+            const finalMatches = matches.slice(0, 10); // Show up to 10 items
+            
+            if (finalMatches.length > 0) {
+                box.innerHTML = finalMatches.map(u => `
+                    <div class="suggestion-item" onclick="selectUnit('${u.unit_name}', '${u.zone}', ${u.required_guards || 0})">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>${u.unit_name}</strong>
+                            <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--gold); font-weight:700;">${u.unit_code || 'N/A'}</span>
+                        </div>
+                        <small style="color:var(--gray-600)">${u.zone} | สัญญา: ${u.required_guards || 0} นาย</small>
+                    </div>
+                `).join('');
+                box.style.setProperty('display', 'block', 'important');
+            } else if (searchVal) {
+                box.innerHTML = '<div class="suggestion-item" style="color:var(--gray-400); cursor:default;">ไม่พบหน่วยงานที่ตรงกัน</div>';
+                box.style.setProperty('display', 'block', 'important');
+            } else {
+                box.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        // Click outside to close
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#siteName') && !e.target.closest('#unitSuggestions')) {
+                document.getElementById('unitSuggestions').style.display = 'none';
+            }
+        });
+
+        async function selectUnit(name, zone, req) {
+            document.getElementById('siteName').value = name;
+            document.getElementById('zone').value = zone;
+            document.getElementById('reqStaff').value = req;
+            document.getElementById('unitSuggestions').style.display = 'none';
+            
+            // Auto-fetch Actual Staff from logs
+            await fetchActualGuards(name);
+        }
+
+        async function fetchActualGuards(unitName) {
+            try {
+                // 1. Get all guards (we'll filter manually to be safe against typos)
+                const { data: staff, error: sErr } = await supabaseClient
+                    .from('staff')
+                    .select('emp_id, name, unit, role, level');
+                
+                if (sErr) throw sErr;
+                if (!staff || staff.length === 0) return;
+
+                // Clean and Filter staff for this unit
+                const cleanTarget = unitName.replace(/[\s.]/g, '').toLowerCase();
+                const unitStaff = staff.filter(s => {
+                    const cleanStaffUnit = (s.unit || '').replace(/[\s.]/g, '').toLowerCase();
+                    const cleanLevel = (s.level || '').trim().toLowerCase();
+                    return cleanStaffUnit === cleanTarget && cleanLevel.includes('guard');
+                });
+
+                if (unitStaff.length === 0) {
+                    document.getElementById('actStaff').value = 0;
+                    document.getElementById('staffTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--gray-400);">ไม่พบพนักงานที่สังกัดหน่วยงานนี้</td></tr>';
+                    return;
+                }
+
+                // 2. Get today's logs for these guards
+                const today = new Date().toISOString().split('T')[0];
+                const { data: logs, error: lErr } = await supabaseClient
+                    .from('duty_logs')
+                    .select('*')
+                    .in('emp_id', unitStaff.map(s => s.emp_id))
+                    .gte('timestamp', `${today}T00:00:00Z`);
+
+                if (lErr) throw lErr;
+
+                // 3. Determine who is "On Duty"
+                const onDutyGuards = unitStaff.filter(s => {
+                    const guardLogs = logs.filter(l => l.emp_id === s.emp_id)
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    return guardLogs.length > 0 && (guardLogs[0].action_type || '').toLowerCase().includes('in');
+                });
+
+                document.getElementById('actStaff').value = onDutyGuards.length;
+
+                // 4. Update Staff Table
+                const tbody = document.getElementById('staffTableBody');
+                tbody.innerHTML = onDutyGuards.map(g => `
+                    <tr>
+                        <td>${g.name}</td>
+                        <td>${g.role || 'รปภ.'}</td>
+                        <td>
+                            <select class="input-box" style="border:none; background:transparent; padding:4px;">
+                                <option>กลางวัน</option>
+                                <option>กลางคืน</option>
+                            </select>
+                        </td>
+                        <td><button type="button" onclick="this.closest('tr').remove()" style="border:none; background:none; color:var(--red);"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `).join('');
+                
+                if (onDutyGuards.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--gray-400);">ไม่พบกำลังพลที่ลงเวลาเข้างานในขณะนี้</td></tr>';
+                }
+
+            } catch (e) {
+                console.error("Error fetching actual guards:", e);
+                alert("ไม่สามารถดึงข้อมูลกำลังพลได้: " + e.message);
+            }
+        }
+
+        function setCheck(key, status) {
+            checklistState[key] = status;
+            const item = document.getElementById(`item-${key}`);
+            item.className = `check-item active-${status}`;
+            ['pass', 'warn', 'fail'].forEach(s => {
+                document.getElementById(`btn-${key}-${s}`).className = `opt-btn ${s === status ? 'active-' + s : ''}`;
+            });
+        }
+
+        function addStaffRow() {
+            const tbody = document.getElementById('staffTableBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="input-box" style="border:none; background:transparent; padding:4px;" placeholder="พิมพ์ชื่อ..."></td>
+                <td><input type="text" class="input-box" style="border:none; background:transparent; padding:4px;" value="รปภ."></td>
+                <td><select class="input-box" style="border:none; background:transparent; padding:4px;"><option>กลางวัน</option><option>กลางคืน</option></select></td>
+                <td><button type="button" onclick="this.closest('tr').remove()" style="border:none; background:none; color:var(--red);"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function handlePhoto(idx, input) {
+            const file = input.files[0];
+            if (!file) return;
+            photoFiles[idx - 1] = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById(`pimg${idx}`);
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function initSignatures() {
+            const setup = (id) => {
+                const canvas = document.getElementById(id);
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+                const getPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: cx - rect.left, y: cy - rect.top };
+                };
+                const start = (e) => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+                const move = (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#1B2A4A'; ctx.lineWidth = 2; ctx.stroke(); e.preventDefault(); };
+                const end = () => { drawing = false; };
+                canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+                canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); window.addEventListener('touchend', end);
+            };
+            setup('sig1'); setup('sig2');
+        }
+
+        function clearSig(id) {
+            const c = document.getElementById(id);
+            c.getContext('2d').clearRect(0, 0, c.width, c.height);
+        }
+
+        async function uploadPhoto(file) {
+            if (!file) return null;
+            const ext = file.name.split('.').pop();
+            const path = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+            const { data, error } = await supabaseClient.storage.from('fmqc02-photos').upload(path, file);
+            if (error) throw error;
+            const { data: { publicUrl } } = supabaseClient.storage.from('fmqc02-photos').getPublicUrl(path);
+            return publicUrl;
+        }
+
+        async function submitForm() {
+            const site = document.getElementById('siteName').value;
+            if (!site) return alert('กรุณาระบุชื่อหน่วยงาน');
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'กำลังส่งรายงาน...';
+
+            try {
+                const photoUrls = await Promise.all(photoFiles.map(f => uploadPhoto(f)));
+                const staffList = Array.from(document.getElementById('staffTableBody').rows).map(row => {
+                    const nameInput = row.cells[0].querySelector('input');
+                    const roleInput = row.cells[1].querySelector('input');
+                    const shiftInput = row.cells[2].querySelector('select');
+                    
+                    return {
+                        name: nameInput ? nameInput.value : row.cells[0].textContent.trim(),
+                        role: roleInput ? roleInput.value : row.cells[1].textContent.trim(),
+                        shift: shiftInput ? shiftInput.value : row.cells[2].textContent.trim()
+                    };
+                }).filter(s => s.name);
+
+                const reqStaff = parseInt(document.getElementById('reqStaff').value) || 0;
+                const actStaff = parseInt(document.getElementById('actStaff').value) || 0;
+
+                const payload = {
+                    doc_id: document.getElementById('docId').textContent,
+                    visit_date: document.getElementById('visitDate').value,
+                    time_in: document.getElementById('timeIn').value.replace(' น.', ''),
+                    site_name: site,
+                    inspector: document.getElementById('inspector').value,
+                    remarks: document.getElementById('remarks').value,
+                    image1: photoUrls[0],
+                    image2: photoUrls[1],
+                    image3: photoUrls[2],
+                    results: {
+                        ...checklistState,
+                        staffList: staffList,
+                        reqStaff: reqStaff,
+                        actStaff: actStaff,
+                        zone: document.getElementById('zone').value,
+                        sig_inspector: document.getElementById('sig1').toDataURL(),
+                        sig_manager: document.getElementById('sig2').toDataURL()
+                    }
+                };
+
+                const { data, error } = await supabaseClient.from('fmqc02_reports').insert([payload]).select();
+                if (error) throw error;
+
+                // Setup View Button
+                if (data && data[0]) {
+                    document.getElementById('viewReportBtn').onclick = () => {
+                        window.location.href = `FMQC02-View.html?id=${data[0].id}&print=true`;
+                    };
+                }
+
+                document.getElementById('successOverlay').style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+                alert('Error: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = 'บันทึกและส่งรายงาน';
+            }
+        }
+
+        function getMonthThai(m) {
+            return ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'][m];
+        }
+    </script>
+</body>
+
+</html>

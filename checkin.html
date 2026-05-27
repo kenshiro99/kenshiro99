@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexgen | ระบบระบุพิกัดหน่วยงาน</title>
+    <title>Nextgen | ระบบระบุพิกัดหน่วยงาน</title>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -222,9 +222,9 @@
 
     <!-- Premium Footer -->
     <div class="mt-8 text-center pb-6 space-y-1">
-        <p class="text-[10px] text-white font-black uppercase tracking-[2px]">NEXGEN <span class="text-amber-500">SYSTEM CENTER</span></p>
+        <p class="text-[10px] text-white font-black uppercase tracking-[2px]">NEXTGEN <span class="text-amber-500">SYSTEM CENTER</span></p>
         <p class="text-[8px] text-slate-500 font-bold tracking-[1px] opacity-60">
-            <span class="uppercase">&copy; 2026 &bull; NEXGEN SYSTEM CENTER</span> <span class="ml-1">Ver.1.0</span>
+            <span class="uppercase">&copy; 2026 &bull; NEXTGEN SYSTEM CENTER</span> <span class="ml-1">Ver.1.0</span>
         </p>
         <span class="text-[7px] text-slate-700 block">Developer: Ponchai Onkum</span>
     </div>
@@ -232,7 +232,7 @@
     <!-- AI ASSISTANT -->
     <div class="ai-assistant-container">
         <div class="ai-bubble" id="aiBubbleText">
-            สวัสดีค่ะ! <b>Nexgen-AI</b> <br>พร้อมบันทึกพิกัดให้คุณแล้วค่ะ
+            สวัสดีค่ะ! <b>Nextgen-AI</b> <br>พร้อมบันทึกพิกัดให้คุณแล้วค่ะ
         </div>
         <div class="ai-mascot-wrapper">
             <img src="img/avata-checkin.png?v=1" class="ai-video-avatar" id="aiImage" alt="AI Assistant">
@@ -251,7 +251,7 @@
         // --- 2. AUTHENTICATION ---
         function checkAuth() {
             try {
-                const sessionString = localStorage.getItem('nexgen_user');
+                const sessionString = localStorage.getItem('nextgen_user');
                 if (!sessionString) throw new Error('No session');
                 
                 userData = JSON.parse(sessionString);
@@ -262,7 +262,7 @@
                 
             } catch (e) {
                 console.error("Access Denied:", e.message);
-                localStorage.removeItem('nexgen_user');
+                localStorage.removeItem('nextgen_user');
                 window.location.replace('index.html');
             }
         }
@@ -510,7 +510,7 @@
         }
 
         function goToPortal() {
-            const user = JSON.parse(localStorage.getItem('nexgen_user'));
+            const user = JSON.parse(localStorage.getItem('nextgen_user'));
             const level = user ? user.level.toLowerCase() : '';
             if (level === 'admin' || level === 'manager') window.location.href = 'Backend/dashboard.html';
             else if (level === 'supervisor') window.location.href = 'Frontend/staff.html';
@@ -518,7 +518,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('nexgen_user');
+            localStorage.removeItem('nextgen_user');
             window.location.replace('index.html');
         }
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ศูนย์ควบคุมเน็กซ์เจน | พอร์ทัลมือถือ</title>
+    <title>Nextgen Portal | ศูนย์ควบคุมเน็กซ์เจน</title>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -13,7 +13,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap"
         rel="stylesheet">
-    
+
     <!-- Flatpickr (Thai Date Picker) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
@@ -23,147 +23,254 @@
     <style>
         :root {
             --primary: #0ea5e9;
-            --accent: #f59e0b;
-            --bg: #020617;
-            --card: rgba(15, 23, 42, 0.9);
-            --border: rgba(255, 255, 255, 0.1);
+            --primary-dark: #0284c7;
+            --gold: #f59e0b;
+            --navy: #020617;
+            --glass: rgba(15, 23, 42, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Outfit', 'Sarabun', sans-serif;
-            background-color: var(--bg);
-            background-image:
-                radial-gradient(circle at top left, rgba(14, 165, 233, 0.1), transparent 40%),
-                radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.05), transparent 40%);
+            font-family: 'Sarabun', sans-serif;
+            background: var(--navy);
             color: white;
-            margin: 0;
-            padding-bottom: 40px;
+            min-height: 100vh;
             overflow-x: hidden;
         }
 
+        /* Background Glow */
+        .glow-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.15), transparent 70%),
+                radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.05), transparent 50%);
+        }
+
+        /* --- Header Section --- */
         .cyber-header {
-            background: linear-gradient(180deg, rgba(15, 23, 42, 1) 0%, rgba(2, 6, 23, 0.8) 100%);
+            background: var(--glass);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(14, 165, 233, 0.2);
-            padding: 40px 24px 30px;
-            border-radius: 0 0 40px 40px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid var(--card-border);
+            padding: 24px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .user-avatar {
-            width: 65px;
-            height: 65px;
-            border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            object-fit: cover;
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            border: 2px solid var(--primary);
+            padding: 2px;
         }
 
+        /* --- Stats Panel --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stat-label {
+            font-size: 8px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* --- Menu Cards --- */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
-            padding: 20px;
+            padding: 0 20px;
         }
 
         .tactical-card {
-            background: var(--card);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 24px;
-            padding: 20px 12px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tactical-card:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .card-icon-box {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
+            width: 45px;
+            height: 45px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
-            margin-bottom: 12px;
-            background: rgba(2, 6, 23, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .card-label {
             font-size: 11px;
             font-weight: 800;
+            color: white;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* --- Recent Activity --- */
+        .activity-feed {
+            margin: 30px 20px;
+        }
+
+        .feed-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--gold);
             text-transform: uppercase;
-            color: #94a3b8;
-        }
-
-        .stats-panel {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 25px;
-            margin: 0 20px 20px;
-            padding: 20px;
-            border: 1px dashed rgba(14, 165, 233, 0.2);
-        }
-
-        .guard-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 12px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
+        .feed-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .feed-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* --- Modal Styles --- */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 200;
             padding: 20px;
         }
 
         .main-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 20px;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 24px;
         }
 
         .btn-exit {
             width: 100%;
-            padding: 16px;
-            border-radius: 18px;
-            background: rgba(244, 63, 94, 0.1);
-            border: 1px solid rgba(244, 63, 94, 0.2);
-            color: #fb7185;
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
             font-weight: 800;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 13px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            margin-top: 40px;
         }
 
-        /* Flatpickr Custom */
-        .flatpickr-calendar {
-            background: #0f172a !important;
-            border: 1px solid rgba(14, 165, 233, 0.2) !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-            font-family: 'Sarabun', sans-serif !important;
+        .badge-status {
+            font-size: 8px;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
         }
-        .flatpickr-day.selected {
-            background: #0ea5e9 !important;
-            border-color: #0ea5e9 !important;
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
+    <div class="glow-bg"></div>
 
     <header class="cyber-header">
         <div class="flex items-center justify-between">
@@ -171,139 +278,183 @@
                 <img src="../Backend/logo-1.jpg" class="user-avatar"
                     onerror="this.src='https://ui-avatars.com/api/?name=User'">
                 <div>
-                    <h2 class="text-lg font-black uppercase" id="userName">กำลังโหลด...</h2>
-                    <span class="text-[9px] bg-amber-500 text-black px-3 py-1 rounded-full font-black">SUPERVISOR</span>
+                    <h2 class="text-lg font-black uppercase tracking-tight" id="userName">กำลังโหลด...</h2>
+                    <span
+                        class="text-[9px] bg-amber-500 text-black px-3 py-0.5 rounded-md font-black italic tracking-wider"
+                        id="userRole">เจ้าหน้าที่</span>
                 </div>
             </div>
             <button onclick="logout()"
-                class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-rose-500 shadow-xl">
+                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-rose-500 shadow-xl">
                 <i class="fas fa-power-off"></i>
             </button>
         </div>
-        <div class="mt-5 flex flex-wrap gap-4">
+        <div class="mt-4 flex flex-wrap gap-4 border-t border-white/5 pt-4">
             <div class="flex items-center gap-2">
                 <i class="fas fa-map-marker-alt text-amber-500 text-[10px]"></i>
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="userUnit">หน่วยงาน: --</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="userUnit">หน่วยงาน:
+                    --</span>
             </div>
             <div class="flex items-center gap-2">
                 <i class="fas fa-layer-group text-sky-500 text-[10px]"></i>
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="userZone">เขตพื้นที่: --</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest" id="userZone">เขตพื้นที่:
+                    --</span>
             </div>
         </div>
     </header>
 
-    <main id="mainContent" class="mt-8">
-        <div class="stats-panel">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <p class="text-[8px] font-bold text-slate-500 uppercase mb-1">รปภ. ในสังกัด</p>
-                    <p class="text-2xl font-black text-white" id="stat-total">0</p>
+    <main id="mainContent">
+        <!-- Dashboard สรุปยอดประจำวัน (Compact Design) -->
+        <div class="dashboard-grid">
+            <!-- 1. หน่วยงานในเขต -->
+            <div class="stat-card border-b-2 border-amber-500/50">
+                <div class="stat-icon bg-amber-500/10 text-amber-500">
+                    <i class="fas fa-building"></i>
                 </div>
-                <button onclick="fetchGuards()"
-                    class="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-widest active:scale-95">
-                    <i class="fas fa-sync-alt mr-1"></i> รีเฟรช
-                </button>
+                <div class="stat-info">
+                    <div class="stat-label">หน่วยงาน</div>
+                    <div class="stat-value text-amber-400" id="stat-units">0</div>
+                </div>
             </div>
 
-            <!-- Diagnostic Info Area -->
-            <div id="diagnosticArea" class="mt-4 p-3 bg-black/40 rounded-xl border border-white/5 hidden">
-                <p class="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-2">ระบบตรวจสอบการเชื่อมต่อ
-                </p>
-                <div id="diagnosticLog" class="space-y-1 text-[9px] text-slate-400">
-                    กำลังตรวจสอบ...
+            <!-- 2. พนักงานในเขต -->
+            <div class="stat-card border-b-2 border-sky-500/50">
+                <div class="stat-icon bg-sky-500/10 text-sky-500">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">รปภ.ทั้งหมด</div>
+                    <div class="stat-value text-sky-400" id="stat-total">0</div>
                 </div>
             </div>
+
+            <!-- 3. มาปฏิบัติงาน -->
+            <div class="stat-card border-b-2 border-emerald-500/50">
+                <div class="stat-icon bg-emerald-500/10 text-emerald-500">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">มาทำงาน</div>
+                    <div class="stat-value text-emerald-400" id="stat-present">0</div>
+                </div>
+            </div>
+
+            <!-- 4. ขาด/ลา/หยุด -->
+            <div class="stat-card border-b-2 border-rose-500/50">
+                <div class="stat-icon bg-rose-500/10 text-rose-500">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">ขาด/ลา</div>
+                    <div class="stat-value text-rose-400" id="stat-absent">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- หัวข้อเมนู -->
+        <div class="px-6 mb-4 flex justify-between items-end">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">เมนูการทำงาน</h3>
+            <button onclick="fetchGuards()" class="text-[9px] font-bold text-sky-400 uppercase"><i
+                    class="fas fa-sync mr-1"></i> อัปเดตข้อมูล</button>
         </div>
 
         <div class="menu-grid">
-            <div class="tactical-card" onclick="showGuardSection()">
+            <div class="tactical-card" onclick="window.location.href='guard_report.html'">
                 <div class="card-icon-box text-sky-400"><i class="fas fa-users-cog"></i></div>
                 <span class="card-label">จัดการพนักงาน</span>
             </div>
-            <div class="tactical-card" onclick="window.location.href='../Backend/OP05.html'">
+            <div class="tactical-card" onclick="window.location.href='chektime_guard.html'">
+                <div class="card-icon-box text-rose-400"><i class="fas fa-user-clock"></i></div>
+                <span class="card-label">เช็คเวลา เข้า-ออกงาน รปภ.</span>
+            </div>
+            <div class="tactical-card" onclick="window.location.href='OP05.html'">
                 <div class="card-icon-box text-amber-500"><i class="fas fa-file-signature"></i></div>
-                <span class="card-label">รายงาน OP05</span>
+                <span class="card-label"> (OP05) รายงานพบผู้ว่าจ้าง</span>
             </div>
-            <div class="tactical-card" onclick="alert('กำลังเริ่มระบบ...')">
-                <div class="card-icon-box text-emerald-400"><i class="fas fa-bullhorn"></i></div>
-                <span class="card-label">รายงานรวมแถว</span>
+            <div class="tactical-card" onclick="window.location.href='OP06.html'">
+                <div class="card-icon-box text-amber-500"><i class="fas fa-users-line"></i></div>
+                <span class="card-label"> (OP06) รายงานรวมแถว</span>
             </div>
-            <div class="tactical-card" onclick="window.location.href='../Backend/dashboard 10.html'">
-                <div class="card-icon-box text-slate-300"><i class="fas fa-terminal"></i></div>
-                <span class="card-label">แผงควบคุม</span>
+            <div class="tactical-card" onclick="window.location.href='OP07.html'">
+                <div class="card-icon-box text-indigo-400"><i class="fas fa-graduation-cap"></i></div>
+                <span class="card-label">(OP07) รายงานอบรมประจำเดือน </span>
+            </div>
+            <div class="tactical-card" onclick="window.location.href='FMQC02.html'">
+                <div class="card-icon-box text-emerald-400"><i class="fas fa-clipboard-check"></i></div>
+                <span class="card-label">(FMQC-02) รายงานเข้าตรวจหน่วยงาน</span>
             </div>
         </div>
 
-        <div class="px-6 mt-4">
-            <button onclick="logout()" class="btn-exit">ออกจากระบบ</button>
+        <!-- รายการประวัติล่าสุด -->
+        <div class="activity-feed">
+            <div class="feed-title">
+                <span>ประวัติการทำรายการล่าสุด</span>
+                <i class="fas fa-history text-[10px]"></i>
+            </div>
+            <div id="recentActivity" class="space-y-1">
+                <p class="text-center py-4 text-slate-600 text-[10px] font-bold uppercase italic">
+                    ไม่มีประวัติการทำรายการในวันนี้</p>
+            </div>
+        </div>
+
+        <div class="px-6 pb-12">
+            <button onclick="logout()" class="btn-exit">ออกจากระบบพอร์ทัล</button>
         </div>
     </main>
 
-    <section id="guardSection" style="display:none;" class="mt-8 px-5">
+    <!-- ส่วนรายการพนักงาน -->
+    <section id="guardSection" style="display:none;" class="mt-4 px-5">
         <div class="flex items-center gap-4 mb-6">
             <button onclick="hideGuardSection()"
                 class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white border border-white/10">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <h2 class="text-lg font-black uppercase">จัดการพนักงาน รปภ.</h2>
-        </div>
-
-        <div class="main-box mb-6 border-sky-500/30">
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                <input type="text" id="guardSearch" onkeyup="filterGuards()" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน..."
-                    class="w-full pl-12 pr-4 py-4 bg-slate-900 border border-white/10 rounded-2xl font-bold text-white outline-none focus:border-sky-500">
+            <div>
+                <h2 class="text-lg font-black uppercase">จัดการพนักงาน รปภ.</h2>
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest" id="guardCountLabel">ทั้งหมด 0
+                    ท่าน</p>
             </div>
         </div>
 
-        <div id="guardList" class="space-y-3"></div>
+        <div class="relative mb-6">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"></i>
+            <input type="text" id="guardSearch" onkeyup="filterGuards()" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน..."
+                class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white outline-none focus:border-sky-500 transition-all">
+        </div>
+
+        <div id="guardList" class="space-y-3 pb-10"></div>
     </section>
 
-    <!-- Modal: จัดการการทำงาน -->
+    <!-- Modal: จัดการเวลาทำงาน -->
     <div id="modalWork" class="modal-overlay">
         <div class="main-box w-full max-w-md relative text-white">
             <button onclick="closeModal('modalWork')" class="absolute top-4 right-4 text-slate-500"><i
                     class="fas fa-times text-xl"></i></button>
             <h2 class="text-lg font-black mb-6 flex items-center gap-3"><i class="fas fa-tools text-amber-500"></i>
-                จัดการการทำงาน</h2>
+                บันทึกข้อมูลการทำงาน</h2>
 
             <div class="space-y-6">
-                <div class="p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
                     <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">พนักงานที่เลือก</p>
                     <div id="workModalName" class="text-sm font-black text-sky-400">--</div>
                     <input type="hidden" id="workModalId">
                 </div>
 
-                <!-- รูปแบบคลิกแล้วพิมพ์: 24 ชม. -->
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <p
-                            class="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fas fa-calendar-alt"></i> บันทึกข้อมูลวันเวลาทำงาน (24H)
-                        </p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <!-- เลือกวันที่ -->
+                    <div class="grid grid-cols-2 gap-3">
                         <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
-                            <p class="text-[9px] text-slate-500 font-bold mb-2 uppercase tracking-widest">1. เลือกวันที่
-                                (ปฏิทิน)</p>
-                            <input type="text" id="inputWorkDate" placeholder="เลือกวันที่..."
-                                class="w-full bg-transparent font-black text-white outline-none text-lg cursor-pointer">
+                            <p class="text-[9px] text-slate-500 font-bold mb-2 uppercase tracking-widest">
+                                วันที่ปฏิบัติหน้าที่</p>
+                            <input type="text" id="inputWorkDate"
+                                class="w-full bg-transparent font-black text-white outline-none text-sm cursor-pointer">
                         </div>
-
-                        <!-- พิมพ์เวลา -->
-                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4 relative">
-                            <p class="text-[9px] text-slate-500 font-bold mb-2 uppercase tracking-widest">2. ระบุเวลา
-                                (พิมพ์แบบ 24 ชม.)</p>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <p class="text-[9px] text-slate-500 font-bold mb-2 uppercase tracking-widest">เวลาที่บันทึก
+                                (24H)</p>
                             <input type="text" id="inputWorkTime" placeholder="ชช:นน:วว"
-                                class="w-full bg-transparent font-black text-emerald-400 outline-none text-2xl tracking-widest">
-                            <p class="text-[8px] text-slate-600 font-bold mt-1 uppercase italic">* ตัวอย่าง: 14:30:00
-                                (ห้ามใส่ AM/PM)</p>
+                                class="w-full bg-transparent font-black text-emerald-400 outline-none text-sm tracking-widest">
                         </div>
                     </div>
-
-                    <input type="hidden" id="workDateTime">
 
                     <div class="grid grid-cols-2 gap-3 pt-2">
                         <button onclick="setWorkAction('check_in')" id="btnIn"
@@ -316,382 +467,319 @@
                     <input type="hidden" id="workAction" value="check_in">
 
                     <button onclick="submitWork('clock')"
-                        class="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all uppercase tracking-widest">
+                        class="w-full py-5 bg-gradient-to-r from-sky-600 to-sky-400 text-white rounded-2xl font-black text-sm shadow-xl shadow-sky-500/20 active:scale-[0.98] transition-all uppercase tracking-widest">
                         ยืนยันการบันทึกเวลา
                     </button>
                 </div>
 
-                <div class="border-t border-white/5 pt-4"></div>
-
-                <div class="space-y-3">
-                    <p class="text-[11px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-calendar-minus"></i> บันทึกการลา
+                <div class="border-t border-white/5 pt-6 mt-6">
+                    <p
+                        class="text-[11px] font-black text-amber-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-minus"></i> บันทึกการลา / ขาดงาน
                     </p>
                     <select id="leaveType"
-                        class="w-full p-4 bg-slate-900 border border-white/10 rounded-xl font-bold text-white outline-none">
+                        class="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl font-bold text-white outline-none mb-3">
                         <option value="sick_leave">ลาป่วย (Sick Leave)</option>
                         <option value="personal_leave">ลากิจ (Personal Leave)</option>
-                        <option value="vacation_leave">ลาพักร้อน (Vacation Leave)</option>
+                        <option value="vacation_leave">ลาพักร้อน (Vacation)</option>
+                        <option value="absent">ขาดงาน (Absent)</option>
                     </select>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <p class="text-[9px] text-slate-500 font-bold mb-1 ml-1 uppercase">เริ่มวันที่</p>
-                            <input type="text" id="leaveStartDate" placeholder="วว/ดด/ปปปป"
-                                class="w-full p-4 bg-slate-900 border border-white/10 rounded-xl font-bold text-white outline-none text-xs cursor-pointer">
-                        </div>
-                        <div>
-                            <p class="text-[9px] text-slate-500 font-bold mb-1 ml-1 uppercase">ถึงวันที่</p>
-                            <input type="text" id="leaveEndDate" placeholder="วว/ดด/ปปปป"
-                                class="w-full p-4 bg-slate-900 border border-white/10 rounded-xl font-bold text-white outline-none text-xs cursor-pointer">
-                        </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <input type="text" id="leaveStartDate" placeholder="จากวันที่"
+                            class="p-4 bg-slate-900 border border-white/10 rounded-2xl font-bold text-white outline-none text-xs">
+                        <input type="text" id="leaveEndDate" placeholder="ถึงวันที่"
+                            class="p-4 bg-slate-900 border border-white/10 rounded-2xl font-bold text-white outline-none text-xs">
                     </div>
                     <button onclick="submitWork('leave')"
-                        class="w-full py-4 bg-amber-500 text-white rounded-xl font-black shadow-lg">ยืนยันบันทึกการลา</button>
+                        class="w-full py-4 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-2xl font-black text-xs tracking-widest">ยืนยันบันทึกการลา</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * GLOBAL CONFIGURATION & STATE
-         */
         const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let suData = null;      // ข้อมูล Supervisor ที่ Login เข้ามา
-        let allGuards = [];    // รายชื่อพนักงานทั้งหมดในเขตที่ดูแล
-        let fpWorkDate, fpLeaveStart, fpLeaveEnd; // Flatpickr Instances
+        let suData = null;
+        let allGuards = [];
+        let fpWorkDate, fpLeaveStart, fpLeaveEnd;
 
-        /**
-         * INITIALIZATION: เริ่มต้นระบบ
-         */
         async function initPortal() {
-            try {
-                const session = localStorage.getItem('nexgen_user');
-                if (!session) return window.location.href = '../index.html';
-                
-                const localData = JSON.parse(session);
+            const session = localStorage.getItem('nextgen_user');
+            if (!session) return window.location.href = '../index.html';
+            suData = JSON.parse(session);
 
-                // --- SYNC SESSION: ดึงข้อมูลล่าสุดจาก DB (กรณีมีการแก้ไขเขตพื้นที่) ---
-                const { data, error } = await supabaseClient
-                    .from('staff')
-                    .select('*')
-                    .eq('emp_id', localData.emp_id)
-                    .single();
-                
-                if (!error && data) {
-                    suData = data;
-                    localStorage.setItem('nexgen_user', JSON.stringify(data));
-                } else {
-                    suData = localData;
-                }
-                
-                document.getElementById('userName').innerText = (suData.name || 'USER').toUpperCase();
-                document.getElementById('userUnit').innerText = 'หน่วยงาน: ' + (suData.unit || 'ทั่วไป');
-                document.getElementById('userZone').innerText = 'เขตพื้นที่: ' + (suData.zone || suData.area || 'ยังไม่ได้ระบุ');
-                
-                initFlatpickr();
-                fetchGuards();
-            } catch (e) { 
-                console.error("Portal Init Error:", e); 
-            }
+            document.getElementById('userName').innerText = (suData.name || 'ผู้ใช้งาน').toUpperCase();
+            document.getElementById('userRole').innerText = (suData.level === 'Owner' ? 'เจ้าของระบบ' : (suData.level || 'เจ้าหน้าที่')).toUpperCase();
+            document.getElementById('userUnit').innerText = 'หน่วยงาน: ' + (suData.unit || '--');
+            document.getElementById('userZone').innerText = 'เขตพื้นที่: ' + (suData.zone || suData.area || '--');
+
+            initFlatpickr();
+            fetchGuards();
+            fetchRecentActivity();
         }
 
-        /**
-         * ปรับปรุงระบบเลือกวันที่ (Flatpickr)
-         */
         function initFlatpickr() {
-            const config = {
-                locale: 'th',
-                dateFormat: "d/m/Y",
-                altInput: true,
-                altFormat: "d/m/Y",
-                disableMobile: "true",
-                onReady: function(selectedDates, dateStr, instance) {
-                    // ปรับปีในหน้าจอให้เป็น พ.ศ.
-                    const yearEles = instance.calendarContainer.querySelectorAll('.flatpickr-current-month .cur-year');
-                    yearEles.forEach(el => {
-                        if (el.value) el.value = parseInt(el.value) + 543;
-                    });
-                }
-            };
-
+            const config = { locale: 'th', dateFormat: "d/m/Y", altInput: true, altFormat: "d/m/Y", disableMobile: "true" };
             fpWorkDate = flatpickr("#inputWorkDate", config);
             fpLeaveStart = flatpickr("#leaveStartDate", config);
             fpLeaveEnd = flatpickr("#leaveEndDate", config);
         }
 
-        /**
-         * DATA FETCHING: ดึงข้อมูลพนักงาน
-         */
         async function fetchGuards() {
-            const diagArea = document.getElementById('diagnosticArea');
-            const diagLog = document.getElementById('diagnosticLog');
-
             try {
-                const { data, error } = await supabaseClient.from('staff').select('*');
-                if (error) throw error;
+                // 1. Fetch units for unit_name -> zone mapping
+                const { data: unitData, error: unitErr } = await supabaseClient
+                    .from('units')
+                    .select('unit_name, zone, status');
+                
+                if (unitErr) throw unitErr;
 
-                const myZone = (suData.zone || suData.area || '').trim();
-
-                // คัดกรอง: เฉพาะ Guard ที่อยู่ในเขต (Zone) เดียวกับ Supervisor
-                allGuards = data.filter(u => {
-                    const isGuard = (u.level || '').toLowerCase().trim() === 'guard';
-                    const staffZone = (u.zone || u.area || '').trim();
-                    return isGuard && staffZone === myZone && myZone !== '';
+                const unitToZone = {};
+                (unitData || []).forEach(u => {
+                    if (u.unit_name) {
+                        unitToZone[u.unit_name.trim()] = (u.zone || '').trim();
+                    }
                 });
 
-                renderGuards(allGuards);
-                document.getElementById('stat-total').innerText = allGuards.length;
+                // 2. Fetch all staff
+                const { data: staffData, error: staffErr } = await supabaseClient.from('staff').select('*');
+                if (staffErr) throw staffErr;
 
-                // ตรวจสอบความถูกต้องของข้อมูล (Diagnostic)
-                if (allGuards.length > 0) {
-                    diagArea.classList.add('hidden');
-                } else {
-                    diagArea.classList.remove('hidden');
-                    
-                    let diagMsg = '';
-                    if (myZone === '') {
-                        diagMsg = `
-                            <div class="text-rose-400 font-bold mb-1"><i class="fas fa-exclamation-circle mr-1"></i> บัญชีของคุณยังไม่ได้ระบุ 'เขตพื้นที่' (Zone)</div>
-                            <div class="text-[8px] text-slate-500 uppercase tracking-tighter">โปรดแจ้ง Admin ให้ระบุเขตในฐานข้อมูล และรีเฟรชหน้านี้</div>
-                        `;
-                    } else {
-                        diagMsg = `
-                            <div class="mb-2">
-                                <div>- ไม่พบ รปภ. ในเขต: "${myZone}"</div>
-                                <div class="text-[8px] text-amber-500 mt-2 uppercase italic">คำแนะนำ: ตรวจสอบ Level = 'guard' และ Zone ของ รปภ. ในฐานข้อมูลว่าสะกดตรงกับ "${myZone}" หรือไม่</div>
-                            </div>
-                        `;
+                const allGuardsInDb = (staffData || []).filter(u => (u.level || '').toLowerCase() === 'guard');
+
+                // 3. Fetch recent duty logs (last 30 days) to find their most recent scanned unit
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const thirtyDaysAgoStr = thirtyDaysAgo.toISOString();
+
+                const { data: recentLogs, error: recentLogsErr } = await supabaseClient
+                    .from('duty_logs')
+                    .select('emp_id, unit_name, action_type, timestamp')
+                    .gte('timestamp', thirtyDaysAgoStr)
+                    .order('timestamp', { ascending: false });
+
+                if (recentLogsErr) throw recentLogsErr;
+
+                // Sync guards in background
+                for (let guard of allGuardsInDb) {
+                    const latestLog = (recentLogs || []).find(l => l.emp_id === guard.emp_id);
+                    if (latestLog && latestLog.unit_name) {
+                        const scannedUnit = latestLog.unit_name.trim();
+                        const scannedZone = unitToZone[scannedUnit] || '';
+                        
+                        const currentUnit = (guard.unit || '').trim();
+                        const currentZone = (guard.zone || guard.area || '').trim();
+
+                        if (scannedUnit && scannedZone && (currentUnit !== scannedUnit || currentZone !== scannedZone)) {
+                            console.log(`Auto-syncing Guard ${guard.emp_id} (${guard.name}) from [Unit: ${currentUnit}, Zone: ${currentZone}] to [Unit: ${scannedUnit}, Zone: ${scannedZone}]`);
+                            
+                            // Background update in Supabase
+                            supabaseClient.from('staff')
+                                .update({ unit: scannedUnit, zone: scannedZone })
+                                .eq('emp_id', guard.emp_id)
+                                .then(({ error }) => {
+                                    if (error) console.error("Auto-sync database update error for guard:", guard.emp_id, error);
+                                });
+
+                            guard.unit = scannedUnit;
+                            guard.zone = scannedZone;
+                        }
                     }
-                    
-                    diagLog.innerHTML = diagMsg;
-                    document.getElementById('guardList').innerHTML = `<p class="text-center py-10 text-slate-500 text-xs font-bold">ไม่พบรายชื่อ รปภ. ในเขต "${myZone || '?'}"</p>`;
                 }
-            } catch (e) {
-                diagArea.classList.remove('hidden');
-                diagLog.innerHTML = `<span class="text-rose-500">❌ ระบบขัดข้อง: ${e.message}</span>`;
-            }
+
+                // 4. Now filter guards for the supervisor's zone based on updated/dynamic values
+                const myZone = (suData.zone || suData.area || '').trim();
+                allGuards = allGuardsInDb.filter(u => {
+                    const staffZone = (u.zone || u.area || '').trim();
+                    return staffZone === myZone;
+                });
+
+                // Fallback: If no guards are assigned to this zone, show all guards
+                if (allGuards.length === 0) {
+                    allGuards = allGuardsInDb;
+                }
+
+                document.getElementById('stat-total').innerText = allGuards.length;
+                document.getElementById('guardCountLabel').innerText = `ทั้งหมด ${allGuards.length} ท่าน`;
+                renderGuards(allGuards);
+                updateDailySummary();
+
+                // Fetch Units Count (Only Active Units in Zone)
+                if (unitData) {
+                    const myUnits = unitData.filter(u => {
+                        const unitZone = (u.zone || u.area || '').trim();
+                        return u.status !== 'ปิด' && unitZone === myZone;
+                    });
+                    document.getElementById('stat-units').innerText = myUnits.length;
+                    console.log(`Debug: Zone=${myZone}, UnitsFound=${myUnits.length}`);
+                }
+            } catch (e) { console.error(e); }
         }
 
-        /**
-         * UI RENDERING: แสดงผลรายการพนักงาน
-         */
+        async function updateDailySummary() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const { data, error } = await supabaseClient.from('duty_logs')
+                    .select('emp_id, action_type')
+                    .gte('timestamp', `${today}T00:00:00Z`)
+                    .lte('timestamp', `${today}T23:59:59Z`);
+
+                if (error) throw error;
+
+                const guardIds = new Set(allGuards.map(g => g.emp_id));
+                const presentIds = new Set(data.filter(l => l.action_type === 'check_in' && guardIds.has(l.emp_id)).map(l => l.emp_id));
+                const absentIds = new Set(data.filter(l => ['sick_leave', 'personal_leave', 'vacation_leave', 'absent'].includes(l.action_type) && guardIds.has(l.emp_id)).map(l => l.emp_id));
+
+                document.getElementById('stat-present').innerText = presentIds.size;
+                document.getElementById('stat-absent').innerText = absentIds.size;
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchRecentActivity() {
+            try {
+                if (allGuards.length === 0) return;
+                const guardIds = allGuards.map(g => g.emp_id);
+                const { data, error } = await supabaseClient.from('duty_logs')
+                    .select('*, staff(name)')
+                    .in('emp_id', guardIds)
+                    .order('timestamp', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+                const list = document.getElementById('recentActivity');
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<p class="text-center py-4 text-slate-600 text-[10px] font-bold uppercase italic">ไม่มีประวัติการทำรายการในวันนี้</p>';
+                    return;
+                }
+
+                list.innerHTML = data.map(log => {
+                    const time = new Date(log.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const isCheckIn = log.action_type === 'check_in';
+                    const icon = isCheckIn ? 'fa-sign-in-alt' : 'fa-calendar-day';
+                    const color = isCheckIn ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500';
+                    const actionTxt = log.action_type === 'check_in' ? 'เข้างาน' : (log.action_type === 'check_out' ? 'ออกงาน' : 'แจ้งลา/หยุด');
+
+                    return `
+                        <div class="feed-item">
+                            <div class="feed-icon ${color}"><i class="fas ${icon}"></i></div>
+                            <div class="flex-1">
+                                <p class="text-[10px] font-bold text-white">${log.staff?.name || 'พนักงาน'}</p>
+                                <p class="text-[8px] text-slate-500 font-bold uppercase">${actionTxt} • ${time} น.</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) { console.error(e); }
+        }
+
         function renderGuards(guards) {
             const list = document.getElementById('guardList');
-            list.innerHTML = '';
-            
-            guards.forEach(guard => {
-                const card = document.createElement('div');
-                card.className = 'guard-card flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl mb-3';
-                card.innerHTML = `
+            list.innerHTML = guards.map(g => `
+                <div class="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
                     <div class="flex-1">
-                        <div class="font-bold text-white text-sm mb-1">${guard.name}</div>
-                        <div class="flex flex-wrap gap-x-3 gap-y-1">
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">
-                                <i class="fas fa-id-card text-sky-500/50 mr-1"></i> ID: ${guard.emp_id}
-                            </span>
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">
-                                <i class="fas fa-building text-amber-500/50 mr-1"></i> ${guard.unit || '-'}
-                            </span>
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">
-                                <i class="fas fa-map-marker-alt text-emerald-500/50 mr-1"></i> ${guard.zone || guard.area || 'ทั่วไป'}
-                            </span>
+                        <div class="font-bold text-white text-sm mb-1">${g.name}</div>
+                        <div class="flex gap-3">
+                            <span class="text-[9px] text-slate-500 font-bold uppercase"><i class="fas fa-id-card text-sky-500/50 mr-1"></i> ${g.emp_id}</span>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase"><i class="fas fa-building text-amber-500/50 mr-1"></i> ${g.unit || '-'}</span>
                         </div>
                     </div>
-                    <button onclick="openWorkModal('${guard.emp_id}', '${guard.name}')" 
-                        class="px-4 py-2 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-xl font-bold text-[10px] uppercase active:scale-95 transition-all">
-                        จัดการ
-                    </button>
-                `;
-                list.appendChild(card);
-            });
+                    <button onclick="openWorkModal('${g.emp_id}', '${g.name}')" class="px-4 py-2 bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-xl font-bold text-[10px] uppercase active:scale-95 transition-all">จัดการ</button>
+                </div>
+            `).join('');
         }
 
-        /**
-         * UI INTERACTION: การโต้ตอบหน้าจอ
-         */
         function filterGuards() {
-            const q = document.getElementById('guardSearch').value.toLowerCase();
-            const filtered = allGuards.filter(g => (g.name || '').toLowerCase().includes(q) || (g.emp_id || '').toLowerCase().includes(q));
+            const q = document.getElementById('guardSearch').value.toLowerCase().trim();
+            const terms = q.split(/\s+/).filter(t => t.length > 0);
+            const filtered = allGuards.filter(g => {
+                const name = (g.name || '').toLowerCase();
+                const empId = (g.emp_id || '').toLowerCase();
+                const unit = (g.unit || '').toLowerCase();
+                
+                return terms.length === 0 || terms.every(term => 
+                    name.includes(term) || empId.includes(term) || unit.includes(term)
+                );
+            });
             renderGuards(filtered);
         }
 
-        function showGuardSection() { 
-            document.getElementById('mainContent').style.display = 'none'; 
-            document.getElementById('guardSection').style.display = 'block'; 
-        }
-
-        function hideGuardSection() { 
-            document.getElementById('mainContent').style.display = 'block'; 
-            document.getElementById('guardSection').style.display = 'none'; 
-        }
-
-        function closeModal(id) { 
-            document.getElementById(id).style.display = 'none'; 
-        }
-
-        /**
-         * TIME UTILITIES: ฟังก์ชันจัดการเวลา
-         */
-        function getThaiTime() {
-            const now = new Date();
-            const options = { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
-            const formatter = new Intl.DateTimeFormat('en-US', options);
-            return new Date(formatter.format(now));
-        }
-
-        /**
-         * ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย (วว/ดด/ปปปป พ.ศ.)
-         */
-        function formatThaiDate(dateStr) {
-            if (!dateStr) return '--/--/----';
-            const parts = dateStr.split('-');
-            if (parts.length !== 3) return dateStr;
-            const [y, m, d] = parts;
-            return `${d}/${m}/${parseInt(y) + 543}`;
-        }
-
-        /**
-         * MODAL LOGIC: จัดการหน้าต่างบันทึกเวลา
-         */
         function openWorkModal(id, name) {
             document.getElementById('workModalId').value = id;
             document.getElementById('workModalName').innerText = name;
-
-            const now = getThaiTime();
-            
-            // 1. ตั้งค่าปฏิทินเริ่มต้น (Flatpickr)
+            const now = new Date();
             if (fpWorkDate) fpWorkDate.setDate(now);
-            if (fpLeaveStart) fpLeaveStart.setDate(now);
-            if (fpLeaveEnd) fpLeaveEnd.setDate(now);
-            
-            // 2. ตั้งค่าเวลาเริ่มต้น (HH:mm:ss)
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-            const timeInput = document.getElementById('inputWorkTime');
-            timeInput.value = timeStr;
-            
+            document.getElementById('inputWorkTime').value = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('modalWork').style.display = 'flex';
-
-            // 4. ระบบ Smart Selection: เลือกเฉพาะส่วนที่คลิก (ชั่วโมง/นาที/วินาที)
-            timeInput.onmouseup = function() {
-                const pos = this.selectionStart;
-                if (pos >= 0 && pos <= 2) this.setSelectionRange(0, 2);      // เลือกส่วน ชั่วโมง
-                else if (pos >= 3 && pos <= 5) this.setSelectionRange(3, 5); // เลือกส่วน นาที
-                else if (pos >= 6 && pos <= 8) this.setSelectionRange(6, 8); // เลือกส่วน วินาที
-            };
         }
 
-        function setWorkAction(a) {
-            document.getElementById('workAction').value = a;
-            const btnIn = document.getElementById('btnIn'), btnOut = document.getElementById('btnOut');
-            if (a === 'check_in') {
-                btnIn.className = "py-4 rounded-2xl border border-emerald-500/20 font-black text-xs bg-emerald-500/20 text-emerald-400";
-                btnOut.className = "py-4 rounded-2xl border border-white/10 font-black text-xs bg-white/5 text-slate-500";
-            } else {
-                btnOut.className = "py-4 rounded-2xl border border-rose-500/20 font-black text-xs bg-rose-500/20 text-rose-400";
-                btnIn.className = "py-4 rounded-2xl border border-white/10 font-black text-xs bg-white/5 text-slate-500";
-            }
-        }
+        function showGuardSection() { document.getElementById('mainContent').style.display = 'none'; document.getElementById('guardSection').style.display = 'block'; }
+        function hideGuardSection() { document.getElementById('mainContent').style.display = 'block'; document.getElementById('guardSection').style.display = 'none'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function setWorkAction(a) { document.getElementById('workAction').value = a; }
 
-        /**
-         * DATA SUBMISSION: ส่งข้อมูลลงฐานข้อมูล
-         */
         async function submitWork(type) {
             const emp_id = document.getElementById('workModalId').value;
             try {
+                const guardObj = allGuards.find(g => g.emp_id === emp_id);
                 if (type === 'clock') {
-                    // การลงเวลาเข้า-ออก
                     const action = document.getElementById('workAction').value;
-                    const d = fpWorkDate.input.value; // DD/MM/YYYY
-                    const t = document.getElementById('inputWorkTime').value; 
-                    
-                    if (!d || !t) return alert('กรุณาระบุวันและเวลาให้ครบถ้วน');
-
-                    // แปลง DD/MM/YYYY กลับเป็น YYYY-MM-DD สำหรับสร้าง Date
+                    const d = fpWorkDate.input.value;
+                    const t = document.getElementById('inputWorkTime').value;
+                    if (!d || !t) return alert('กรุณาระบุข้อมูลให้ครบถ้วน');
                     const [dd, mm, yyyy] = d.split('/');
-                    const isoDate = `${yyyy}-${mm}-${dd}`;
-                    
-                    if (!/^\d{2}:\d{2}:\d{2}$/.test(t)) {
-                        return alert('รูปแบบเวลาไม่ถูกต้อง! กรุณาใช้ ชช:นน:วว (เช่น 14:30:00)');
-                    }
-                    
-                    const ts = new Date(`${isoDate}T${t}+07:00`).toISOString();
-                    
+                    const ts = new Date(`${yyyy}-${mm}-${dd}T${t}+07:00`).toISOString();
                     const { error } = await supabaseClient.from('duty_logs').insert([{ 
                         emp_id, 
                         action_type: action, 
-                        timestamp: ts 
+                        timestamp: ts,
+                        unit_name: guardObj ? guardObj.unit : null,
+                        role: 'Guard'
                     }]);
                     if (error) throw error;
-                    alert('บันทึกเวลาทำงานเรียบร้อยแล้ว');
+                    alert('บันทึกเวลาปฏิบัติหน้าที่สำเร็จ');
                 } else {
-                    // --- การลงบันทึกการลา (Leave Recording) ---
                     const lType = document.getElementById('leaveType').value;
-                    const startStr = fpLeaveStart.input.value; // DD/MM/YYYY
-                    const endStr = fpLeaveEnd.input.value;     // DD/MM/YYYY
-
-                    if (!startStr || !endStr) return alert('กรุณาเลือกช่วงวันที่ลาให้ครบถ้วน');
-
-                    // แปลง DD/MM/YYYY เป็น ISO สำหรับคำนวณ
-                    const [sd, sm, sy] = startStr.split('/');
-                    const [ed, em, ey] = endStr.split('/');
+                    const startStr = fpLeaveStart.input.value;
+                    const endStr = fpLeaveEnd.input.value;
+                    if (!startStr || !endStr) return alert('กรุณาระบุวันที่ลาให้ครบถ้วน');
                     
-                    let start = new Date(`${sy}-${sm}-${sd}T12:00:00+07:00`);
-                    let end = new Date(`${ey}-${em}-${ed}T12:00:00+07:00`);
+                    const [s_dd, s_mm, s_yyyy] = startStr.split('/');
+                    const [e_dd, e_mm, e_yyyy] = endStr.split('/');
+                    const startDateDb = `${s_yyyy}-${s_mm}-${s_dd}`;
+                    const endDateDb = `${e_yyyy}-${e_mm}-${e_dd}`;
 
-                    if (end < start) return alert('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม');
+                    // บันทึกลงตาราง leave_records
+                    const { error: leaveErr } = await supabaseClient.from('leave_records').insert([{
+                        emp_id: emp_id,
+                        start_date: startDateDb,
+                        end_date: endDateDb,
+                        leave_type: lType,
+                        status: 'approved'
+                    }]);
+                    if (leaveErr) throw leaveErr;
 
-                    // คำนวณจำนวนวันเบื้องต้น
-                    const diffTime = Math.abs(end - start);
-                    const diffDays = Math.ceil(diffTime / (86400000)) + 1;
+                    // บันทึกลงตาราง duty_logs สำหรับแสดงผลในหน้าแรกของวันนี้
+                    const { error: logErr } = await supabaseClient.from('duty_logs').insert([{
+                        emp_id: emp_id,
+                        action_type: lType,
+                        timestamp: new Date().toISOString(),
+                        unit_name: guardObj ? guardObj.unit : null,
+                        role: 'Guard'
+                    }]);
+                    if (logErr) throw logErr;
 
-                    // ยืนยันกับผู้ใช้อีกครั้งในรูปแบบไทย
-                    const lTypeName = document.getElementById('leaveType').options[document.getElementById('leaveType').selectedIndex].text;
-                    const startThai = formatThaiDate(startStr);
-                    const endThai = formatThaiDate(endStr);
-                    
-                    if (!confirm(`ยืนยันบันทึกการลา [${lTypeName}]\nตั้งแต่วันที่: ${startThai}\nถึงวันที่: ${endThai}\nรวมทั้งหมด: ${diffDays} วัน ?`)) return;
-
-                    // ป้องกันการบันทึกที่ผิดปกติ (เช่น 121 วันโดยไม่ตั้งใจ)
-                    if (diffDays > 60) {
-                        if (!confirm('!!! คำเตือน: คุณกำลังบันทึกการลาเกิน 60 วัน แน่ใจหรือไม่?')) return;
-                    }
-
-                    let logs = [];
-                    let current = new Date(start);
-                    
-                    // ปรับเวลาให้เป็น 00:00:00 สำหรับการบันทึกลงฐานข้อมูล
-                    current.setHours(0, 0, 0, 0);
-                    let finalEnd = new Date(end);
-                    finalEnd.setHours(23, 59, 59, 999);
-
-                    while (current <= finalEnd) {
-                        logs.push({
-                            emp_id,
-                            action_type: lType,
-                            timestamp: current.toISOString()
-                        });
-                        current.setDate(current.getDate() + 1);
-                        
-                        // Safety break: ป้องกัน Infinite Loop
-                        if (logs.length > 366) break; 
-                    }
-
-                    const { error } = await supabaseClient.from('duty_logs').insert(logs);
-                    if (error) throw error;
-                    alert(`บันทึกการลาสำเร็จ (รวม ${logs.length} วัน)`);
+                    alert('บันทึกการลาสำเร็จ');
                 }
                 closeModal('modalWork');
-            } catch (e) { 
-                console.error("Submit Error:", e);
-                alert("เกิดข้อผิดพลาด: " + e.message); 
-            }
+                fetchRecentActivity();
+                updateDailySummary();
+            } catch (e) { alert('เกิดข้อผิดพลาด: ' + e.message); }
         }
 
-        function logout() { if (confirm('ออกจากระบบ?')) { localStorage.removeItem('nexgen_user'); window.location.href = '../index.html'; } }
+        function logout() { if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) { localStorage.removeItem('nextgen_user'); window.location.href = '../index.html'; } }
         initPortal();
     </script>
 </body>

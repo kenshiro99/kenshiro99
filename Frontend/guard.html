@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexgen | Guard Portal v1.0</title>
+    <title>Nextgen | Guard Portal v1.0</title>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -251,7 +251,7 @@
     <!-- Footer -->
     <div class="mt-10 text-center pb-12 space-y-2">
         <p class="text-[9px] text-slate-500 font-bold tracking-[1px] opacity-60 uppercase">
-            &copy; 2026 &bull; NEXGEN SYSTEM CENTER Ver.1.0
+            &copy; 2026 &bull; NEXTGEN SYSTEM CENTER Ver.1.0
         </p>
         <span class="text-[8px] text-slate-700 block font-bold">Developer: Ponchai Onkum</span>
     </div>
@@ -267,11 +267,11 @@
 
         async function initPortal() {
             try {
-                const session = localStorage.getItem('nexgen_user');
+                const session = localStorage.getItem('nextgen_user');
                 if (!session) throw new Error();
                 userData = JSON.parse(session);
 
-                document.getElementById('userName').innerText = userData.name.toUpperCase();
+                document.getElementById('userName').innerText = (userData.name || 'ไม่ระบุชื่อ').toUpperCase();
                 document.getElementById('userUnit').innerText = 'หน่วยงาน: ' + (userData.unit || 'ทั่วไป');
 
                 await fetchAttendance();
@@ -521,7 +521,7 @@
             }
         }
 
-        function logout() { if (confirm('ยืนยันออกจากระบบ?')) { localStorage.removeItem('nexgen_user'); window.location.href = '../index.html'; } }
+        function logout() { if (confirm('ยืนยันออกจากระบบ?')) { localStorage.removeItem('nextgen_user'); window.location.href = '../index.html'; } }
         initPortal();
     </script>
 </body>

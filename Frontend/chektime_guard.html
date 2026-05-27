@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nextgen | OP08 ระบบเช็คเวลาเข้า-ออกงาน</title>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+            --navy: #020617;
+            --glass: rgba(15, 23, 42, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--navy); color: white; min-height: 100vh; padding-bottom: 80px; }
+
+        /* Background Glow */
+        .glow-bg {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
+            background: radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.1), transparent 50%),
+                        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05), transparent 50%);
+        }
+
+        /* Header */
+        .cyber-header {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 20px; position: sticky; top: 0; z-index: 100;
+        }
+
+        /* Dashboard */
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 15px 10px; text-align: center; }
+        .stat-label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .stat-val { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; }
+
+        /* Filter Tabs */
+        .filter-wrap { display: flex; gap: 8px; padding: 0 20px 15px; overflow-x: auto; scrollbar-width: none; }
+        .filter-wrap::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; white-space: nowrap;
+            background: var(--card-bg); border: 1px solid var(--card-border); color: #94a3b8; transition: all 0.2s;
+        }
+        .filter-btn.active { background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.5); color: var(--primary); }
+
+        /* Search */
+        .search-box { margin: 0 20px 20px; position: relative; }
+        .search-box input {
+            width: 100%; padding: 14px 14px 14px 45px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+            border-radius: 16px; font-size: 14px; color: white; outline: none; transition: border-color 0.2s;
+        }
+        .search-box input:focus { border-color: var(--primary); }
+        .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; }
+
+        /* Guard Cards */
+        .guard-list { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
+        .g-card {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
+            padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden;
+        }
+        .g-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+        .g-card.status-in::before { background: var(--emerald); }
+        .g-card.status-out::before { background: var(--rose); }
+        .g-card.status-pending::before { background: var(--amber); }
+
+        .g-info { display: flex; justify-content: space-between; align-items: flex-start; }
+        .g-name { font-size: 15px; font-weight: 800; color: white; margin-bottom: 2px; }
+        .g-id { font-size: 10px; font-weight: 800; color: var(--primary); font-family: 'Outfit', sans-serif; letter-spacing: 1px; }
+        
+        .g-status-badge {
+            padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .status-in .g-status-badge { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+        .status-out .g-status-badge { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+        .status-pending .g-status-badge { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+
+        .g-time { font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px; display: flex; items-center; gap: 4px; }
+
+        /* Action Buttons */
+        .g-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--card-border); padding-top: 12px; }
+        .btn-action {
+            padding: 12px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; border: 1px solid transparent;
+        }
+        .btn-action:active { transform: scale(0.95); }
+        
+        .btn-in { background: rgba(16, 185, 129, 0.1); color: var(--emerald); border-color: rgba(16, 185, 129, 0.2); }
+        .btn-out { background: rgba(244, 63, 94, 0.1); color: var(--rose); border-color: rgba(244, 63, 94, 0.2); }
+        
+        /* Disabled states for buttons based on current status */
+        .status-in .btn-in { opacity: 0.3; pointer-events: none; }
+        .status-out .btn-out { opacity: 0.3; pointer-events: none; }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: var(--glass); border: 1px solid var(--card-border); backdrop-filter: blur(10px);
+            padding: 12px 24px; border-radius: 100px; font-size: 12px; font-weight: 800; color: white;
+            display: flex; align-items: center; gap: 8px; z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <header class="cyber-header">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='staff.html'" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="text-lg font-black uppercase tracking-tight text-white">OP08 Time Check</h2>
+                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest" id="userZone">เขตพื้นที่: กำลังโหลด...</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xl font-black font-['Outfit'] text-sky-400" id="clockTime">--:--</div>
+                <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest" id="clockDate">--/--/----</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <div class="stat-label">กำลังพล</div>
+            <div class="stat-val text-white" id="statTotal">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label text-emerald-500">เข้างานแล้ว (IN)</div>
+            <div class="stat-val text-emerald-400" id="statIn">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label text-rose-500">ออกงาน (OUT)</div>
+            <div class="stat-val text-rose-400" id="statOut">0</div>
+        </div>
+    </div>
+
+    <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือ รหัสพนักงาน..." onkeyup="filterList()">
+    </div>
+
+    <div class="filter-wrap">
+        <button class="filter-btn active" onclick="setFilter('all', this)">ทั้งหมด (All)</button>
+        <button class="filter-btn" onclick="setFilter('in', this)">🟢 เข้างานแล้ว</button>
+        <button class="filter-btn" onclick="setFilter('pending', this)">🟠 ยังไม่มา</button>
+        <button class="filter-btn" onclick="setFilter('out', this)">🔴 ออกงานแล้ว</button>
+    </div>
+
+    <div class="guard-list" id="guardList">
+        <!-- Guard Cards injected here -->
+        <div class="text-center py-10 text-slate-500 text-xs font-bold uppercase tracking-widest">
+            <i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i><br>กำลังโหลดข้อมูล...
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-emerald-400"></i> <span id="toastMsg">บันทึกเวลาสำเร็จ</span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let guardsData = []; // Store combined data (staff info + latest log status)
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSystem();
+            startClock();
+        });
+
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('clockTime').innerText = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                document.getElementById('clockDate').innerText = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
+            }, 1000);
+        }
+
+        async function initSystem() {
+            const session = localStorage.getItem('nextgen_user');
+            if (!session) return window.location.href = '../index.html';
+            currentUser = JSON.parse(session);
+            document.getElementById('userZone').innerText = `เขตพื้นที่: ${currentUser.zone || currentUser.area || 'ทั่วไป'}`;
+            await fetchData();
+        }
+
+        async function fetchData() {
+            const myZone = (currentUser.zone || currentUser.area || '').trim();
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                // 1. Fetch all units for mapping unit_name -> zone
+                const { data: allUnits, error: unitsErr } = await supabaseClient
+                    .from('units')
+                    .select('unit_name, zone');
+                
+                if (unitsErr) throw unitsErr;
+
+                const unitToZone = {};
+                (allUnits || []).forEach(u => {
+                    if (u.unit_name) {
+                        unitToZone[u.unit_name.trim()] = (u.zone || '').trim();
+                    }
+                });
+
+                // 2. Fetch all Staff
+                const { data: allStaff, error: staffErr } = await supabaseClient
+                    .from('staff')
+                    .select('emp_id, name, unit, zone, level');
+                
+                if (staffErr) throw staffErr;
+
+                // Only perform dynamic sync for users who are guards
+                const allGuardsInDb = (allStaff || []).filter(u => (u.level || '').toLowerCase() === 'guard');
+
+                // 3. Fetch recent duty logs (last 30 days) to find their most recent scanned unit
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const thirtyDaysAgoStr = thirtyDaysAgo.toISOString();
+
+                const { data: recentLogs, error: recentLogsErr } = await supabaseClient
+                    .from('duty_logs')
+                    .select('emp_id, unit_name, action_type, timestamp')
+                    .gte('timestamp', thirtyDaysAgoStr)
+                    .order('timestamp', { ascending: false });
+
+                if (recentLogsErr) throw recentLogsErr;
+
+                // Sync guards in background
+                for (let guard of allGuardsInDb) {
+                    const latestLog = (recentLogs || []).find(l => l.emp_id === guard.emp_id);
+                    if (latestLog && latestLog.unit_name) {
+                        const scannedUnit = latestLog.unit_name.trim();
+                        const scannedZone = unitToZone[scannedUnit] || '';
+                        
+                        // If it differs, update database in background and update in-memory object
+                        const currentUnit = (guard.unit || '').trim();
+                        const currentZone = (guard.zone || '').trim();
+
+                        if (scannedUnit && scannedZone && (currentUnit !== scannedUnit || currentZone !== scannedZone)) {
+                            console.log(`Auto-syncing Guard ${guard.emp_id} (${guard.name}) from [Unit: ${currentUnit}, Zone: ${currentZone}] to [Unit: ${scannedUnit}, Zone: ${scannedZone}]`);
+                            
+                            // Background update in Supabase
+                            supabaseClient.from('staff')
+                                .update({ unit: scannedUnit, zone: scannedZone })
+                                .eq('emp_id', guard.emp_id)
+                                .then(({ error }) => {
+                                    if (error) console.error("Auto-sync database update error for guard:", guard.emp_id, error);
+                                });
+
+                            guard.unit = scannedUnit;
+                            guard.zone = scannedZone;
+                        }
+                    }
+                }
+
+                // 4. Now filter guards for the logged-in supervisor's zone based on updated/dynamic values
+                let myGuards = allGuardsInDb.filter(u => {
+                    const staffZone = (u.zone || '').trim();
+                    return staffZone === myZone;
+                });
+
+                // Fallback: If no guards are assigned to this zone, show all guards
+                if (myGuards.length === 0) {
+                    myGuards = allGuardsInDb;
+                }
+
+                // 5. Fetch today's duty_logs safely for these filtered guards
+                const empIds = myGuards.map(g => g.emp_id);
+                let logs = [];
+                
+                if (empIds.length > 0) {
+                    const { data: fetchedLogs, error: logsErr } = await supabaseClient
+                        .from('duty_logs')
+                        .select('*')
+                        .in('emp_id', empIds)
+                        .gte('timestamp', `${today}T00:00:00Z`)
+                        .lte('timestamp', `${today}T23:59:59Z`)
+                        .order('timestamp', { ascending: false });
+
+                    if (logsErr) throw logsErr;
+                    logs = fetchedLogs || [];
+                }
+
+                // 6. Combine Data
+                guardsData = myGuards.map(guard => {
+                    // Find the most recent log for this guard today
+                    const latestLog = logs.find(l => l.emp_id === guard.emp_id);
+                    
+                    let status = 'pending';
+                    let lastTime = '--:--';
+                    
+                    if (latestLog) {
+                        if (latestLog.action_type === 'check_in') status = 'in';
+                        else if (latestLog.action_type === 'check_out') status = 'out';
+                        else status = 'pending'; // sick_leave, etc.
+                        
+                        lastTime = new Date(latestLog.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    return { ...guard, status, lastTime };
+                });
+
+                // Sort: Pending first, then In, then Out
+                guardsData.sort((a, b) => {
+                    const order = { 'pending': 1, 'in': 2, 'out': 3 };
+                    return order[a.status] - order[b.status];
+                });
+
+                updateDashboard();
+                renderList();
+
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                document.getElementById('guardList').innerHTML = `<div class="text-center text-rose-500 py-5 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>`;
+            }
+        }
+
+        function updateDashboard() {
+            document.getElementById('statTotal').innerText = guardsData.length;
+            document.getElementById('statIn').innerText = guardsData.filter(g => g.status === 'in').length;
+            document.getElementById('statOut').innerText = guardsData.filter(g => g.status === 'out').length;
+        }
+
+        function renderList() {
+            const list = document.getElementById('guardList');
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const terms = q.split(/\s+/).filter(t => t.length > 0);
+            
+            const filtered = guardsData.filter(g => {
+                const name = (g.name || '').toLowerCase();
+                const empId = (g.emp_id || '').toLowerCase();
+                const unit = (g.unit || '').toLowerCase();
+                
+                const matchSearch = terms.length === 0 || terms.every(term => 
+                    name.includes(term) || empId.includes(term) || unit.includes(term)
+                );
+                const matchFilter = currentFilter === 'all' || g.status === currentFilter;
+                return matchSearch && matchFilter;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="text-center text-slate-500 py-10 font-bold uppercase text-[10px] tracking-widest">ไม่พบรายชื่อในหมวดหมู่นี้</div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(g => {
+                const statusLabels = {
+                    'in': 'มาปฏิบัติงาน',
+                    'out': 'ออกงานแล้ว',
+                    'pending': 'ยังไม่ลงเวลา'
+                };
+                
+                return `
+                <div class="g-card status-${g.status}">
+                    <div class="g-info">
+                        <div>
+                            <div class="g-id"><i class="fas fa-id-badge mr-1"></i> ${g.emp_id}</div>
+                            <div class="g-name">${g.name}</div>
+                            <div class="text-[9px] text-slate-400 font-bold uppercase mt-1"><i class="fas fa-building mr-1"></i> ${g.unit || '-'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="g-status-badge">${statusLabels[g.status]}</div>
+                            <div class="g-time"><i class="fas fa-clock text-[8px]"></i> ล่าสุด: ${g.lastTime}</div>
+                        </div>
+                    </div>
+                    <div class="g-actions">
+                        <button class="btn-action btn-in" onclick="recordTime('${g.emp_id}', 'check_in')">
+                            <i class="fas fa-sign-in-alt"></i> เข้างาน (IN)
+                        </button>
+                        <button class="btn-action btn-out" onclick="recordTime('${g.emp_id}', 'check_out')">
+                            <i class="fas fa-sign-out-alt"></i> ออกงาน (OUT)
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function setFilter(filter, btnElement) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            renderList();
+        }
+
+        function filterList() {
+            renderList();
+        }
+
+        async function recordTime(empId, actionType) {
+            const actionText = actionType === 'check_in' ? 'เข้างาน' : 'ออกงาน';
+            if (!confirm(`ยืนยันการลงเวลา [${actionText}] ให้กับรหัส ${empId} หรือไม่?`)) return;
+
+            try {
+                // Find guard to instantly update UI optimally
+                const guardIdx = guardsData.findIndex(g => g.emp_id === empId);
+                const guard = guardIdx !== -1 ? guardsData[guardIdx] : null;
+                
+                // Show a loading state on the card (optional, but good UX)
+                const now = new Date();
+                const isoString = now.toISOString();
+
+                const { error } = await supabaseClient.from('duty_logs').insert([{
+                    emp_id: empId,
+                    action_type: actionType,
+                    timestamp: isoString,
+                    unit_name: guard ? guard.unit : null,
+                    role: 'Guard'
+                }]);
+
+                if (error) throw error;
+
+                // Update Local Data
+                if (guardIdx !== -1) {
+                    guardsData[guardIdx].status = actionType === 'check_in' ? 'in' : 'out';
+                    guardsData[guardIdx].lastTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                }
+
+                updateDashboard();
+                renderList();
+                showToast(`บันทึกเวลา ${actionText} สำเร็จ`);
+
+            } catch (e) {
+                console.error("Record Time Error:", e);
+                alert("เกิดข้อผิดพลาดในการบันทึกเวลา: " + e.message);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

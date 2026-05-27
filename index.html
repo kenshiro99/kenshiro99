@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexgen ระบบพอร์ทัล | เข้าสู่ระบบ</title>
+    <title>Nextgen ระบบพอร์ทัล | เข้าสู่ระบบ</title>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -66,12 +66,31 @@
             animation: move 20s infinite alternate;
         }
 
-        .orb-1 { width: 400px; height: 400px; background: rgba(14, 165, 233, 0.1); top: -100px; left: -100px; }
-        .orb-2 { width: 300px; height: 300px; background: rgba(245, 158, 11, 0.05); bottom: -50px; right: -50px; animation-delay: -5s; }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(14, 165, 233, 0.1);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(245, 158, 11, 0.05);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
 
         @keyframes move {
-            from { transform: translate(0, 0); }
-            to { transform: translate(100px, 100px); }
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(100px, 100px);
+            }
         }
 
         /* --- COMPONENTS --- */
@@ -155,89 +174,279 @@
             animation: pulse-border 4s ease-in-out infinite;
         }
 
-        .brand-logo img { width: 85%; height: 85%; border-radius: 18px; object-fit: cover; }
+        .brand-logo img {
+            width: 85%;
+            height: 85%;
+            border-radius: 18px;
+            object-fit: cover;
+        }
 
         .cyber-title {
-            font-size: 26px; font-weight: 800; text-align: center;
+            font-size: 26px;
+            font-weight: 800;
+            text-align: center;
             background: linear-gradient(to bottom, #fff 40%, #94a3b8);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 5px;
         }
 
         .cyber-subtitle {
-            font-size: 10px; font-weight: 700; color: var(--cyber-blue);
-            text-align: center; text-transform: uppercase; letter-spacing: 3px;
-            margin-bottom: 35px; opacity: 0.8;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--cyber-blue);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 35px;
+            opacity: 0.8;
         }
 
         /* --- INPUTS & BUTTONS --- */
-        .input-wrapper { position: relative; margin-bottom: 20px; }
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
         .input-wrapper label {
-            position: absolute; left: 18px; top: -10px; background: #0f172a;
-            padding: 0 6px; font-size: 9px; font-weight: 800; color: var(--cyber-blue);
-            text-transform: uppercase; z-index: 10; border-radius: 4px;
+            position: absolute;
+            left: 18px;
+            top: -10px;
+            background: #0f172a;
+            padding: 0 6px;
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--cyber-blue);
+            text-transform: uppercase;
+            z-index: 10;
+            border-radius: 4px;
         }
 
         .cyber-input {
-            width: 100%; padding: 16px 20px 16px 50px;
+            width: 100%;
+            padding: 16px 20px 16px 50px;
             background: rgba(2, 6, 23, 0.4) !important;
             border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
-            border-radius: 16px; color: white !important; outline: none; transition: 0.3s;
+            border-radius: 16px;
+            color: white !important;
+            outline: none;
+            transition: 0.3s;
         }
 
-        .cyber-input:focus { border-color: var(--cyber-blue) !important; box-shadow: 0 0 15px rgba(14, 165, 233, 0.1); }
-        .input-wrapper i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #475569; }
-        .cyber-input:focus + i { color: var(--cyber-blue); }
+        .cyber-input:focus {
+            border-color: var(--cyber-blue) !important;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+        }
+
+        .cyber-input:focus+i {
+            color: var(--cyber-blue);
+        }
 
         .cyber-btn {
-            width: 100%; padding: 18px; border-radius: 18px; font-weight: 800; color: white;
-            text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.4s;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%;
+            padding: 18px;
+            border-radius: 18px;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.4s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
         }
 
-        .cyber-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .cyber-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
         .cyber-btn.mode-report {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
             box-shadow: 0 10px 20px rgba(14, 165, 233, 0.2);
         }
 
         /* --- ANIMATIONS --- */
-        @keyframes float-ai { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        @keyframes bubble-pop { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        @keyframes cardEntrance { from { opacity: 0; transform: scale(0.95) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        @keyframes pulse-border { 0%, 100% { border-color: rgba(14, 165, 233, 0.3); } 50% { border-color: var(--cyber-gold); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes float-ai {
 
-        .loader { width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; display: none; }
+            0%,
+            100% {
+                transform: translateY(0);
+            }
 
-        .ai-video-avatar { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
-        .ai-cursor { display: inline-block; width: 6px; height: 15px; background: var(--cyber-gold); margin-left: 4px; vertical-align: middle; animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        @keyframes bubble-pop {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes pulse-border {
+
+            0%,
+            100% {
+                border-color: rgba(14, 165, 233, 0.3);
+            }
+
+            50% {
+                border-color: var(--cyber-gold);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .ai-video-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+        }
+
+        .ai-cursor {
+            display: inline-block;
+            width: 6px;
+            height: 15px;
+            background: var(--cyber-gold);
+            margin-left: 4px;
+            vertical-align: middle;
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
 
         /* Smooth Effects */
-        .ai-smoke-out { animation: smoke 0.4s ease-in forwards; }
-        .ai-smoke-in { animation: smoke 0.4s ease-out reverse forwards; }
-        @keyframes smoke { 0% { opacity: 1; filter: blur(0); } 100% { opacity: 0; filter: blur(20px); transform: scale(1.1); } }
+        .ai-smoke-out {
+            animation: smoke 0.4s ease-in forwards;
+        }
+
+        .ai-smoke-in {
+            animation: smoke 0.4s ease-out reverse forwards;
+        }
+
+        @keyframes smoke {
+            0% {
+                opacity: 1;
+                filter: blur(0);
+            }
+
+            100% {
+                opacity: 0;
+                filter: blur(20px);
+                transform: scale(1.1);
+            }
+        }
 
         .ai-choice-btn {
-            width: 100%; padding: 12px; background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2);
-            border-radius: 12px; color: #bae6fd; font-size: 12px; font-weight: 700; text-align: left; transition: 0.3s;
+            width: 100%;
+            padding: 12px;
+            background: rgba(14, 165, 233, 0.05);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 12px;
+            color: #bae6fd;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: left;
+            transition: 0.3s;
         }
-        .ai-choice-btn:hover { background: rgba(14, 165, 233, 0.2); border-color: var(--cyber-blue); transform: translateX(5px); }
+
+        .ai-choice-btn:hover {
+            background: rgba(14, 165, 233, 0.2);
+            border-color: var(--cyber-blue);
+            transform: translateX(5px);
+        }
 
         /* Responsive refinements */
         @media (max-width: 1024px) {
-            .ai-mascot-wrapper { width: 150px; height: 150px; }
-            .ai-bubble { max-width: 380px; padding: 20px; font-size: 14px; }
+            .ai-mascot-wrapper {
+                width: 150px;
+                height: 150px;
+            }
+
+            .ai-bubble {
+                max-width: 380px;
+                padding: 20px;
+                font-size: 14px;
+            }
         }
 
         @media (max-width: 640px) {
-            .ai-mascot-wrapper { width: 120px; height: 120px; }
-            .ai-bubble { font-size: 13px; padding: 15px; border-radius: 20px; }
-            .login-card { padding: 35px 25px; border-radius: 30px; }
-            .cyber-title { font-size: 22px; }
+            .ai-mascot-wrapper {
+                width: 120px;
+                height: 120px;
+            }
+
+            .ai-bubble {
+                font-size: 13px;
+                padding: 15px;
+                border-radius: 20px;
+            }
+
+            .login-card {
+                padding: 35px 25px;
+                border-radius: 30px;
+            }
+
+            .cyber-title {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
@@ -248,7 +457,8 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
-    <div id="mainGateway" class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center justify-items-center">
+    <div id="mainGateway"
+        class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center justify-items-center">
 
         <!-- AI ASSISTANT (Always visible, handles greeting) -->
         <div class="ai-assistant-container order-2 lg:order-1" id="aiAssistant">
@@ -258,7 +468,7 @@
                 </div>
                 <div id="aiChoices" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 hidden">
                     <button class="ai-choice-btn" onclick="aiChoose('checkin')">
-                        <i class="fas fa-location-dot mr-2 text-cyber-gold"></i> ลงเวลางาน
+                        <i class="fas fa-location-dot mr-2 text-cyber-gold"></i> ลงเวลาเข้า-ออกงาน
                     </button>
                     <button class="ai-choice-btn" onclick="aiChoose('report')">
                         <i class="fas fa-chart-line mr-2 text-cyber-gold"></i> ดูรายงานสรุป
@@ -273,16 +483,18 @@
         <!-- LOGIN CARD (Shows after AI interaction) -->
         <div class="login-card order-1 lg:order-2" id="loginCard">
             <div class="brand-logo">
-                <img src="img/logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=N&background=0ea5e9&color=fff'" alt="NEXGEN">
+                <img src="img/logo-1.jpg"
+                    onerror="this.src='https://ui-avatars.com/api/?name=N&background=0ea5e9&color=fff'" alt="NEXTGEN">
             </div>
 
-            <h1 class="cyber-title">NEXGEN <span style="color: var(--cyber-gold);">SYSTEM</span></h1>
+            <h1 class="cyber-title">NEXTGEN <span style="color: var(--cyber-gold);">SYSTEM</span></h1>
             <p class="cyber-subtitle" id="formSubtitle">Identity Verification</p>
 
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div class="input-wrapper">
                     <label>รหัสพนักงาน</label>
-                    <input type="text" id="username" class="cyber-input" placeholder="ระบุรหัสพนักงาน" required autocomplete="off">
+                    <input type="text" id="username" class="cyber-input" placeholder="ระบุรหัสพนักงาน" required
+                        autocomplete="off">
                     <i class="fas fa-fingerprint"></i>
                 </div>
 
@@ -310,7 +522,7 @@
 
             <div class="mt-8 pt-6 border-t border-white/5 text-center">
                 <p class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
-                    &copy; 2026 NEXGEN SYSTEM CENTER &bull; Ver.1.0
+                    &copy; 2026 NEXTGEN SYSTEM CENTER &bull; Ver.1.0
                 </p>
             </div>
         </div>
@@ -389,7 +601,7 @@
                 }
 
                 // บันทึก Session
-                localStorage.setItem('nexgen_user', JSON.stringify(data));
+                localStorage.setItem('nextgen_user', JSON.stringify(data));
 
                 // Success Animation
                 // ตัดคำนำหน้าชื่อออกเพื่อความสวยงาม
@@ -456,7 +668,7 @@
 
         window.onload = () => {
             // เคลียร์ session เก่าเพื่อบังคับให้ล็อกอินใหม่ทุกครั้งตามความต้องการ
-            localStorage.removeItem('nexgen_user');
+            localStorage.removeItem('nextgen_user');
             console.log("System Ready. Please login.");
 
             // AI Greeting Logic
@@ -506,14 +718,14 @@
 
             // 1. ท่าตะเบ๊ะเริ่มต้น
             aiImage.src = 'img/avata-salute.png?v=3';
-            typeText(aiText, `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดีค่ะ</h2><p class="text-lg opacity-80">ดิฉัน <b>Nexgen-AI</b> ยินดีที่ได้ดูแลคุณค่ะ</p>`);
+            typeText(aiText, `<h2 class="text-4xl font-black text-amber-400 mb-4 tracking-tight animate-pulse">สวัสดี</h2><p class="text-lg opacity-80"><b>Nextgen-AI</b> ยินดีที่ได้ดูแลคุณครับ</p>`);
 
             // 2. ดีเลย์ แล้วเปลี่ยนเป็นเมนู
             setTimeout(() => {
                 aiMascotWrapper.classList.add('ai-flash', 'ai-glitch');
 
                 setTimeout(() => {
-                    typeText(aiText, `<p class="text-base">วันนี้ต้องการให้ดิฉันช่วยดำเนินการในส่วนไหนดีคะ?</p>`);
+                    typeText(aiText, `<p class="text-base">วันนี้ต้องการให้NexGen.AIช่วยดำเนินการในส่วนไหนดีครับ?</p>`);
                     aiChoices.style.display = 'grid';
                     aiChoices.classList.add('animate-bounce-short');
 
@@ -557,7 +769,7 @@
             } else {
                 reportRadio.checked = true;
                 typeText(aiText, "รับทราบค่ะ! กำลังเข้าสู่ระบบ <b>รายงานสรุป</b> กรุณากรอกรหัสพนักงานและรหัสผ่านเพื่อเข้าระบบรายงานสรุปนะคะ");
-                formSubtitle.innerText = "Admin: Reporting System";
+                formSubtitle.innerText = "Reporting System";
                 document.body.style.background = "radial-gradient(circle at center, #1e1b4b 0%, #020617 100%)";
             }
 

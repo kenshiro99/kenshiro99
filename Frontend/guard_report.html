@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guard Performance Report - Nextgen Security</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Flatpickr (Thai Date Picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+
+    <style>
+        body { background-color: #020617; font-family: 'Sarabun', sans-serif; color: #f8fafc; position: relative; min-height: 100vh; overflow-x: hidden; }
+        .report-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; }
+        input, select { background: rgba(0, 0, 0, 0.3) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; color: white !important; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: #f59e0b !important; }
+        
+        /* Background Glow */
+        .glow-bg {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
+            background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.12), transparent 70%),
+                        radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.05), transparent 50%);
+        }
+
+        @media print { 
+            .no-print { display: none !important; } 
+            body { background: white !important; color: black !important; padding: 0; } 
+            table { color: black !important; border: 1px solid black !important; border-collapse: collapse; width: 100%; } 
+            th, td { border: 1px solid black !important; padding: 5px !important; color: black !important; font-size: 10px; } 
+            .text-emerald-400, .text-blue-400, .text-red-500, .text-amber-500, .text-rose-400 { color: black !important; font-weight: bold; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="glow-bg"></div>
+
+    <div class="max-w-[1400px] mx-auto">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='staff.html'" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all no-print mr-1">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <img src="../img/logo-1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=N&background=f59e0b&color=fff'" class="w-16 h-16 rounded-full border-2 border-amber-500 shadow-lg object-cover">
+                <div>
+                    <h1 class="text-lg sm:text-2xl font-black text-white uppercase tracking-tight leading-none whitespace-nowrap">รายงานสรุปการปฏิบัติงาน <span class="text-amber-500">รปภ.</span></h1>
+                    <p class="text-slate-500 text-[8px] sm:text-[10px] font-bold uppercase tracking-[2px] mt-2 whitespace-nowrap">Employee Attendance</p>
+                </div>
+            </div>
+            <div class="no-print flex items-center gap-2 w-full sm:w-auto">
+                <button onclick="exportToExcel()" class="flex-1 sm:flex-none px-5 py-2.5 bg-[#107c41] text-white rounded-xl text-xs font-bold hover:bg-[#0b592e] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
+                    <i class="fas fa-file-excel text-sm"></i> ดาวน์โหลดเป็น เอ็กเซลล์
+                </button>
+                <button onclick="fetchReportData()" class="flex-1 sm:flex-none px-5 py-2.5 bg-amber-500 text-black rounded-xl text-xs font-bold shadow-lg shadow-amber-500/10 hover:bg-amber-400 transition-all active:scale-[0.97]">อัปเดตข้อมูล</button>
+            </div>
+        </header>
+ 
+        <!-- Filters -->
+        <div class="report-card p-6 mb-8 no-print shadow-xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">วันที่เริ่ม</label>
+                    <input type="text" id="startDate" class="w-full px-4 py-2.5 rounded-xl text-sm transition-all" placeholder="เลือกวันที่เริ่ม...">
+                </div>
+                <div>
+                    <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">วันที่สิ้นสุด</label>
+                    <input type="text" id="endDate" class="w-full px-4 py-2.5 rounded-xl text-sm transition-all" placeholder="เลือกวันที่สิ้นสุด...">
+                </div>
+                <div>
+                    <label class="text-[10px] text-amber-500 font-bold uppercase tracking-widest ml-1">หน่วยงาน</label>
+                    <select id="unitFilter" onchange="renderTable()" class="w-full px-4 py-2.5 rounded-xl text-sm appearance-none">
+                        <option value="">ทั้งหมดทุกหน่วยงาน</option>
+                    </select>
+                </div>
+                <div>
+                    <input type="text" id="searchStaff" onkeyup="renderTable()" class="w-full px-4 py-3 rounded-xl text-sm" placeholder="ค้นหาชื่อ หรือ รหัส...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="report-card overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-[#020617] text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-white/5">
+                        <tr>
+                            <th class="px-4 py-5">รหัส รปภ.</th>
+                            <th class="px-4 py-5">ชื่อ-นามสกุล</th>
+                            <th class="px-4 py-5">หน่วยงาน</th>
+                            <th class="px-3 py-5 text-center bg-emerald-500/5">มาทำงาน (วัน)</th>
+                            <th class="px-3 py-5 text-center bg-blue-500/5">ลางาน (วัน)</th>
+                            <th class="px-3 py-5 text-center bg-red-500/5">ขาดงาน (วัน)</th>
+                            <th class="px-3 py-5 text-center bg-amber-500/5">มาสาย (วัน)</th>
+                            <th class="px-3 py-5 text-center bg-rose-500/5">ออกก่อน (วัน)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody" class="divide-y divide-white/5">
+                        <tr><td colspan="8" class="px-6 py-20 text-center italic text-slate-500">กำลังประมวลผลข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 🔒 ฝังรหัสเชื่อมต่อ (Embedded Config) ---
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let reportData = [];
+        let fpStart, fpEnd;
+        let currentUser = null;
+        let myZone = "";
+
+        async function init() {
+            const session = localStorage.getItem('nextgen_user');
+            if (!session) return window.location.href = '../index.html';
+            currentUser = JSON.parse(session);
+            myZone = (currentUser.zone || currentUser.area || '').trim();
+
+            initFlatpickr();
+            await fetchUnits();
+            await fetchReportData();
+        }
+
+        function initFlatpickr() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            const config = {
+                locale: 'th',
+                dateFormat: "Y-m-d", // Store ISO format under the hood
+                altInput: true,
+                altFormat: "d/m/Y",
+                disableMobile: "true",
+                formatDate: function(date, format, locale) {
+                    if (format === "d/m/Y") {
+                        const d = String(date.getDate()).padStart(2, '0');
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const y = date.getFullYear() + 543; // Convert A.D. to B.E.
+                        return `${d}/${m}/${y}`;
+                    }
+                    return flatpickr.formatDate(date, format, locale);
+                },
+                parseDate: function(dateStr, format) {
+                    if (format === "d/m/Y") {
+                        const parts = dateStr.split('/');
+                        if (parts.length === 3) {
+                            const d = parseInt(parts[0], 10);
+                            const m = parseInt(parts[1], 10) - 1;
+                            let y = parseInt(parts[2], 10);
+                            if (y > 2400) y -= 543; // Convert back to A.D. for internal engine
+                            return new Date(y, m, d);
+                        }
+                    }
+                    return false;
+                },
+                onReady: function(selectedDates, dateStr, instance) {
+                    localizeYearToBE(instance);
+                },
+                onMonthChange: function(selectedDates, dateStr, instance) {
+                    localizeYearToBE(instance);
+                },
+                onYearChange: function(selectedDates, dateStr, instance) {
+                    localizeYearToBE(instance);
+                },
+                onChange: function() {
+                    fetchReportData();
+                }
+            };
+
+            fpStart = flatpickr("#startDate", { ...config, defaultDate: firstDay });
+            fpEnd = flatpickr("#endDate", { ...config, defaultDate: lastDay });
+        }
+
+        function localizeYearToBE(instance) {
+            setTimeout(() => {
+                const yearSelect = instance.calendarContainer.querySelector('.numInput.cur-year');
+                if (yearSelect) {
+                    const yearVal = parseInt(yearSelect.value, 10);
+                    if (yearVal < 2500) {
+                        yearSelect.value = yearVal + 543;
+                    }
+                }
+            }, 0);
+        }
+
+        function getLocalDateString(date) {
+            if (!date) return '';
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        async function fetchUnits() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('units')
+                    .select('unit_name, zone')
+                    .eq('status', 'เปิด');
+                
+                if (error) throw error;
+                
+                const sel = document.getElementById('unitFilter');
+                
+                // Filter units belonging to the supervisor's zone (myZone)
+                const myUnits = (data || []).filter(u => {
+                    const unitZone = (u.zone || '').trim();
+                    return unitZone === myZone;
+                });
+
+                // Fallback: If no units in supervisor's zone, show all
+                const unitsToShow = myUnits.length > 0 ? myUnits : data || [];
+
+                unitsToShow.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.unit_name; opt.textContent = u.unit_name;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {
+                console.error("Fetch units error:", e);
+            }
+        }
+
+        async function fetchReportData() {
+            if (!fpStart || !fpEnd || fpStart.selectedDates.length === 0 || fpEnd.selectedDates.length === 0) return;
+
+            const start = getLocalDateString(fpStart.selectedDates[0]);
+            const end = getLocalDateString(fpEnd.selectedDates[0]);
+            const body = document.getElementById('reportTableBody');
+
+            body.innerHTML = '<tr><td colspan="8" class="px-6 py-20 text-center animate-pulse italic text-slate-500">กำลังดึงข้อมูลจากฐานข้อมูล...</td></tr>';
+
+            const d1 = fpStart.selectedDates[0]; 
+            const d2 = fpEnd.selectedDates[0];
+            const totalDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            try {
+                // Fetch staff, logs, and leaves with minimal safe columns
+                const { data: staff, error: staffErr } = await supabaseClient.from('staff').select('emp_id, name, unit, zone, level');
+                const { data: logs, error: logsErr } = await supabaseClient.from('duty_logs').select('emp_id, action_type, timestamp').gte('timestamp', start).lte('timestamp', end + "T23:59:59");
+                const { data: leaves, error: leavesErr } = await supabaseClient.from('leave_records').select('emp_id, start_date, end_date, status').eq('status', 'approved').gte('start_date', start);
+
+                if (staffErr) throw staffErr;
+                if (logsErr) throw logsErr;
+                if (leavesErr) throw leavesErr;
+
+                const safeStaff = staff || [];
+                const safeLogs = logs || [];
+                const safeLeaves = leaves || [];
+
+                // Filter guards belonging to the supervisor's zone (myZone)
+                let guards = safeStaff.filter(s => {
+                    const isGuard = (s.level || '').toLowerCase().includes('guard') || (s.level || '').includes('รปภ');
+                    const staffZone = (s.zone || '').trim();
+                    return isGuard && staffZone === myZone;
+                });
+
+                // Fallback: If no guards in supervisor's zone, show all
+                if (guards.length === 0) {
+                    guards = safeStaff.filter(s => (s.level || '').toLowerCase().includes('guard') || (s.level || '').includes('รปภ'));
+                }
+
+                reportData = guards.map(s => {
+                    const sLogsIn = safeLogs.filter(l => l.emp_id === s.emp_id && l.action_type === 'check_in');
+                    const sLogsOut = safeLogs.filter(l => l.emp_id === s.emp_id && l.action_type === 'check_out');
+                    const workDays = new Set(sLogsIn.map(l => l.timestamp.split('T')[0])).size;
+
+                    let late = 0;
+                    sLogsIn.forEach(l => {
+                        const d = new Date(l.timestamp);
+                        const h = d.getHours(); const m = d.getMinutes();
+                        if (h === 7 && m > 15) late++; else if (h > 7 && h < 18) late++;
+                        else if (h === 19 && m > 15) late++; else if (h > 19 || h < 6) late++;
+                    });
+
+                    let early = 0;
+                    sLogsOut.forEach(l => {
+                        const d = new Date(l.timestamp);
+                        const h = d.getHours();
+                        if (h >= 17 && h < 19) early++; else if (h >= 5 && h < 7) early++;
+                    });
+
+                    const sLeaves = safeLeaves.filter(l => l.emp_id === s.emp_id);
+                    let leaveDays = 0;
+                    sLeaves.forEach(l => {
+                        const lStart = new Date(l.start_date); const lEnd = new Date(l.end_date || l.start_date);
+                        const aS = lStart < d1 ? d1 : lStart; const aE = lEnd > d2 ? d2 : lEnd;
+                        if (aS <= aE) leaveDays += Math.ceil(Math.abs(aE - aS) / (1000 * 60 * 60 * 24)) + 1;
+                    });
+
+                    let absent = totalDays - (workDays + leaveDays);
+                    if (absent < 0) absent = 0;
+
+                    return { ...s, workDays, leaveDays, absent, late, early };
+                });
+
+                renderTable();
+            } catch (e) {
+                body.innerHTML = `<tr><td colspan="8" class="px-6 py-20 text-center text-red-500">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        function renderTable() {
+            const unit = document.getElementById('unitFilter').value;
+            const search = document.getElementById('searchStaff').value.toLowerCase().trim();
+            const body = document.getElementById('reportTableBody');
+            
+            const filtered = reportData.filter(s => {
+                const matchUnit = !unit || s.unit === unit;
+                const matchSearch = !search || s.name.toLowerCase().includes(search) || (s.emp_id && s.emp_id.toLowerCase().includes(search));
+                return matchUnit && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" class="px-6 py-20 text-center text-slate-500 italic">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+
+            body.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-white/5 transition-all">
+                    <td class="px-4 py-4 font-mono font-bold text-amber-500 text-xs">${s.emp_id}</td>
+                    <td class="px-4 py-4 font-bold text-white text-sm">${s.name}</td>
+                    <td class="px-4 py-4 text-slate-400 text-[11px]">${s.unit || '-'}</td>
+                    <td class="px-3 py-4 text-center font-black text-emerald-400 text-lg bg-emerald-500/5">${s.workDays}</td>
+                    <td class="px-3 py-4 text-center font-black text-blue-400 text-lg bg-blue-500/5">${s.leaveDays}</td>
+                    <td class="px-3 py-4 text-center font-black ${s.absent > 0 ? 'text-red-500' : 'text-slate-700'} text-lg bg-red-500/5">${s.absent}</td>
+                    <td class="px-3 py-4 text-center font-black ${s.late > 0 ? 'text-amber-500' : 'text-slate-700'} text-lg bg-amber-500/5">${s.late}</td>
+                    <td class="px-3 py-4 text-center font-black ${s.early > 0 ? 'text-rose-400' : 'text-slate-700'} text-lg bg-rose-500/5">${s.early}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportToExcel() {
+            if (reportData.length === 0) return alert("ไม่มีข้อมูลสำหรับการดาวน์โหลด");
+
+            const unit = document.getElementById('unitFilter').value;
+            const search = document.getElementById('searchStaff').value.toLowerCase().trim();
+
+            const filtered = reportData.filter(s => {
+                const matchUnit = !unit || s.unit === unit;
+                const matchSearch = !search || s.name.toLowerCase().includes(search) || (s.emp_id && s.emp_id.toLowerCase().includes(search));
+                return matchUnit && matchSearch;
+            });
+
+            if (filtered.length === 0) return alert("ไม่พบข้อมูลตามตัวเลือกตัวกรองปัจจุบัน");
+
+            const excelRows = filtered.map(s => ({
+                "รหัส รปภ.": s.emp_id || '',
+                "ชื่อ-นามสกุล": s.name || '',
+                "หน่วยงาน": s.unit || '-',
+                "มาทำงาน (วัน)": s.workDays || 0,
+                "ลางาน (วัน)": s.leaveDays || 0,
+                "ขาดงาน (วัน)": s.absent || 0,
+                "มาสาย (วัน)": s.late || 0,
+                "ออกก่อน (วัน)": s.early || 0
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'รายงานสรุป รปภ.');
+
+            const startStr = fpStart && fpStart.selectedDates[0] ? getLocalDateString(fpStart.selectedDates[0]) : 'start';
+            const endStr = fpEnd && fpEnd.selectedDates[0] ? getLocalDateString(fpEnd.selectedDates[0]) : 'end';
+            const filename = `รายงานสรุปการปฏิบัติงาน_รปภ_${startStr}_ถึง_${endStr}.xlsx`;
+
+            XLSX.writeFile(workbook, filename);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+    </script>
+    <!-- Premium Footer -->
+    <div class="mt-12 text-center pb-12 border-t border-white/5 pt-8 space-y-1">
+        <p class="text-[11px] text-white font-black uppercase tracking-[2px]">NEXTGEN <span class="text-amber-500">SYSTEM CENTER</span></p>
+        <p class="text-[9px] text-slate-500 font-bold tracking-[1px] opacity-60">
+            <span class="uppercase">&copy; 2026 &bull; NEXTGEN SYSTEM CENTER</span> <span class="ml-1">Ver.1.0</span>
+        </p>
+        <span class="text-[8px] text-slate-700 block">Developer: Ponchai Onkum</span>
+    </div>
+</body>
+</html>
