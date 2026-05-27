@@ -193,6 +193,32 @@
             from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
         }
+
+        /* --- MOBILE RESPONSIVE ADAPTATIONS FOR AI ASSISTANT --- */
+        @media (max-width: 640px) {
+            .ai-assistant-container {
+                bottom: 10px;
+                right: 10px;
+                gap: 5px;
+            }
+            .ai-mascot-wrapper {
+                width: 65px;
+                height: 65px;
+            }
+            .ai-bubble {
+                max-width: 165px;
+                font-size: 10px;
+                padding: 8px 12px;
+                border-radius: 12px;
+            }
+            .ai-bubble::after {
+                bottom: -6px;
+                right: 15px;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid rgba(30, 41, 59, 0.9);
+            }
+        }
     </style>
 </head>
 
@@ -367,6 +393,16 @@
 
                     if (isEarly) {
                         const cleanName = userData.name.split(' ')[0];
+                        
+                        // Ensure AI assistant is visible if it was hidden during selection
+                        const aiContainer = document.querySelector('.ai-assistant-container');
+                        if (aiContainer) {
+                            aiContainer.style.display = 'flex';
+                            aiContainer.style.opacity = '1';
+                            aiContainer.style.transform = 'none';
+                            aiContainer.style.pointerEvents = 'auto';
+                        }
+
                         updateAIText(`<span class="text-rose-400 font-bold">⚠️ คำเตือน!</span><br>คุณ <b>${cleanName}</b> กำลังจะบันทึกออกงานก่อนเวลานะคะ (เลิกงานคือ ${shiftTime})`);
                         
                         const unitInfoDiv = document.getElementById('unitInfo');
@@ -427,6 +463,18 @@
             document.getElementById('statusLabel').innerText = 'พบหลายหน่วยงาน';
             document.getElementById('mainStatus').innerText = 'กรุณาเลือกหน่วยงาน';
 
+            // Hide AI Assistant container to prevent blocking selection buttons on mobile
+            const aiContainer = document.querySelector('.ai-assistant-container');
+            if (aiContainer) {
+                aiContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                aiContainer.style.opacity = '0';
+                aiContainer.style.transform = 'translateY(20px)';
+                aiContainer.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    aiContainer.style.display = 'none';
+                }, 500);
+            }
+
             const unitInfoDiv = document.getElementById('unitInfo');
             let html = '<div class="mt-4 space-y-3">';
             units.forEach(u => {
@@ -452,6 +500,18 @@
             document.getElementById('statusIcon').className = 'fas fa-check-circle text-emerald-500';
             document.getElementById('statusLabel').innerText = 'ระบุพิกัดสำเร็จ';
             document.getElementById('mainStatus').innerText = `บันทึก${actionText}งานเรียบร้อย`;
+
+            // Hide AI Assistant container completely to prevent blocking the dashboard button on mobile
+            const aiContainer = document.querySelector('.ai-assistant-container');
+            if (aiContainer) {
+                aiContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                aiContainer.style.opacity = '0';
+                aiContainer.style.transform = 'translateY(20px)';
+                aiContainer.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    aiContainer.style.display = 'none';
+                }, 500);
+            }
             
             const unitInfoDiv = document.getElementById('unitInfo');
             const colorClass = nextAction === 'check_in' ? 'emerald' : 'amber';
