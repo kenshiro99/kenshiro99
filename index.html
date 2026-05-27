@@ -425,23 +425,32 @@
 
         @media (max-width: 640px) {
             .ai-mascot-wrapper {
-                width: 120px;
-                height: 120px;
+                width: 100px;
+                height: 100px;
             }
 
             .ai-bubble {
-                font-size: 13px;
-                padding: 15px;
-                border-radius: 20px;
+                font-size: 12px;
+                padding: 12px 16px;
+                border-radius: 16px;
             }
 
             .login-card {
-                padding: 35px 25px;
-                border-radius: 30px;
+                padding: 28px 20px;
+                border-radius: 24px;
             }
 
             .cyber-title {
-                font-size: 22px;
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+
+            .cyber-subtitle {
+                margin-bottom: 20px;
+            }
+
+            #mainGateway {
+                gap: 16px !important;
             }
         }
     </style>
@@ -457,7 +466,7 @@
         class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center justify-items-center">
 
         <!-- AI ASSISTANT (Always visible, handles greeting) -->
-        <div class="ai-assistant-container order-2 lg:order-1" id="aiAssistant">
+        <div class="ai-assistant-container order-1 lg:order-1" id="aiAssistant">
             <div class="ai-bubble" id="aiBubble">
                 <div class="ai-text text-slate-200" id="aiText">
                     กำลังเตรียมระบบผู้ช่วย...
@@ -477,7 +486,7 @@
         </div>
 
         <!-- LOGIN CARD (Shows after AI interaction) -->
-        <div class="login-card order-1 lg:order-2" id="loginCard">
+        <div class="login-card order-2 lg:order-2" id="loginCard">
             <div class="brand-logo">
                 <img src="img/logo-1.jpg"
                     onerror="this.src='https://ui-avatars.com/api/?name=N&background=0ea5e9&color=fff'" alt="NEXTGEN">
@@ -591,8 +600,7 @@
                     const level = (data.level || '').toLowerCase();
                     if (level === 'admin' || level === 'manager') {
                         // ระดับแอดมินหรือเมเนเจอร์ วิ่งตรงเข้า Dashboard ทันที!
-                        document.getElementById('loginCard').style.opacity = '0.3';
-                        document.getElementById('loginCard').style.pointerEvents = 'none';
+                        document.getElementById('loginCard').style.display = 'none';
                         
                         typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่หน้าจอ Dashboard อัตโนมัติค่ะ...`);
                         
@@ -601,8 +609,7 @@
                         }, 1800);
                     } else {
                         // ระดับหัวหน้างานหรือ รปภ. แสดงตัวเลือกหลังล็อกอินสำเร็จ
-                        document.getElementById('loginCard').style.opacity = '0.1';
-                        document.getElementById('loginCard').style.pointerEvents = 'none';
+                        document.getElementById('loginCard').style.display = 'none';
 
                         typeText(aiText, `<span class="text-sky-400 font-bold text-lg">เข้าสู่ระบบสำเร็จ!</span><br>สวัสดีครับคุณ <b>${fullName}</b><br>วันนี้ต้องการเข้าใช้งานในส่วนใดดีครับ?`);
                         
@@ -659,6 +666,7 @@
         }
 
         function resetUI() {
+            document.getElementById('loginCard').style.display = 'block';
             const btnText = document.getElementById('btnText');
             const btnIcon = document.getElementById('btnIcon');
             const btnLoader = document.getElementById('btnLoader');
