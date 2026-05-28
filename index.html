@@ -599,15 +599,36 @@
 
                 setTimeout(() => {
                     const level = (data.level || '').toLowerCase();
-                    if (level === 'admin' || level === 'manager') {
-                        // ระดับแอดมินหรือเมเนเจอร์ วิ่งตรงเข้า Dashboard ทันที!
-                        document.getElementById('loginCard').style.display = 'none';
+                    if (level === 'admin' || level === 'manager' || level === 'owner') {
+                        // ตรวจสอบประเภทอุปกรณ์ (มือถือ vs คอมพิวเตอร์)
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                         
-                        typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่หน้าจอ Dashboard อัตโนมัติค่ะ...`);
-                        
-                        setTimeout(() => {
-                            window.location.href = 'Backend/dashboard.html';
-                        }, 1800);
+                        if (isMobile) {
+                            // 📱 โหมดมือถือ: แสดงปุ่มกดเพื่อให้สอดคล้องกับข้อกำหนดการสัมผัสของมือถือ (User Gesture) ป้องกันการบล็อกนำทาง
+                            document.getElementById('loginCard').style.display = 'none';
+                            
+                            typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารคุณ <b>${fullName}</b><br>ระบบเตรียม Dashboard เรียบร้อยแล้ว โปรดกดปุ่มด้านล่างเพื่อเข้าสู่ระบบงานค่ะ`);
+                            
+                            // แสดงปุ่มทางเลือกสำหรับระดับบริหาร
+                            const aiChoices = document.getElementById('aiChoices');
+                            aiChoices.innerHTML = `
+                                <button class="ai-choice-btn flex items-center justify-between col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]" onclick="postLoginRedirect('admin_dashboard', '${level}')">
+                                    <span><i class="fas fa-chart-pie mr-2 text-emerald-400 animate-pulse"></i> เข้าสู่หน้าจอ Dashboard</span>
+                                    <i class="fas fa-chevron-right text-emerald-400"></i>
+                                </button>
+                            `;
+                            aiChoices.style.setProperty('display', 'grid', 'important');
+                            aiChoices.classList.add('animate-bounce-short');
+                        } else {
+                            // 💻 โหมดคอมพิวเตอร์/โน้ตบุ๊ก: วิ่งตรงเข้า Dashboard ทันทีแบบอัตโนมัติ ไม่ต้องคลิกปุ่ม!
+                            document.getElementById('loginCard').style.display = 'none';
+                            
+                            typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่หน้าจอ Dashboard อัตโนมัติค่ะ...`);
+                            
+                            setTimeout(() => {
+                                window.location.href = 'Backend/dashboard.html';
+                            }, 1800);
+                        }
                     } else {
                         // ระดับหัวหน้างานหรือ รปภ. แสดงตัวเลือกหลังล็อกอินสำเร็จ
                         document.getElementById('loginCard').style.display = 'none';
@@ -644,7 +665,7 @@
             aiChoices.style.setProperty('display', 'none', 'important');
             
             // เล่นเอฟเฟกต์ควันตอนสลับรูป AI เพื่อความพรีเมียม
-            const newImgSrc = mode === 'checkin' ? 'img/avata-checkin.png?v=6' : 'img/avata-dashboard.png?v=6';
+            const newImgSrc = (mode === 'checkin') ? 'img/avata-checkin.png?v=6' : 'img/avata-dashboard.png?v=6';
             aiImage.classList.add('ai-smoke-out');
             setTimeout(() => {
                 aiImage.src = newImgSrc;
@@ -653,7 +674,11 @@
                 setTimeout(() => { aiImage.classList.remove('ai-smoke-in'); }, 500);
             }, 450);
 
-            if (mode === 'checkin') {
+            if (mode === 'admin_dashboard') {
+                typeText(aiText, "กำลังเปิดหน้าจอ <b>แดชบอร์ดผู้บริหาร (Dashboard)</b>...");
+                // นำทางโดยตรงทันทีเพื่อรักษาความถูกต้องของสิทธิ์การกดของผู้ใช้ (User Gesture)
+                window.location.href = 'Backend/dashboard.html';
+            } else if (mode === 'checkin') {
                 typeText(aiText, "รับทราบครับ! กำลังเปิดหน้าจอ <b>ลงเวลาเข้า-ออกหน่วยงาน</b>...");
                 setTimeout(() => {
                     window.location.href = 'checkin.html';
