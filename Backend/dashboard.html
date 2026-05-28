@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexgen System Center</title>
+    <title>NEXTGEN System Center</title>
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <script src="js/sidebar.js"></script>
+    <script src="js/dashboard.js"></script>
     <link rel="stylesheet" href="css/dashboard.css">
+
 </head>
 
 <body>
@@ -22,11 +24,9 @@
     <div
         class="md:hidden fixed top-0 left-0 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 z-40 flex justify-between items-center p-2 px-4 shadow-2xl">
         <div class="flex items-center gap-3">
-            <img id="mobileUserImg" src="../img/logo-1.jpg"
-                onerror="this.src='https://ui-avatars.com/api/?name=NEXGEN&background=f59e0b&color=fff'"
-                class="w-12 h-12 rounded-full object-cover object-top border-2 border-amber-500 shadow-lg shadow-amber-500/20">
+            <!-- Removed Mobile Profile Img -->
             <div class="flex flex-col">
-                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXGEN</span>
+                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXTGEN</span>
                 <span class="text-[8px] text-amber-500 font-bold tracking-[2px] uppercase">System Center</span>
             </div>
         </div>
@@ -48,42 +48,30 @@
         <section id="tab-dashboard" class="view">
             <header class="mb-4 flex-none flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-6">
-                    <div>
-                        <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase mb-1">System Status</p>
-                        <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">Dashboard</h1>
-                    </div>
-                    <!-- Big Digital Clock -->
-                    <div
-                        class="hidden lg:flex items-center bg-black/40 px-4 py-1.5 rounded-2xl border border-white/5 shadow-2xl backdrop-blur-md">
-                        <div class="flex flex-col items-center">
-                            <span id="digitalClock"
-                                class="text-2xl font-black text-amber-500 font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">00:00:00</span>
-                            <span id="digitalDate"
-                                class="text-[9px] text-slate-500 font-bold uppercase tracking-[2px]">00 January
-                                2026</span>
-                        </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter leading-none mb-1">Dashboard</h1>
+                        <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase">System Status</p>
                     </div>
                 </div>
-                <!-- Premium User Profile Pill -->
-                <div
-                    class="flex items-center gap-3 bg-gradient-to-r from-[#0f172a] to-[#1e293b] p-1 pr-4 rounded-full border border-amber-500/20 shadow-2xl hover:border-amber-500/50 transition-all duration-300 group">
-                    <div class="relative">
-                        <div
-                            class="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-300">
-                        </div>
-                        <img id="userImg" src="https://ui-avatars.com/api/?name=User&background=f59e0b&color=fff"
-                            class="relative w-12 h-12 rounded-full border-2 border-amber-500 object-cover object-top shadow-inner">
-                        <div
-                            class="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0f172a] rounded-full shadow-md animate-pulse">
+
+                <!-- Right Side: Clock & User Info Redesign -->
+                <div class="flex items-center gap-6 bg-black/20 px-6 py-3 rounded-2xl border border-white/5 backdrop-blur-xl shadow-2xl transition-all hover:border-amber-500/20">
+                    <!-- Digital Clock Redesign -->
+                    <div class="hidden lg:flex flex-col items-end pr-6 border-r border-white/10">
+                        <span id="digitalClock" class="text-3xl font-black text-amber-500 font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">00:00:00</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <i class="far fa-calendar-alt text-[10px] text-slate-500"></i>
+                            <span id="digitalDate" class="text-[9px] text-slate-500 font-bold uppercase tracking-[2px]">00 January 2026</span>
                         </div>
                     </div>
-                    <div class="flex flex-col justify-center">
-                        <p id="userName" class="text-white text-sm font-black leading-tight tracking-tight">---</p>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-                            <p id="userLevel" class="text-amber-500/90 text-[10px] font-black uppercase tracking-[1px]">
-                                ---</p>
+
+                    <!-- User Name & Position -->
+                    <div class="flex flex-col items-end">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                            <p id="userName" class="text-white text-base font-black leading-tight tracking-tight">---</p>
                         </div>
+                        <p id="userLevel" class="text-amber-500/80 text-[10px] font-black uppercase tracking-[2px]">---</p>
                     </div>
                 </div>
             </header>
@@ -143,442 +131,138 @@
                 </div>
             </div>
 
-            <!-- Quick Operations Section (New) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                <button onclick="window.location.href='OP05Report.html'"
-                    class="p-3 glass-card bg-primary/10 border border-primary/20 rounded-2xl flex flex-col items-center gap-2 hover:bg-primary/20 hover:border-primary/50 transition-all group shadow-lg shadow-primary/10">
-                    <i class="fas fa-handshake text-2xl text-primary group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">ดูรายงาน OP05</span>
-                </button>
-                <button onclick="switchTab('staff')"
-                    class="p-4 glass-card bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-3 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all group">
-                    <i
-                        class="fas fa-user-plus text-2xl text-emerald-500 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">จัดการพนักงาน</span>
-                </button>
-                <button onclick="switchTab('units')"
-                    class="p-4 glass-card bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-3 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all group">
-                    <i
-                        class="fas fa-map-marker-alt text-2xl text-amber-500 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">จัดการหน่วยงาน</span>
-                </button>
-                <button onclick="window.open('../Frontend/OP05.html', '_blank')"
-                    class="p-3 glass-card bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center gap-2 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all group">
-                    <i
-                        class="fas fa-file-signature text-2xl text-cyan-500 group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">เขียนรายงาน OP05</span>
-                </button>
-            </div>
-
-            <!-- Main Content: Stats Chart + Supervisor Live Feed (Side by Side) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
-                <div class="lg:col-span-2 data-card border border-white/5 flex flex-col h-[350px]">
-                    <h4 class="text-white font-bold mb-3 flex items-center gap-2 flex-none">
-                        <i class="fas fa-chart-line text-amber-500"></i> สถิติการปฏิบัติงาน (สัปดาห์)
-                    </h4>
-                    <div class="flex-1 relative min-h-0">
-                        <canvas id="dashboardChart"></canvas>
+            <!-- Report Stats Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Card 1: รายงานเข้าตรวจหน่วยงาน (OP05) -->
+                <div class="data-card p-3 border border-white/5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-3 relative z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-primary/20 rounded-md">
+                                <i class="fas fa-search-location text-primary text-xs"></i>
+                            </div>
+                            <h3 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-tight">เข้าตรวจหน่วย</h3>
+                        </div>
+                        <div class="flex items-baseline gap-1 shrink-0">
+                            <span class="text-lg font-black text-white" id="countOP05">0</span>
+                            <span class="text-slate-500 text-[9px] font-mono">ฉบับ</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 relative z-10" id="eqOP05">
+                        <!-- JS Equalizer injected here -->
+                    </div>
+                </div>
+                
+                <!-- Card 2: รายงานพบผู้ว่าจ้าง (OP06) -->
+                <div class="data-card p-3 border border-white/5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-3 relative z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-emerald-500/20 rounded-md">
+                                <i class="fas fa-handshake text-emerald-500 text-xs"></i>
+                            </div>
+                            <h3 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-tight">พบผู้ว่าจ้าง</h3>
+                        </div>
+                        <div class="flex items-baseline gap-1 shrink-0">
+                            <span class="text-lg font-black text-white" id="countOP06">0</span>
+                            <span class="text-slate-500 text-[9px] font-mono">ฉบับ</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 relative z-10" id="eqOP06">
+                        <!-- JS Equalizer injected here -->
                     </div>
                 </div>
 
-                <!-- Supervisor Live Feed Moved Here -->
-                <div
-                    class="lg:col-span-1 data-card border border-white/5 flex flex-col h-[350px] border-l-4 border-amber-500">
+                <!-- Card 3: รายงานการรวมแถว (OP07) -->
+                <div class="data-card p-3 border border-white/5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-3 relative z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-amber-500/20 rounded-md">
+                                <i class="fas fa-users text-amber-500 text-xs"></i>
+                            </div>
+                            <h3 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-tight">การรวมแถว</h3>
+                        </div>
+                        <div class="flex items-baseline gap-1 shrink-0">
+                            <span class="text-lg font-black text-white" id="countOP07">0</span>
+                            <span class="text-slate-500 text-[9px] font-mono">ฉบับ</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 relative z-10" id="eqOP07">
+                        <!-- JS Equalizer injected here -->
+                    </div>
+                </div>
+
+                <!-- Card 4: รายงานอบรมประจำเดือน (FMQC02) -->
+                <div class="data-card p-3 border border-white/5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                    <div class="flex justify-between items-center mb-3 relative z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-cyan-500/20 rounded-md">
+                                <i class="fas fa-chalkboard-teacher text-cyan-500 text-xs"></i>
+                            </div>
+                            <h3 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-tight">อบรมประจำเดือน</h3>
+                        </div>
+                        <div class="flex items-baseline gap-1 shrink-0">
+                            <span class="text-lg font-black text-white" id="countFMQC02">0</span>
+                            <span class="text-slate-500 text-[9px] font-mono">ฉบับ</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 relative z-10" id="eqFMQC02">
+                        <!-- JS Equalizer injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content: Combined Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                
+                <!-- Left Column (Span 2): Stats + Zone Charts -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <!-- Weekly Stats Chart -->
+                    <div class="data-card border border-white/5 flex flex-col h-[350px]">
+                        <h4 class="text-white font-bold mb-3 flex items-center gap-2 flex-none">
+                            <i class="fas fa-chart-line text-amber-500"></i> สถิติเข้าตรวจหน่วยงาน(สัปดาห์)
+                        </h4>
+                        <div class="flex-1 relative min-h-0">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Area Breakdown Chart -->
+                    <div class="data-card border border-white/5 flex flex-col h-[172px]">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-white font-bold flex items-center gap-2 text-sm">
+                                <i class="fas fa-chart-bar text-emerald-500"></i> แยกตามพื้นที่ (เฉพาะหน่วยที่เปิด)
+                            </h4>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Distribution by
+                                Zone</span>
+                        </div>
+                        <div class="flex-1 relative min-h-0 overflow-y-auto custom-scrollbar pr-2" id="zoneEqContainer">
+                            <p class="text-slate-500 text-xs py-4 text-center italic">กำลังโหลดสัดส่วน...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Span 1): Live Feed -->
+                <div class="lg:col-span-1 data-card border border-white/5 flex flex-col h-[546px] border-l-4 border-amber-500">
                     <div class="flex items-center justify-between mb-4 flex-none">
                         <h4 class="text-white font-bold flex items-center gap-2 text-sm">
                             <i class="fas fa-search-location text-amber-500 animate-pulse"></i> การเข้าตรวจหน่วยงาน
                             (Live)
                         </h4>
-                        <span
-                            class="text-[9px] bg-amber-500/10 text-amber-500 px-2 py-1 rounded-full font-bold uppercase tracking-widest">15
-                            รายการ</span>
+                        <span class="text-[9px] bg-amber-500/10 text-amber-500 px-2 py-1 rounded-full font-bold uppercase tracking-widest">Live</span>
                     </div>
-                    <div id="liveActivityFeed" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                    <div id="liveActivityFeed" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                         <p class="text-slate-500 text-xs py-10 text-center italic">กำลังโหลดข้อมูลการเข้าตรวจ...</p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Bottom Row: Area Breakdown Chart (Moved Here) -->
-            <div class="grid grid-cols-1 gap-6 mb-6">
-                <div class="data-card border border-white/5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-white font-bold flex items-center gap-2 text-sm">
-                            <i class="fas fa-chart-bar text-emerald-500"></i> แยกตามพื้นที่ (เฉพาะหน่วยที่เปิด)
-                        </h4>
-                        <span class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Distribution by
-                            Zone</span>
-                    </div>
-                    <div class="h-[150px]">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
             </div>
         </section>
+        <!-- --- Manage Staff Section: Migrated to Standalone ManageStaff.html --- -->
 
-        <section id="tab-report-site" class="view">
-            <div class="h-full p-8 text-center w-full">
-                <h1 class="text-3xl font-black mb-4 uppercase">รายงานเข้าตรวจหน่วยงาน</h1>
-                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
-            </div>
-        </section>
-        <section id="tab-report-rollcall" class="view">
-            <div class="h-full p-8 text-center w-full">
-                <h1 class="text-3xl font-black mb-4 uppercase">รายงานการรวมแถว</h1>
-                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
-            </div>
-        </section>
-        <section id="tab-report-training" class="view">
-            <div class="h-full p-8 text-center w-full">
-                <h1 class="text-3xl font-black mb-4 uppercase">รายงานการอบรมประจำเดือน</h1>
-                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
-            </div>
-        </section>
-        <section id="tab-report-guard" class="view">
-            <div class="h-full p-8 text-center w-full">
-                <h1 class="text-3xl font-black mb-4 uppercase">รายงานเข้าออกหน่วยงาน รปภ.</h1>
-                <p class="text-slate-500">ระบบกำลังอยู่ระหว่างการพัฒนาฟอร์มข้อมูล...</p>
-            </div>
-        </section>
-
-        <!-- --- Manage Staff Section --- -->
-        <section id="tab-staff" class="view">
-            <div class="h-full flex flex-col w-full pb-8 sm:pb-0">
-                <header class="flex justify-between items-center mb-6 flex-none">
-                    <div>
-                        <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase mb-1">Personnel
-                            Management</p>
-                        <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">จัดการ<span
-                                class="text-amber-500">พนักงาน</span></h1>
-                    </div>
-                </header>
-
-                <!-- Staff Form -->
-                <div
-                    class="mb-3 p-[1px] rounded-[14px] bg-gradient-to-br from-amber-500/30 to-emerald-500/20 w-full shadow-sm">
-                    <div
-                        class="data-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[13px] relative h-full p-3">
-                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
-                                    <i class="fas fa-user-plus text-[10px]"></i>
-                                </div>
-                                <h2 class="text-xs font-black text-white">แบบฟอร์มข้อมูลพนักงาน</h2>
-                            </div>
-                            <button onclick="addNewStaff()"
-                                class="px-4 py-1.5 rounded-md text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-black transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
-                                <i class="fas fa-save"></i> <span id="btnText">บันทึกข้อมูล</span>
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 lg:gap-2 items-end">
-                            <div class="space-y-1 col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสพนักงาน</label>
-                                <input type="text" id="empId"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600 shadow-inner"
-                                    placeholder="EMP-XXXX">
-                            </div>
-                            <div class="space-y-1 lg:col-span-2">
-                                <label
-                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ชื่อ-นามสกุล</label>
-                                <input type="text" id="empName"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600 shadow-inner"
-                                    placeholder="ระบุชื่อ-นามสกุล">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label
-                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">หน่วยงานประจำ</label>
-                                <div class="relative">
-                                    <input type="text" id="empUnit" oninput="handleUnitInput(this.value)"
-                                        onfocus="handleUnitInput(this.value)" onclick="handleUnitInput(this.value)"
-                                        class="w-full px-2.5 py-1.5 rounded-md text-[11px] transition-all text-white outline-none"
-                                        placeholder="ค้นหาหน่วยงาน..." autocomplete="off">
-                                    <div id="unitSuggestions" class="suggestions-container hidden"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ตำแหน่ง</label>
-                                <input type="text" id="empRole"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600"
-                                    placeholder="ตำแหน่ง">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สิทธิ</label>
-                                <select id="empLevel"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] cursor-pointer appearance-none">
-                                    <option value="Guard">Guard</option>
-                                    <option value="Supervisor">Supervisor</option>
-                                    <option value="Manager">Manager</option>
-                                    <option value="Admin">Admin</option>
-                                </select>
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เขตพื้นที่</label>
-                                <select id="empZone"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] cursor-pointer appearance-none">
-                                    <option value="">— ไม่ระบุ —</option>
-                                    <option value="เขต 1">เขต 1</option>
-                                    <option value="เขต 2">เขต 2</option>
-                                    <option value="กทม.">กทม.</option>
-                                </select>
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label
-                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะพนักงาน</label>
-                                <select id="empStatus"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold text-emerald-400 appearance-none">
-                                    <option value="เปิด">เปิด (ON)</option>
-                                    <option value="ปิด">ปิด (OFF)</option>
-                                </select>
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รูปโปรไฟล์
-                                    (URL)</label>
-                                <input type="text" id="empImage"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600 shadow-inner"
-                                    placeholder="https://...">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสผ่าน</label>
-                                <input type="password" id="empPassword"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] placeholder-slate-600"
-                                    placeholder="****">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Staff Table -->
-                <div class="mb-4 flex items-center gap-3">
-                    <div class="relative flex-1">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="globalStaffSearch" onkeyup="applyFilter()"
-                            placeholder="ค้นหาพนักงานด่วน (ชื่อ, รหัส, ตำแหน่ง...)"
-                            class="w-full bg-[#020617] border border-slate-700/50 rounded-xl py-2 pl-11 pr-4 text-white text-xs focus:border-amber-500 outline-none transition-all shadow-inner h-10">
-                    </div>
-                </div>
-
-                <div
-                    class="data-card p-0 overflow-hidden border border-white/5 rounded-[14px] flex-1 flex flex-col min-h-[250px]">
-                    <div class="overflow-auto w-full flex-1 bg-[#0f172a]/20">
-                        <table class="w-full text-left relative min-w-[800px]">
-                            <thead
-                                class="bg-[#0f172a] text-slate-400 text-[9px] font-bold uppercase border-b border-slate-800 sticky top-0 z-10">
-                                <tr>
-                                    <th class="px-3 py-2 w-[5%]">รูป</th>
-                                    <th class="px-3 py-2 w-[12%]">รหัสพนักงาน <input type="text" id="hFilterId"
-                                            onkeyup="applyFilter()" placeholder="ค้นรหัส..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[20%]">ชื่อพนักงาน <input type="text" id="hFilterName"
-                                            onkeyup="applyFilter()" placeholder="ค้นชื่อ..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[15%]">หน่วยงาน <select id="hFilterUnit"
-                                            onchange="applyFilter()"
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal"></select>
-                                    </th>
-                                    <th class="px-3 py-2 w-[15%]">ตำแหน่ง <input type="text" id="hFilterRole"
-                                            onkeyup="applyFilter()" placeholder="ตำแหน่ง..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[10%]">สิทธิ <select id="hFilterLevel"
-                                            onchange="applyFilter()"
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal">
-                                            <option value="">ทั้งหมด</option>
-                                            <option value="Guard">Guard</option>
-                                            <option value="Supervisor">Spv.</option>
-                                            <option value="Manager">Mgr.</option>
-                                            <option value="Admin">Admin</option>
-                                        </select></th>
-                                    <th class="px-3 py-2 w-[10%]">เขต <select id="hFilterZone" onchange="applyFilter()"
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal">
-                                            <option value="">ทั้งหมด</option>
-                                            <option value="เขต 1">เขต 1</option>
-                                            <option value="เขต 2">เขต 2</option>
-                                            <option value="กทม.">กทม.</option>
-                                        </select></th>
-                                    <th class="px-3 py-2 w-[13%]">สถานะ <select id="hFilterStatus"
-                                            onchange="applyFilter()"
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded py-1 mt-1 font-normal">
-                                            <option value="">ทั้งหมด</option>
-                                            <option value="เปิด">เปิด</option>
-                                            <option value="ปิด">ปิด</option>
-                                        </select></th>
-                                    <th class="px-3 py-2 text-center w-[15%]">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="staffTable" class="divide-y divide-slate-800/50 text-[11px]"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <div class="flex flex-col sm:flex-row items-center justify-between mt-3 px-2 gap-4 flex-none">
-                    <div class="text-[10px] text-slate-500 font-bold uppercase">แสดง <span id="pageStartItem"
-                            class="text-amber-500">0</span> ถึง <span id="pageEndItem" class="text-amber-500">0</span>
-                        จาก <span id="totalItems" class="text-white">0</span></div>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="prevPage()"
-                            class="px-3 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-slate-400 hover:text-amber-500 text-[10px] font-bold"><i
-                                class="fas fa-chevron-left"></i></button>
-                        <div id="pageNumbers" class="flex gap-1"></div>
-                        <button onclick="nextPage()"
-                            class="px-3 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-slate-400 hover:text-amber-500 text-[10px] font-bold"><i
-                                class="fas fa-chevron-right"></i></button>
-                        <select id="jumpSelect" onchange="goToPage(this.value)"
-                            class="ml-3 px-2 py-1.5 rounded bg-[#0f172a] border border-slate-800 text-white text-[10px] font-bold"></select>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- --- Manage Units Section --- -->
-        <section id="tab-units" class="view">
-            <div class="h-full flex flex-col w-full pb-8 sm:pb-0">
-                <header class="flex justify-between items-center mb-6 flex-none">
-                    <div>
-                        <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase mb-1">Site
-                            Configuration</p>
-                        <h1 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter">จัดการ<span
-                                class="text-amber-500">หน่วยงาน</span></h1>
-                    </div>
-                </header>
-
-                <!-- Unit Form -->
-                <div
-                    class="mb-3 p-[1px] rounded-[14px] bg-gradient-to-br from-amber-500/30 to-emerald-500/20 w-full shadow-sm">
-                    <div
-                        class="data-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[13px] relative h-full p-3">
-                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
-                                    <i class="fas fa-building text-[10px]"></i>
-                                </div>
-                                <h2 class="text-xs font-black text-white uppercase tracking-tight">
-                                    แบบฟอร์มข้อมูลหน่วยงาน</h2>
-                            </div>
-                            <button onclick="addNewUnit()"
-                                class="px-4 py-1.5 rounded-md text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5">
-                                <i class="fas fa-save"></i> <span id="btnUnitText">บันทึกหน่วยงาน</span>
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3 lg:gap-2 items-end">
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เลขที่</label>
-                                <input type="text" id="uNumber" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="001">
-                            </div>
-                            <div class="space-y-1 lg:col-span-2">
-                                <label
-                                    class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ชื่อหน่วยงาน</label>
-                                <input type="text" id="uName" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="ชื่อหน่วยงาน">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เขต</label>
-                                <input type="text" id="uZone" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="กทม.">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รหัสหน่วย</label>
-                                <input type="text" id="uCode" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="CODE">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ผู้ดูแล</label>
-                                <input type="text" id="uManager" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="ชื่อผู้ดูแล">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">Lat</label>
-                                <input type="text" id="uLat" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="13.xxxx">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">Lng</label>
-                                <input type="text" id="uLng" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    placeholder="100.xxxx">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">รัศมี(ม.)</label>
-                                <input type="number" id="uRadius" class="w-full px-2.5 py-1.5 rounded-md text-[11px]"
-                                    value="100">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-blue-400 uppercase ml-1">กำลังพล(นาย)</label>
-                                <input type="number" id="uRequired"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] border-blue-500/30"
-                                    placeholder="0">
-                            </div>
-                            <div class="space-y-1 lg:col-span-1">
-                                <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะ</label>
-                                <select id="uStatus"
-                                    class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold text-emerald-400 appearance-none">
-                                    <option value="เปิด">เปิด (ON)</option>
-                                    <option value="ปิด">ปิด (OFF)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Unit Table -->
-                <div class="mb-4 flex items-center gap-3">
-                    <div class="relative flex-1">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="globalUnitSearch" onkeyup="applyUnitFilter()"
-                            placeholder="ค้นหาหน่วยงานด่วน (ชื่อ, รหัส, เขต...)"
-                            class="w-full bg-[#020617] border border-slate-700/50 rounded-xl py-2 pl-11 pr-4 text-white text-xs focus:border-amber-500 outline-none transition-all shadow-inner h-10">
-                    </div>
-                </div>
-
-                <div
-                    class="data-card p-0 overflow-hidden border border-white/5 rounded-[14px] flex-1 flex flex-col min-h-[250px]">
-                    <div class="overflow-auto w-full flex-1 bg-[#0f172a]/20">
-                        <table class="w-full text-left relative min-w-[800px]">
-                            <thead
-                                class="bg-[#0f172a] text-slate-400 text-[9px] font-bold uppercase border-b border-slate-800 sticky top-0 z-10">
-                                <tr>
-                                    <th class="px-3 py-2 w-[8%]">เลขที่ <input type="text" id="uFilterNum"
-                                            onkeyup="applyUnitFilter()" placeholder="ค้น..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[18%]">ชื่อหน่วยงาน <input type="text" id="uFilterName"
-                                            onkeyup="applyUnitFilter()" placeholder="ค้นชื่อ..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[10%]">เขต <input type="text" id="uFilterZone"
-                                            onkeyup="applyUnitFilter()" placeholder="ค้นเขต..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[10%]">รหัสหน่วย <input type="text" id="uFilterCode"
-                                            onkeyup="applyUnitFilter()" placeholder="รหัส..."
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1.5 py-1 mt-1 font-normal">
-                                    </th>
-                                    <th class="px-3 py-2 w-[10%]">ผู้ดูแล</th>
-                                    <th class="px-3 py-2 w-[12%]">พิกัด (Lat,Lng)</th>
-                                    <th class="px-3 py-2 w-[6%]">รัศมี</th>
-                                    <th class="px-3 py-2 w-[8%] text-center">กำลังพล</th>
-                                    <th class="px-3 py-2 w-[8%]">สถานะ <select id="uFilterStatus"
-                                            onchange="applyUnitFilter()"
-                                            class="w-full bg-[#020617]/80 border-slate-700/50 rounded px-1 py-1 mt-1 font-normal text-slate-400">
-                                            <option value="">ทั้งหมด</option>
-                                            <option value="เปิด">เปิด</option>
-                                            <option value="ปิด">ปิด</option>
-                                        </select></th>
-                                    <th class="px-3 py-2 text-center w-[10%]">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="unitsTable" class="divide-y divide-slate-800/50 text-[11px]"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <!-- --- Manage Units Section: Migrated to Standalone ManageUnits.html --- -->
 
         <!-- --- Leaves Section --- -->
         <section id="tab-leaves" class="view">
@@ -591,8 +275,6 @@
                             การอนุมัติ<span class="text-amber-500">การลา</span></h1>
                     </div>
                     <div class="bg-[#0f172a] px-4 py-2 rounded-xl border border-slate-800 shadow-inner">
-                        <span
-                            class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mr-2">Pending:</span>
                         <span id="pendingCount" class="text-xl font-black text-amber-500">0</span>
                     </div>
                 </header>
@@ -642,12 +324,12 @@
                             <thead
                                 class="bg-[#0f172a] text-slate-400 text-[9px] font-bold uppercase border-b border-slate-800">
                                 <tr>
-                                    <th class="px-5 py-3">พนักงาน</th>
-                                    <th class="px-5 py-3">ประเภท</th>
-                                    <th class="px-5 py-3">จำนวนเงิน</th>
-                                    <th class="px-5 py-3">วันที่บันทึก</th>
-                                    <th class="px-5 py-3">รายละเอียด</th>
-                                    <th class="px-5 py-3 text-center">จัดการ</th>
+                                    <th class="px-5 py-1.5">พนักงาน</th>
+                                    <th class="px-5 py-1.5">ประเภท</th>
+                                    <th class="px-5 py-1.5">จำนวนเงิน</th>
+                                    <th class="px-5 py-1.5">วันที่บันทึก</th>
+                                    <th class="px-5 py-1.5">รายละเอียด</th>
+                                    <th class="px-5 py-1.5 text-center">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="financeTableBody" class="divide-y divide-slate-800/50 text-[11px]"></tbody>
@@ -658,7 +340,128 @@
         </section>
     </main>
 
-    <script src="js/dashboard.js"></script>
+
+
+
+
+    <!-- AI ASSISTANT -->
+    <div class="ai-assistant-container">
+        <div class="ai-bubble" id="aiBubbleText">สวัสดีค่ะบอส! <b>NEXTGEN-AI</b> <br>สรุปรายงานภาพรวมให้ค่ะ</div>
+        <div class="ai-mascot-wrapper">
+            <img src="../img/avata-dashboard.png?v=1" class="ai-video-avatar" id="aiImage" alt="AI Assistant">
+        </div>
+    </div>
+
+    <script>
+        // --- ระบบ Draggable AI Assistant ---
+        const aiContainer = document.querySelector('.ai-assistant-container');
+        const aiMascot = document.querySelector('.ai-mascot-wrapper');
+        let isDraggingAI = false;
+        let startX, startY, initialRight, initialBottom;
+
+        // โหลดตำแหน่งที่บันทึกไว้
+                function loadAIPosition() {
+            const savedPos = localStorage.getItem('NEXTGEN_ai_pos');
+            let currentRight = 20, currentBottom = 20;
+            if (savedPos) {
+                try {
+                    const pos = JSON.parse(savedPos);
+                    currentRight = pos.right || 20;
+                    currentBottom = pos.bottom || 20;
+                } catch(e){}
+            }
+            const maxRight = Math.max(10, window.innerWidth - 110);
+            const maxBottom = Math.max(10, window.innerHeight - 150);
+            if (currentRight > maxRight) currentRight = maxRight;
+            if (currentBottom > maxBottom) currentBottom = maxBottom;
+            
+            if (aiContainer) {
+                aiContainer.style.right = currentRight + 'px';
+                aiContainer.style.bottom = currentBottom + 'px';
+                updateAIBubbleDirection(currentRight);
+            }
+        }
+        window.addEventListener('resize', loadAIPosition);
+
+        function updateAIBubbleDirection(right) {
+            const screenWidth = window.innerWidth;
+            const currentLeft = screenWidth - right - 100; // 100 is mascot width
+            
+            if (currentLeft < screenWidth / 2) {
+                aiContainer.classList.add('left-side');
+            } else {
+                aiContainer.classList.remove('left-side');
+            }
+        }
+
+        function handleStart(e) {
+            isDraggingAI = true;
+            aiContainer.classList.add('dragging');
+            
+            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            
+            initialRight = parseInt(window.getComputedStyle(aiContainer).right);
+            initialBottom = parseInt(window.getComputedStyle(aiContainer).bottom);
+        }
+
+        function handleMove(e) {
+            if (!isDraggingAI) return;
+            
+            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+            
+            const deltaX = startX - clientX;
+            const deltaY = startY - clientY;
+            
+            let newRight = initialRight + deltaX;
+            let newBottom = initialBottom + deltaY;
+            
+            // ขอบเขตหน้าจอ
+            newRight = Math.max(10, Math.min(window.innerWidth - 110, newRight));
+            newBottom = Math.max(10, Math.min(window.innerHeight - 150, newBottom));
+            
+            aiContainer.style.right = newRight + 'px';
+            aiContainer.style.bottom = newBottom + 'px';
+            
+            updateAIBubbleDirection(newRight);
+        }
+
+        function handleEnd() {
+            if (!isDraggingAI) return;
+            isDraggingAI = false;
+            aiContainer.classList.remove('dragging');
+            
+            // บันทึกตำแหน่ง
+            const pos = {
+                right: parseInt(aiContainer.style.right),
+                bottom: parseInt(aiContainer.style.bottom)
+            };
+            localStorage.setItem('NEXTGEN_ai_pos', JSON.stringify(pos));
+        }
+
+        aiMascot.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        aiMascot.addEventListener('touchstart', handleStart, { passive: true });
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+
+        loadAIPosition();
+
+        // ฟังก์ชันสำหรับเปลี่ยนข้อความ AI ตามสถานะ
+        function updateAIText(text) {
+            const bubble = document.getElementById('aiBubbleText');
+            if (bubble) bubble.innerHTML = text;
+        }
+    </script>
 </body>
 
 </html>
+
+
+
