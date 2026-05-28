@@ -1,5 +1,5 @@
 // --- Configuration & Helpers ---
-        const STORAGE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co/storage/v1/object/public/Nexgen/';
+        const STORAGE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co/storage/v1/object/public/NEXTGEN/';
         
         function getImageUrl(path, name) {
             if (!path || path.trim() === '') return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=f59e0b&color=fff&bold=true`;
@@ -8,40 +8,60 @@
         }
 
         // --- Session Guard ---
-        const userData = JSON.parse(localStorage.getItem('nexgen_user'));
-        if (!userData || (userData.level.toLowerCase() !== 'admin' && userData.level.toLowerCase() !== 'manager')) {
+        let userData = JSON.parse(localStorage.getItem('nextgen_user'));
+        if (!userData && sessionStorage.getItem('nextgen_user')) {
+            localStorage.setItem('nextgen_user', sessionStorage.getItem('nextgen_user'));
+            userData = JSON.parse(sessionStorage.getItem('nextgen_user'));
+        }
+
+        // 📱 Unconditional Debug Alert เพื่อความชัวร์ 100% ว่าทำงานบนทุกอุปกรณ์
+        if (!userData) {
+            alert("📢 [NEXTGEN Debug System]\nไม่พบข้อมูลล็อกอินเลยในเครื่องนี้ (ทั้ง localStorage และ sessionStorage เป็น NULL)\n\nระบบจะนำคุณกลับไปหน้าล็อกอิน...");
+        } else {
+            alert("📢 [NEXTGEN Debug System]\nพบเซสชันผู้ใช้บนอุปกรณ์นี้!\n- ชื่อ: " + userData.name + "\n- ระดับสิทธิ์ (level): '" + userData.level + "'\n- รหัสพนักงาน: " + userData.emp_id + "\n- สถานะพนักงาน: " + userData.status);
+        }
+
+        if (!userData || !userData.level) {
             window.location.href = '../index.html';
+        } else {
+            const userLvl = userData.level.trim().toLowerCase();
+            if (userLvl !== 'admin' && userLvl !== 'manager' && userLvl !== 'owner') {
+                window.location.href = '../index.html';
+            }
         }
 
         // --- State ---
         let staffData = [];
         let unitsData = [];
         let editingEmpId = null;
-        let editingUnitId = null;
         let lineChart, barChart;
         let currentPage = 1;
-        const itemsPerPage = 12;
+        let itemsPerPage = 50; // Initial load, will increase on scroll
         let filteredData = [];
-        let filteredUnits = [];
+        let lastActiveMap = {}; // Global storage for inactivity check
+        let selectedItems = new Set();
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', async () => {
             if (userData) {
-                // Populate User Profile
+                // Populate User Name & Level
                 if (document.getElementById('userName')) document.getElementById('userName').innerText = userData.name || 'Admin User';
                 if (document.getElementById('userLevel')) document.getElementById('userLevel').innerText = userData.level || 'Administrator';
-                
-                const avatarUrl = getImageUrl(userData.image, userData.name);
-                if (document.getElementById('userImg')) document.getElementById('userImg').src = avatarUrl;
-                if (document.getElementById('mobileUserImg')) document.getElementById('mobileUserImg').src = avatarUrl;
             }
 
             initChart();
-            await fetchUnits();
-            await fetchStaff();
-            await fetchLeaves();
-            await fetchFinance();
-            await fetchLiveActivity();
+            
+            // Load essential dashboard stats first
+            updateDashboardStats(); 
+
+            // Fetch data in background without blocking the UI
+            fetchUnits();
+            fetchStaff();
+            fetchLeaves();
+            fetchFinance();
+            fetchWorkingGuardsCount();
+            fetchWeeklyStats();
+            fetchReportCounts();
             
             // Start Digital Clock
             updateClock();
@@ -82,7 +102,7 @@
                 data: {
                     labels: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
                     datasets: [{
-                        label: 'ผู้ปฏิบัติงาน (นาย)',
+                        label: 'จำนวนการเข้าตรวจ (ครั้ง)',
                         data: [18, 22, 20, 24, 21, 26, 23],
                         borderColor: '#f59e0b',
                         backgroundColor: gradient,
@@ -98,24 +118,6 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            let barGradient = ctxBar.createLinearGradient(0, 0, 0, 300);
-            barGradient.addColorStop(0, '#10b981');
-            barGradient.addColorStop(1, 'rgba(16, 185, 129, 0.2)');
-
-            barChart = new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: ['กทม.', 'ภาคกลาง', 'ภาคเหนือ', 'ภาคใต้', 'ภาคตะวันออก'],
-                    datasets: [{
-                        label: 'พนักงาน (นาย)',
-                        data: [0, 0, 0, 0, 0],
-                        backgroundColor: barGradient,
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
         }
 
         // --- Dashboard Logic ---
@@ -128,57 +130,325 @@
             const activeStaff = staffData.filter(s => s.status === 'เปิด');
             if (document.getElementById('staffCount')) document.getElementById('staffCount').innerText = activeStaff.length;
 
-            // 3. กำลังปฏิบัติงาน (Simulation for Ver 1.0)
-            const workingNow = staffData.filter(s => s.is_working === true).length;
-            if (document.getElementById('workingCount')) document.getElementById('workingCount').innerText = workingNow;
+            // 3. กำลังปฏิบัติงาน (ย้ายไปนับจาก duty_logs ผ่านฟังก์ชัน fetchWorkingGuardsCount)
+            // เพื่อให้แสดงผลลัพธ์ที่ถูกต้องและอัปเดตแบบเรียลไทม์
             
             // 4. แจ้งเตือน (Removed in new layout, replaced by connection status)
             const alertEl = document.getElementById('alertCount');
             if (alertEl) alertEl.innerText = 0;
 
-            if (barChart) {
+            // Zone Equalizer (Exclude null/empty/whitespace)
+            const zoneEqContainer = document.getElementById('zoneEqContainer');
+            if (zoneEqContainer) {
                 const zoneCounts = {};
-                activeUnits.forEach(u => zoneCounts[u.zone] = (zoneCounts[u.zone] || 0) + 1);
-                barChart.data.labels = Object.keys(zoneCounts);
-                barChart.data.datasets[0].data = Object.values(zoneCounts);
-                barChart.update();
+                activeUnits.forEach(u => {
+                    const z = (u.zone || '').trim();
+                    if (z && z !== '-' && z.toLowerCase() !== 'null') {
+                        zoneCounts[z] = (zoneCounts[z] || 0) + 1;
+                    }
+                });
+                
+                const entries = Object.entries(zoneCounts).sort((a,b) => b[1] - a[1]);
+                if (entries.length === 0) {
+                    zoneEqContainer.innerHTML = '<p class="text-slate-500 text-xs py-4 text-center italic">ไม่มีข้อมูลพื้นที่</p>';
+                } else {
+                    const maxVal = Math.max(...entries.map(e => e[1]), 1);
+                    const colors = ['bg-emerald-500', 'bg-cyan-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-blue-500', 'bg-pink-500'];
+                    let html = '';
+                    entries.forEach(([name, value], idx) => {
+                        const colorClass = colors[idx % colors.length];
+                        const textColorClass = colorClass.replace('bg-', 'text-');
+                        
+                        // Increase segments to 20 and use flex-1 to fill the whole width beautifully
+                        const segments = 20; 
+                        let filled = Math.ceil((value / maxVal) * segments);
+                        if (value > 0 && filled === 0) filled = 1;
+                        
+                        let barsHtml = '';
+                        for (let i = 0; i < segments; i++) {
+                            if (i < filled) {
+                                barsHtml += `<div class="h-3 flex-1 ${colorClass} rounded-sm shadow-[0_0_5px_currentColor]"></div>`;
+                            } else {
+                                barsHtml += `<div class="h-3 flex-1 bg-slate-800/80 rounded-sm"></div>`;
+                            }
+                        }
+                        
+                        html += `
+                            <div class="flex items-center gap-3 group mb-2.5">
+                                <span class="w-16 text-[10px] text-slate-400 font-bold truncate group-hover:text-white transition-colors" title="${name}">${name}</span>
+                                <div class="flex-1 flex gap-[2px] items-center">
+                                    ${barsHtml}
+                                </div>
+                                <span class="text-xs font-black ${textColorClass} w-6 text-right">${value}</span>
+                            </div>
+                        `;
+                    });
+                    zoneEqContainer.innerHTML = html;
+                }
+            }
+        }
+
+        function renderEqualizer(containerId, dataObj, bgColorClass, textColorClass) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const entries = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 5); // top 5
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center">ไม่มีข้อมูล</p>';
+                return;
+            }
+            const maxVal = Math.max(...entries.map(e => e[1]), 1);
+            
+            for (const [name, value] of entries) {
+                const segments = 12;
+                const filled = Math.ceil((value / maxVal) * segments);
+                
+                let barsHtml = '';
+                for (let i = 0; i < segments; i++) {
+                    if (i < filled) {
+                        barsHtml += `<div class="h-3 w-1.5 ${bgColorClass} rounded-sm opacity-${80 - (i*5)}"></div>`;
+                    } else {
+                        barsHtml += `<div class="h-3 w-1.5 bg-slate-800 rounded-sm"></div>`;
+                    }
+                }
+                
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 group">
+                        <span class="w-20 text-[10px] text-slate-400 font-bold truncate group-hover:text-white transition-colors" title="${name}">${name}</span>
+                        <div class="flex-1 flex gap-1 items-center">
+                            ${barsHtml}
+                        </div>
+                        <span class="text-[10px] font-black ${textColorClass}">${value}</span>
+                    </div>
+                `;
             }
         }
 
         // --- Live Activity Logic ---
         async function fetchLiveActivity() {
             try {
-                // ดึงข้อมูล 20 รายการล่าสุด ทั้ง Guard และ Supervisor
+                // ดึงข้อมูล 20 รายการล่าสุด เฉพาะ Supervisor โดยใช้ emp_id จาก staffData (เนื่องจาก role ในตาราง duty_logs ว่าง)
+                const supervisorIds = staffData.filter(s => s.level === 'Supervisor' || s.level === 'Manager').map(s => s.id);
+                if (supervisorIds.length === 0) {
+                    renderLiveFeed([]);
+                    return;
+                }
+
                 const { data, error } = await supabaseClient
                     .from('duty_logs')
                     .select('*')
+                    .in('emp_id', supervisorIds)
                     .order('timestamp', { ascending: false })
                     .limit(20);
 
                 if (error) throw error;
-                renderLiveFeed(data);
+                
+                // แนบ role จาก staffData กลับเข้าไปให้ log
+                const logsWithRole = data.map(log => {
+                    const staff = staffData.find(s => s.id === log.emp_id);
+                    return {
+                        ...log,
+                        role: staff ? staff.role : 'Supervisor'
+                    };
+                });
+                
+                renderLiveFeed(logsWithRole);
             } catch (err) {
                 console.error('Error fetching live activity:', err);
-                // Fallback: Demo Data
-                const demoData = [
-                    { 
-                        id: 'demo1', 
-                        timestamp: new Date().toISOString(), 
-                        action_type: 'check_in', 
-                        unit_name: 'หน่วยงาน A', 
-                        name: 'สมชาย มั่นคง',
-                        role: 'Supervisor' 
-                    },
-                    { 
-                        id: 'demo2', 
-                        timestamp: new Date(Date.now() - 3600000).toISOString(), 
-                        action_type: 'check_out', 
-                        unit_name: 'หน่วยงาน B', 
-                        name: 'สมปอง รักงาน',
-                        role: 'Guard' 
+                renderLiveFeed([]);
+            }
+        }
+
+        // --- Reports Stats Logic ---
+        async function fetchReportCounts() {
+            try {
+                // OP05
+                const { count: countOP05, error: err1 } = await supabaseClient.from('op05_reports').select('*', { count: 'exact', head: true });
+                if (!err1) updateReportCard('OP05', countOP05 || 0, 'bg-primary');
+                
+                // OP06
+                const { count: countOP06, error: err2 } = await supabaseClient.from('op06_reports').select('*', { count: 'exact', head: true });
+                if (!err2) updateReportCard('OP06', countOP06 || 0, 'bg-emerald-500');
+
+                // OP07
+                const { count: countOP07, error: err3 } = await supabaseClient.from('op07_reports').select('*', { count: 'exact', head: true });
+                if (!err3) updateReportCard('OP07', countOP07 || 0, 'bg-amber-500');
+
+                // FMQC02
+                const { count: countFMQC02, error: err4 } = await supabaseClient.from('fmqc02_reports').select('*', { count: 'exact', head: true });
+                if (!err4) updateReportCard('FMQC02', countFMQC02 || 0, 'bg-cyan-500');
+
+            } catch (err) {
+                console.error("Error fetching report counts", err);
+            }
+        }
+
+        function updateReportCard(id, count, colorClass) {
+            const el = document.getElementById(`count${id}`);
+            if (el) el.innerText = count;
+            
+            const eqContainer = document.getElementById(`eq${id}`);
+            if (eqContainer) {
+                const segments = 15;
+                const max = 100; // Visual scale (สมมติเป้าหมายสูงสุด)
+                let filled = Math.ceil((count / max) * segments);
+                if (count > 0 && filled === 0) filled = 1;
+                if (filled > segments) filled = segments;
+                
+                let barsHtml = '';
+                for (let i = 0; i < segments; i++) {
+                    if (i < filled) {
+                        const opacity = 1 - (i * 0.04);
+                        barsHtml += `<div class="h-2 flex-1 ${colorClass} rounded-sm" style="opacity: ${opacity}"></div>`;
+                    } else {
+                        barsHtml += `<div class="h-2 flex-1 bg-slate-800 rounded-sm"></div>`;
                     }
-                ];
-                renderLiveFeed(demoData);
+                }
+                eqContainer.innerHTML = barsHtml;
+            }
+        }
+
+        async function fetchWorkingGuardsCount() {
+            try {
+                // Get today's start date (00:00:00) in Bangkok local time
+                const now = new Date();
+                const tzOffset = 7 * 60 * 60 * 1000; // GMT+7
+                const localTime = new Date(now.getTime() + tzOffset);
+                const todayThaiStr = localTime.toISOString().split('T')[0] + 'T00:00:00+07:00';
+
+                // Fetch duty logs for the current day (starting from 00:00:00 Bangkok time)
+                const { data, error } = await supabaseClient
+                    .from('duty_logs')
+                    .select('emp_id, action_type, role, timestamp')
+                    .gte('timestamp', todayThaiStr)
+                    .order('timestamp', { ascending: false })
+                    .limit(2000);
+                    
+                if (error) throw error;
+                
+                // Group by emp_id to get the latest action of each unique employee today
+                const latestStatus = {};
+                data.forEach(log => {
+                    if (log.emp_id && !latestStatus[log.emp_id]) {
+                        latestStatus[log.emp_id] = log;
+                    }
+                });
+                
+                let workingCount = 0;
+                for (const emp in latestStatus) {
+                    const log = latestStatus[emp];
+                    const action = (log.action_type || '').toLowerCase();
+                    const role = (log.role || '').toLowerCase();
+                    
+                    // A guard is active if their latest action today is 'check_in' (excluding leave and check-out)
+                    if (action.includes('in') && !action.includes('leave') && !action.includes('out')) {
+                        // Check if they are a Guard (case-insensitive check for english and thai roles)
+                        let isGuard = role.includes('guard') || role.includes('รปภ');
+                        
+                        // Fallback check against staffData if role inside the log was empty
+                        if (!role && staffData.length > 0) {
+                            const staff = staffData.find(s => s.id.toLowerCase() === emp.toLowerCase());
+                            if (staff) {
+                                const sLvl = (staff.level || '').toLowerCase();
+                                const sRole = (staff.role || '').toLowerCase();
+                                isGuard = sLvl.includes('guard') || sLvl.includes('รปภ') || sRole.includes('guard') || sRole.includes('รปภ');
+                            }
+                        }
+                        
+                        if (isGuard) {
+                            workingCount++;
+                        }
+                    }
+                }
+                
+                if (document.getElementById('workingCount')) {
+                    document.getElementById('workingCount').innerText = workingCount;
+                }
+            } catch (err) {
+                console.error('Error fetching working count:', err);
+                if (document.getElementById('workingCount')) document.getElementById('workingCount').innerText = '0';
+            }
+        }
+
+        async function fetchWeeklyStats() {
+            try {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                const past7Days = new Date(today);
+                past7Days.setDate(today.getDate() - 6);
+                past7Days.setHours(0, 0, 0, 0);
+
+                // Fetch logs for the past 7 days, ordered by timestamp descending and limited to 5000 rows
+                const { data, error } = await supabaseClient
+                    .from('duty_logs')
+                    .select('emp_id, action_type, role, timestamp')
+                    .gte('timestamp', past7Days.toISOString())
+                    .lte('timestamp', today.toISOString())
+                    .order('timestamp', { ascending: false })
+                    .limit(5000);
+                    
+                if (error) throw error;
+
+                // Helper to format date in Bangkok timezone (YYYY-MM-DD) robustly on all devices
+                const getBangkokDateStr = (dateObj) => {
+                    const localTime = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000);
+                    return localTime.toISOString().split('T')[0];
+                };
+
+                // Group by date string (YYYY-MM-DD) in Bangkok timezone
+                const daysMap = {};
+                for (let i=0; i<7; i++) {
+                    const d = new Date(past7Days);
+                    d.setDate(d.getDate() + i);
+                    const dateStr = getBangkokDateStr(d);
+                    const dayName = d.toLocaleDateString('th-TH', { weekday: 'short' });
+                    daysMap[dateStr] = { label: dayName, count: 0 };
+                }
+
+                // Count check-in actions done by Supervisor/Manager levels for each day
+                data.forEach(log => {
+                    const logDate = new Date(log.timestamp);
+                    const dateStr = getBangkokDateStr(logDate);
+                    
+                    if (daysMap[dateStr]) {
+                        const action = (log.action_type || '').toLowerCase();
+                        const role = (log.role || '').toLowerCase();
+                        
+                        const isCheckIn = action.includes('in') && !action.includes('leave') && !action.includes('out');
+                        
+                        let isSupervisor = role.includes('supervisor') || role.includes('manager');
+                        // Fallback check against staffData
+                        if (!isSupervisor && staffData.length > 0) {
+                            const staff = staffData.find(s => s.id === log.emp_id);
+                            if (staff) {
+                                const sLvl = (staff.level || '').toLowerCase();
+                                const sRole = (staff.role || '').toLowerCase();
+                                isSupervisor = sLvl.includes('supervisor') || sLvl.includes('manager') || sRole.includes('supervisor') || sRole.includes('manager');
+                            }
+                        }
+                        
+                        if (isCheckIn && isSupervisor) {
+                            daysMap[dateStr].count++;
+                        }
+                    }
+                });
+
+                const labels = [];
+                const counts = [];
+                Object.keys(daysMap).sort().forEach(dateStr => {
+                    labels.push(daysMap[dateStr].label);
+                    counts.push(daysMap[dateStr].count);
+                });
+
+                if (lineChart) {
+                    lineChart.data.labels = labels;
+                    lineChart.data.datasets[0].data = counts;
+                    lineChart.data.datasets[0].label = 'จำนวนการเข้าตรวจ (ครั้ง)';
+                    lineChart.update();
+                }
+            } catch (err) {
+                console.error("Error fetching weekly stats", err);
             }
         }
 
@@ -192,8 +462,8 @@
             }
 
             container.innerHTML = logs.map(log => {
-                // ใช้ timestamp เป็นหลัก ถ้าไม่มีค่อยใช้ created_at
                 const timeObj = new Date(log.timestamp || log.created_at);
+                const thaiDate = timeObj.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: '2-digit', month: 'short', year: '2-digit' });
                 const time = timeObj.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' });
                 
                 const type = (log.action_type || '').toLowerCase();
@@ -218,19 +488,11 @@
                 }
 
                 return `
-                    <div class="feed-item p-3 rounded-xl bg-slate-900/40 border border-white/5 hover:border-amber-500/30 transition-all group">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[11px] font-black ${statusColor} uppercase tracking-tight">
-                                <i class="fas ${icon} mr-1"></i>
-                                ${label}
-                            </span>
-                            <span class="text-[10px] text-slate-500 font-mono">${time}</span>
-                        </div>
-                        <p class="text-white text-xs font-bold">${staffName}</p>
-                        <p class="text-slate-400 text-[10px] flex items-center gap-1.5 mt-1">
-                            <i class="fas fa-building text-slate-600"></i> ${unitName}
-                        </p>
-                        ${log.role ? `<p class="text-[9px] text-slate-600 mt-1 uppercase tracking-tighter">${log.role}</p>` : ''}
+                    <div class="feed-item px-3 py-2 rounded-lg bg-slate-900/40 border border-white/5 hover:border-amber-500/30 transition-all flex items-center gap-2">
+                        <span class="text-[10px] font-black ${statusColor} shrink-0" title="${label}"><i class="fas ${icon}"></i></span>
+                        <span class="text-white text-[10px] font-bold whitespace-nowrap">${staffName} <span class="text-slate-500 font-normal text-[9px] ml-1">(${log.role || 'Staff'})</span></span>
+                        <span class="text-slate-400 text-[9px] truncate flex-1">@ ${unitName}</span>
+                        <span class="text-[9px] text-slate-500 font-mono shrink-0">${thaiDate} ${time}</span>
                     </div>
                 `;
             }).join('');
@@ -247,12 +509,11 @@
 
             if (el) el.classList.add('active');
 
-            // Auto fetch data when switching
-            if (tabId === 'leaves') fetchLeaves();
-            if (tabId === 'finance') fetchFinance();
-            if (tabId === 'staff') fetchStaff();
-            if (tabId === 'units') fetchUnits();
-            if (tabId === 'report-site') fetchInspections();
+            // Only fetch if data is empty or specifically needed
+            if (tabId === 'leaves' && (!filteredData || filteredData.length === 0)) fetchLeaves();
+            if (tabId === 'finance') fetchFinance(); // Finance usually needs latest
+            if (tabId === 'staff' && staffData.length === 0) fetchStaff();
+            if (tabId === 'units' && unitsData.length === 0) fetchUnits();
 
             // Handle editing states cleanup
             if (tabId !== 'units') {
@@ -267,199 +528,108 @@
                 const sidebar = document.querySelector('.sidebar');
                 if (sidebar && sidebar.classList.contains('open')) toggleSidebar();
             }
+            
+            activeBulkTab = tabId;
+            clearSelection();
         }
 
         // --- Staff Management ---
         async function fetchStaff() {
             try {
-                const { data, error } = await supabaseClient.from('staff').select('*').order('emp_id', { ascending: true });
-                if (error) throw error;
-                staffData = data.map(i => ({ id: i.emp_id, name: i.name, unit: i.unit, role: i.role, level: i.level, status: i.status, image: i.image, zone: i.zone }));
-                applyFilter();
-                updateDashboardStats();
-            } catch (error) {
-                console.error("Staff Error:", error);
-            }
-        }
+                let allData = [];
+                let from = 0;
+                let to = 999;
+                let hasMore = true;
 
-        function applyFilter() {
-            const global = document.getElementById('globalStaffSearch')?.value.toLowerCase() || '';
-            const filters = {
-                id: document.getElementById('hFilterId')?.value.toLowerCase() || '',
-                name: document.getElementById('hFilterName')?.value.toLowerCase() || '',
-                unit: document.getElementById('hFilterUnit')?.value || '',
-                role: document.getElementById('hFilterRole')?.value.toLowerCase() || '',
-                level: document.getElementById('hFilterLevel')?.value || '',
-                status: document.getElementById('hFilterStatus')?.value || '',
-                zone: document.getElementById('hFilterZone')?.value || ''
-            };
+                // Loop fetch until all staff are loaded
+                while (hasMore) {
+                    const { data, error } = await supabaseClient
+                        .from('staff')
+                        .select('*')
+                        .order('emp_id', { ascending: true })
+                        .range(from, to);
 
-            filteredData = staffData.filter(s => {
-                const matchGlobal = !global || 
-                    s.id.toLowerCase().includes(global) || 
-                    s.name.toLowerCase().includes(global) || 
-                    s.role.toLowerCase().includes(global) ||
-                    s.unit.toLowerCase().includes(global);
+                    if (error) throw error;
+                    allData = [...allData, ...data];
 
-                const matchFields = 
-                    (filters.id ? s.id.toLowerCase().includes(filters.id) : true) &&
-                    (filters.name ? s.name.toLowerCase().includes(filters.name) : true) &&
-                    (filters.unit ? s.unit === filters.unit : true) &&
-                    (filters.role ? s.role.toLowerCase().includes(filters.role) : true) &&
-                    (filters.level ? s.level === filters.level : true) &&
-                    (filters.status ? s.status === filters.status : true) &&
-                    (filters.zone ? s.zone === filters.zone : true);
+                    if (data.length < 1000) {
+                        hasMore = false;
+                    } else {
+                        from += 1000;
+                        to += 1000;
+                    }
+                }
 
-                return matchGlobal && matchFields;
-            });
-            currentPage = 1;
-            renderTable();
-        }
-
-        function applyUnitFilter() {
-            const global = document.getElementById('globalUnitSearch')?.value.toLowerCase() || '';
-            const filters = {
-                num: document.getElementById('uFilterNum')?.value.toLowerCase() || '',
-                name: document.getElementById('uFilterName')?.value.toLowerCase() || '',
-                zone: document.getElementById('uFilterZone')?.value.toLowerCase() || '',
-                code: document.getElementById('uFilterCode')?.value.toLowerCase() || '',
-                status: document.getElementById('uFilterStatus')?.value || ''
-            };
-
-            filteredUnits = unitsData.filter(u => {
-                const matchGlobal = !global || 
-                    (u.unit_name && u.unit_name.toLowerCase().includes(global)) ||
-                    (u.unit_code && u.unit_code.toLowerCase().includes(global)) ||
-                    (u.zone && u.zone.toLowerCase().includes(global)) ||
-                    (u.unit_number && String(u.unit_number).includes(global));
-
-                const matchFields = 
-                    (filters.num ? String(u.unit_number).includes(filters.num) : true) &&
-                    (filters.name ? u.unit_name.toLowerCase().includes(filters.name) : true) &&
-                    (filters.zone ? u.zone.toLowerCase().includes(filters.zone) : true) &&
-                    (filters.code ? u.unit_code.toLowerCase().includes(filters.code) : true) &&
-                    (filters.status ? u.status === filters.status : true);
-
-                return matchGlobal && matchFields;
-            });
-            renderUnitsTable();
-        }
-
-        function renderTable() {
-            const body = document.getElementById('staffTable');
-            const start = (currentPage - 1) * itemsPerPage;
-            const data = filteredData.slice(start, start + itemsPerPage);
-
-            body.innerHTML = data.map(s => {
-                const imgUrl = getImageUrl(s.image, s.name);
-                return `
-                <tr class="hover:bg-slate-800/30 transition-colors">
-                    <td class="px-3 py-2">
-                        <img src="${imgUrl}" 
-                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=334155&color=fff'"
-                             class="w-8 h-8 rounded-full border border-slate-700 object-cover">
-                    </td>
-                    <td class="px-3 py-2 font-mono text-amber-500 font-bold">${s.id}</td>
-                    <td class="px-3 py-2 font-bold text-white">${(s.name || '').split(' (')[0]}</td>
-                    <td class="px-3 py-2 text-slate-300">${s.unit}</td>
-                    <td class="px-3 py-2 text-slate-400">${s.role}</td>
-                    <td class="px-3 py-2 text-slate-300">${s.level}</td>
-                    <td class="px-3 py-2 text-slate-300 font-bold">${s.zone || '-'}</td>
-                    <td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-[9px] font-bold ${s.status === 'เปิด' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-500'}">${s.status}</span></td>
-                    <td class="px-3 py-2 text-center text-slate-500">
-                        <i class="fas fa-edit mr-3 cursor-pointer hover:text-amber-500" onclick="editStaff('${s.id}')"></i>
-                        <i class="fas fa-trash-alt cursor-pointer hover:text-red-500" onclick="deleteStaff('${s.id}')"></i>
-                    </td>
-                </tr>`;
-            }).join('');
-            renderPagination();
-        }
-
-        function renderPagination() {
-            const totalItems = filteredData.length;
-            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-            const start = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-            const end = Math.min(currentPage * itemsPerPage, totalItems);
-
-            document.getElementById('pageStartItem').innerText = start;
-            document.getElementById('pageEndItem').innerText = end;
-            document.getElementById('totalItems').innerText = totalItems;
-
-            let html = '';
-            for (let i = 1; i <= totalPages; i++) {
-                const active = i === currentPage ? 'bg-amber-500 text-black' : 'bg-[#0f172a] text-slate-400';
-                html += `<button onclick="goToPage(${i})" class="w-6 h-6 rounded font-bold text-[10px] ${active} border border-slate-800">${i}</button>`;
-            }
-            document.getElementById('pageNumbers').innerHTML = html;
-
-            const jump = document.getElementById('jumpSelect');
-            jump.innerHTML = Array.from({ length: totalPages }, (_, i) => `<option value="${i + 1}" ${i + 1 === currentPage ? 'selected' : ''}>หน้า ${i + 1}</option>`).join('');
-        }
-
-        function goToPage(p) { currentPage = parseInt(p); renderTable(); }
-        function nextPage() { if (currentPage < Math.ceil(filteredData.length / itemsPerPage)) { currentPage++; renderTable(); } }
-        function prevPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
-
-        async function addNewStaff() {
-            const id = document.getElementById('empId').value;
-            const name = document.getElementById('empName').value;
-            const unit = document.getElementById('empUnit').value;
-            const role = document.getElementById('empRole').value;
-            const level = document.getElementById('empLevel').value;
-            const zone = document.getElementById('empZone').value;
-            const status = document.getElementById('empStatus').value;
-            const image = document.getElementById('empImage').value;
-            const password = document.getElementById('empPassword').value;
-
-            if (!id || !name) return alert("กรุณากรอกข้อมูลหลักให้ครบถ้วน");
-
-            const payload = { emp_id: id, name, unit, role, level, zone, status, image };
-            if (password) payload.password = password; else if (!editingEmpId) payload.password = '1234';
-
-            try {
-                const { error } = editingEmpId ?
-                    await supabaseClient.from('staff').update(payload).eq('emp_id', editingEmpId) :
-                    await supabaseClient.from('staff').insert([payload]);
+                staffData = allData.map(i => ({ 
+                    id: i.emp_id, 
+                    name: i.name, 
+                    unit: i.unit, 
+                    role: i.role, 
+                    level: i.level, 
+                    status: i.status, 
+                    image: i.image, 
+                    zone: i.zone,
+                    password: i.password,
+                    is_working: i.is_working,
+                    vehicle_rate: i.vehicle_rate
+                }));
                 
-                if (error) throw error;
+                updateDashboardStats();
+                checkStaffInactivity();
+                fetchLiveActivity();
 
-                alert(editingEmpId ? 'แก้ไขข้อมูลพนักงานสำเร็จ' : 'เพิ่มพนักงานใหม่สำเร็จ');
-                editingEmpId = null;
-                document.getElementById('btnText').innerText = 'บันทึกข้อมูล';
-                ['empId', 'empName', 'empUnit', 'empRole', 'empPassword', 'empImage'].forEach(i => document.getElementById(i).value = '');
-                await fetchStaff();
-            } catch (e) { 
-                console.error("Staff Save Error:", e);
-                alert("ไม่สามารถบันทึกข้อมูลได้: " + (e.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ")); 
+                // Recalculate guard count and supervisor stats now that staffData is fully loaded
+                fetchWorkingGuardsCount();
+                fetchWeeklyStats();
+            } catch (error) {
+                console.error("Staff Fetch Error:", error);
             }
         }
 
-        function editStaff(id) {
-            const s = staffData.find(x => x.id === id);
-            editingEmpId = s.id;
-            document.getElementById('empId').value = s.id;
-            document.getElementById('empName').value = s.name;
-            document.getElementById('empUnit').value = s.unit;
-            document.getElementById('empRole').value = s.role;
-            document.getElementById('empLevel').value = s.level;
-            document.getElementById('empZone').value = s.zone || '';
-            document.getElementById('empStatus').value = s.status;
-            document.getElementById('empImage').value = s.image || '';
-            document.getElementById('btnText').innerText = 'บันทึกการแก้ไข';
-            document.getElementById('empId').focus();
-        }
-
-        async function deleteStaff(id) {
-            if (!confirm('ยืนยันการลบพนักงาน ' + id + ' ใช่หรือไม่?')) return;
+        async function checkStaffInactivity() {
             try {
-                const { error } = await supabaseClient.from('staff').delete().eq('emp_id', id);
+                const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+                const { data: logs, error } = await supabaseClient
+                    .from('duty_logs')
+                    .select('emp_id, timestamp')
+                    .gt('timestamp', fourteenDaysAgo)
+                    .order('timestamp', { ascending: false });
+
                 if (error) throw error;
-                alert('ลบข้อมูลพนักงานสำเร็จ');
-                await fetchStaff();
-            } catch (e) {
-                console.error("Staff Delete Error:", e);
-                alert("ไม่สามารถลบข้อมูลได้: " + (e.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ"));
-            }
+
+                lastActiveMap = {}; // Update global map
+                logs.forEach(log => {
+                    if (!lastActiveMap[log.emp_id]) {
+                        lastActiveMap[log.emp_id] = new Date(log.timestamp);
+                    }
+                });
+
+                const now = new Date();
+                const day3 = 3 * 24 * 60 * 60 * 1000;
+                const day7 = 7 * 24 * 60 * 60 * 1000;
+
+                let count3 = 0;
+                let count7 = 0;
+
+                staffData.forEach(s => {
+                    if (s.status !== 'เปิด') return;
+                    const lastDate = lastActiveMap[s.id];
+                    if (!lastDate) return;
+                    const diff = now - lastDate;
+                    if (diff >= day7) count7++;
+                    else if (diff >= day3) count3++;
+                });
+
+                if (count7 > 0) {
+                    updateAIText(`บอสคะ! มีพนักงาน <b class="text-rose-500">${count7} นาย</b> ไม่ได้ออนไลน์เกิน <b>7 วัน</b> แล้วนะคะ ระบบแนะนำให้ลบข้อมูลออกค่ะ <br> <button onclick="showInactiveStaff(7)" class="mt-1 px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded-md text-[9px] font-bold">ตรวจสอบคนหาย 7 วัน</button>`);
+                } else if (count3 > 0) {
+                    updateAIText(`สวัสดีค่ะบอส! พบพนักงาน <b class="text-amber-500">${count3} นาย</b> ไม่ได้เข้าสู่ระบบเกิน <b>3 วัน</b> แล้วค่ะ <br> <button onclick="showInactiveStaff(3)" class="mt-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-md text-[9px] font-bold">ดูรายละเอียด (3 วัน)</button>`);
+                }
+            } catch (err) { console.error("Inactivity Error:", err); }
+        }
+
+        function showInactiveStaff(days) {
+            window.location.href = `ManageStaff.html?filter=inactive${days}`;
         }
 
         // --- Unit Management ---
@@ -468,105 +638,42 @@
                 const { data, error } = await supabaseClient.from('units').select('*').order('unit_number', { ascending: true });
                 if (error) throw error;
                 unitsData = data || [];
-                applyUnitFilter();
                 updateDashboardStats();
                 updateUnitDropdowns();
             } catch (e) { console.error("Units Error:", e); }
         }
 
-        function renderUnitsTable() {
-            const body = document.getElementById('unitsTable');
-            if (filteredUnits.length === 0) { body.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่พบข้อมูลหน่วยงาน</td></tr>'; return; }
-            body.innerHTML = filteredUnits.map(u => `
-                <tr class="hover:bg-slate-800/30 transition-colors">
-                    <td class="px-3 py-2 font-mono text-amber-500 font-bold">${u.unit_number}</td>
-                    <td class="px-3 py-2 font-bold text-white">${u.unit_name}</td>
-                    <td class="px-3 py-2 text-slate-300">${u.zone}</td>
-                    <td class="px-3 py-2 text-slate-400">${u.unit_code}</td>
-                    <td class="px-3 py-2 text-slate-300">${u.manager_name || '-'}</td>
-                    <td class="px-3 py-2 text-amber-400/80 text-[10px] font-mono">${u.latitude || '-'}, ${u.longitude || '-'}</td>
-                    <td class="px-3 py-2 text-center text-cyan-400">${u.radius_meters || 100}</td>
-                    <td class="px-3 py-2 text-center font-bold text-blue-400">${u.required_guards || 0} นาย</td>
-                    <td class="px-3 py-2 font-bold ${u.status === 'ปิด' ? 'text-red-500' : 'text-emerald-500'}">${u.status || 'เปิด'}</td>
-                    <td class="px-3 py-2 text-center text-slate-500">
-                        <i class="fas fa-edit mr-3 cursor-pointer hover:text-amber-500" onclick="editUnit('${u.id}')"></i>
-                        <i class="fas fa-trash-alt cursor-pointer hover:text-red-500" onclick="deleteUnit('${u.id}')"></i>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        async function addNewUnit() {
-            const payload = {
-                unit_number: document.getElementById('uNumber').value,
-                unit_name: document.getElementById('uName').value,
-                zone: document.getElementById('uZone').value,
-                unit_code: document.getElementById('uCode').value,
-                manager_name: document.getElementById('uManager').value,
-                latitude: parseFloat(document.getElementById('uLat').value) || null,
-                longitude: parseFloat(document.getElementById('uLng').value) || null,
-                radius_meters: parseInt(document.getElementById('uRadius').value) || 100,
-                required_guards: parseInt(document.getElementById('uRequired').value) || 0,
-                status: document.getElementById('uStatus').value
-            };
-            if (!payload.unit_number || !payload.unit_name) return alert("กรุณากรอกข้อมูลเลขที่และชื่อหน่วยงาน");
-
-            try {
-                const { error } = editingUnitId ?
-                    await supabaseClient.from('units').update(payload).eq('id', editingUnitId) :
-                    await supabaseClient.from('units').insert([payload]);
-                
-                if (error) throw error;
-                
-                alert(editingUnitId ? 'แก้ไขข้อมูลหน่วยงานสำเร็จ' : 'เพิ่มหน่วยงานใหม่สำเร็จ');
-                clearUnitForm();
-                await fetchUnits();
-            } catch (e) { 
-                console.error("Unit Save Error:", e);
-                alert("ไม่สามารถบันทึกหน่วยงานได้: " + (e.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ")); 
-            }
-        }
-
-        function editUnit(id) {
-            const u = unitsData.find(x => x.id === id);
-            editingUnitId = u.id;
-            ['uNumber', 'uName', 'uZone', 'uCode', 'uManager', 'uLat', 'uLng', 'uRadius', 'uRequired', 'uStatus'].forEach(id => {
-                const key = id === 'uNumber' ? 'unit_number' : id === 'uName' ? 'unit_name' : id === 'uZone' ? 'zone' : id === 'uCode' ? 'unit_code' : id === 'uManager' ? 'manager_name' : id === 'uLat' ? 'latitude' : id === 'uLng' ? 'longitude' : id === 'uRadius' ? 'radius_meters' : id === 'uRequired' ? 'required_guards' : 'status';
-                document.getElementById(id).value = u[key] || (id === 'uRadius' ? 100 : id === 'uRequired' ? 0 : id === 'uStatus' ? 'เปิด' : '');
-            });
-            document.getElementById('btnUnitText').innerText = 'บันทึกการแก้ไข';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function deleteUnit(id) {
-            if (!confirm('ยืนยันการลบหน่วยงานใช่หรือไม่? ข้อมูลนี้จะไม่สามารถกู้คืนได้')) return;
-            
-            try {
-                const { error } = await supabaseClient.from('units').delete().eq('id', id);
-                if (error) throw error;
-                
-                alert('ลบหน่วยงานสำเร็จ');
-                await fetchUnits();
-            } catch (e) {
-                console.error("Delete Error:", e);
-                alert("ไม่สามารถลบได้: " + (e.message || "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล"));
-            }
-        }
-
-        // --- Utils & Suggestions ---
-        function clearUnitForm() {
-            editingUnitId = null;
-            ['uNumber', 'uName', 'uZone', 'uCode', 'uManager', 'uLat', 'uLng', 'uRequired'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('uRadius').value = '100';
-            document.getElementById('uStatus').value = 'เปิด';
-            document.getElementById('btnUnitText').innerText = 'บันทึกหน่วยงาน';
-        }
-
         function updateUnitDropdowns() {
-            const f = document.getElementById('hFilterUnit');
-            if (f) {
-                const val = f.value;
-                f.innerHTML = '<option value="">ทั้งหมด</option>' + unitsData.map(u => `<option value="${u.unit_name}" ${u.unit_name === val ? 'selected' : ''}>${u.unit_name}</option>`).join('');
+            // 1. Populate Units Filter
+            const fUnit = document.getElementById('hFilterUnit');
+            if (fUnit) {
+                const val = fUnit.value;
+                const uniqueUnits = [...new Set(unitsData.map(u => u.unit_name))].sort();
+                fUnit.innerHTML = '<option value="">ทั้งหมด</option>' + uniqueUnits.map(u => `<option value="${u}" ${u === val ? 'selected' : ''}>${u}</option>`).join('');
+            }
+
+            // 2. Populate Level Filter (Dynamic from data)
+            const fLevel = document.getElementById('hFilterLevel');
+            if (fLevel) {
+                const val = fLevel.value;
+                const uniqueLevels = [...new Set(staffData.map(s => s.level))].filter(Boolean).sort();
+                fLevel.innerHTML = '<option value="">ทั้งหมด</option>' + uniqueLevels.map(l => `<option value="${l}" ${l === val ? 'selected' : ''}>${l}</option>`).join('');
+            }
+
+            // 3. Populate Zone Filter (Dynamic from data)
+            const fZone = document.getElementById('hFilterZone');
+            if (fZone) {
+                const val = fZone.value;
+                const uniqueZones = [...new Set(staffData.map(s => s.zone))].filter(Boolean).sort();
+                fZone.innerHTML = '<option value="">ทั้งหมด</option>' + uniqueZones.map(z => `<option value="${z}" ${z === val ? 'selected' : ''}>${z}</option>`).join('');
+            }
+
+            // 4. Populate Status Filter (Dynamic from data)
+            const fStatus = document.getElementById('hFilterStatus');
+            if (fStatus) {
+                const val = fStatus.value;
+                const uniqueStatus = [...new Set(staffData.map(s => s.status))].filter(Boolean).sort();
+                fStatus.innerHTML = '<option value="">ทั้งหมด</option>' + uniqueStatus.map(st => `<option value="${st}" ${st === val ? 'selected' : ''}>${st}</option>`).join('');
             }
         }
 
@@ -727,52 +834,5 @@
             } catch (e) { alert("Error: " + e.message); }
         }
 
-        // --- Inspections (FMQC-02) Logic ---
-        async function fetchInspections() {
-            try {
-                const { data, error } = await supabaseClient.from('fmqc02').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
-                renderInspections(data);
-            } catch (e) { console.error("Inspections Error:", e); }
-        }
 
-        function renderInspections(list) {
-            const body = document.getElementById('inspectionTableBody');
-            if (!body) return;
-            if (!list || list.length === 0) { 
-                body.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-500 italic">ไม่มีข้อมูลการตรวจเยี่ยม</td></tr>'; 
-                return; 
-            }
-            body.innerHTML = list.map(i => {
-                let badgeClass = 'bg-emerald-500/20 text-emerald-400';
-                let statusText = 'ปกติ';
-                // ถ้าใน results มี fail ให้เป็น ปัญหา
-                const resString = JSON.stringify(i.results || {});
-                if (resString.includes('"fail"')) {
-                    badgeClass = 'bg-rose-500/20 text-rose-400';
-                    statusText = 'พบปัญหา';
-                } else if (resString.includes('"warn"')) {
-                    badgeClass = 'bg-amber-500/20 text-amber-400';
-                    statusText = 'ต้องติดตาม';
-                }
 
-                return `
-                <tr class="hover:bg-slate-800/30 transition-colors">
-                    <td class="px-5 py-3 font-mono text-amber-500">${i.doc_id || '-'}</td>
-                    <td class="px-5 py-3 text-white">${i.visit_date || '-'}</td>
-                    <td class="px-5 py-3 text-slate-300">${i.time_in || '-'}</td>
-                    <td class="px-5 py-3 font-bold text-white">${i.site_name || '-'}</td>
-                    <td class="px-5 py-3 text-slate-400">${i.inspector || '-'}</td>
-                    <td class="px-5 py-3 text-center">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold ${badgeClass}">${statusText}</span>
-                    </td>
-                    <td class="px-5 py-3 text-center">
-                        <button onclick="viewInspection('${i.id}')" class="text-cyan-400 hover:text-cyan-300 text-xs font-bold underline"><i class="fas fa-file-alt mr-1"></i> ดูเอกสาร</button>
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        function viewInspection(id) {
-            window.open('../Frontend/FMQC02-View.html?id=' + id, '_blank');
-        }
