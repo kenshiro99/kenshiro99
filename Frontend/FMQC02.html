@@ -640,7 +640,7 @@
                         <label>ชื่อหน่วยงาน (Site Name) <span style="color:var(--red);">*</span></label>
                         <div style="position:relative; width:100%;">
                             <input type="text" id="siteName" class="input-box" placeholder="คลิกเพื่อเลือกหรือค้นหารหัส..."
-                                onclick="handleUnitSearch(this.value)" onfocus="handleUnitSearch(this.value)" oninput="handleUnitSearch(this.value)" autocomplete="off">
+                                onclick="handleUnitSearch('')" onfocus="handleUnitSearch('')" oninput="handleUnitSearch(this.value)" autocomplete="off">
                             <i class="fas fa-chevron-down" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--gray-400); pointer-events:none;"></i>
                         </div>
                         <div id="unitSuggestions" class="suggestions"></div>
@@ -828,6 +828,20 @@
             initForm();
             await fetchUnits();
             initSignatures();
+
+            // Auto-fill unit if available in supervisor's profile and fetch DB values
+            if (userData && userData.unit) {
+                const matchedUnit = unitsData.find(u => u.unit_name === userData.unit);
+                if (matchedUnit) {
+                    document.getElementById('siteName').value = matchedUnit.unit_name;
+                    document.getElementById('zone').value = matchedUnit.zone || '-';
+                    document.getElementById('reqStaff').value = matchedUnit.required_guards || 0;
+                    await fetchActualGuards(matchedUnit.unit_name);
+                } else {
+                    document.getElementById('siteName').value = userData.unit;
+                    await fetchActualGuards(userData.unit);
+                }
+            }
         };
 
         async function syncUserSession() {
@@ -912,22 +926,28 @@
             const myZone = (userData.zone || userData.area || '').trim().toLowerCase();
             const userLevel = (userData.level || '').toLowerCase();
 
-            // 1. ลองกรองตามเขตเท่านั้น (Strict Zone Filter with Mismatch Handling)
+            // Clear values if input is cleared manually
+            if (!searchVal) {
+                document.getElementById('reqStaff').value = '';
+                document.getElementById('actStaff').value = '';
+                document.getElementById('staffTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--gray-400);">กรุณาเลือกหน่วยงานเพื่อแสดงรายชื่อ</td></tr>';
+            }
+
+            // 1. กรองหน่วยงานแบบยืดหยุ่นสูง (Flexible Zone Filter)
             let matches = unitsData.filter(u => {
                 const searchMatch = !searchVal || 
                                    (u.unit_name || '').toLowerCase().includes(searchVal) ||
                                    (u.unit_code || '').toLowerCase().includes(searchVal);
                 
                 const uZone = (u.zone || '').trim().toLowerCase();
-                const myZoneClean = myZone.replace('เขต', '').trim();
-                const uZoneClean = uZone.replace('เขต', '').trim();
+                const myZoneClean = myZone ? myZone.replace('เขต', '').replace('zone', '').trim() : '';
+                const uZoneClean = uZone.replace('เขต', '').replace('zone', '').trim();
                 
-                // ตรวจสอบว่าเขตตรงกัน (รองรับทั้ง "เขต 1" และ "1")
-                const zoneMatch = (userLevel === 'admin' || !myZone || 
+                // ตรวจสอบความสอดคล้องของเขต (รองรับทั้ง "เขต 1", "Zone 1" และ "1" และสิทธิ์เข้าถึง)
+                const zoneMatch = (userLevel === 'admin' || userLevel === 'manager' || !myZone || 
                                   uZone === myZone || 
-                                  uZoneClean === myZoneClean ||
-                                  uZone.includes(myZone) || 
-                                  myZone.includes(uZone));
+                                  (uZoneClean && myZoneClean && uZoneClean === myZoneClean) ||
+                                  (myZone && uZone && (uZone.includes(myZone) || myZone.includes(uZone))));
                                   
                 return searchMatch && zoneMatch;
             });
@@ -936,7 +956,7 @@
             
             if (finalMatches.length > 0) {
                 box.innerHTML = finalMatches.map(u => `
-                    <div class="suggestion-item" onclick="selectUnit('${u.unit_name}', '${u.zone}', ${u.required_guards || 0})">
+                    <div class="suggestion-item" onclick="selectUnit('${u.unit_name.replace(/'/g,"\\'")}', '${(u.zone || '').replace(/'/g,"\\'")}', ${u.required_guards || 0})">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong>${u.unit_name}</strong>
                             <span style="font-family:'IBM Plex Mono'; font-size:10px; color:var(--gold); font-weight:700;">${u.unit_code || 'N/A'}</span>
@@ -1118,17 +1138,19 @@
 
             try {
                 const photoUrls = await Promise.all(photoFiles.map(f => uploadPhoto(f)));
-                const staffList = Array.from(document.getElementById('staffTableBody').rows).map(row => {
-                    const nameInput = row.cells[0].querySelector('input');
-                    const roleInput = row.cells[1].querySelector('input');
-                    const shiftInput = row.cells[2].querySelector('select');
-                    
-                    return {
-                        name: nameInput ? nameInput.value : row.cells[0].textContent.trim(),
-                        role: roleInput ? roleInput.value : row.cells[1].textContent.trim(),
-                        shift: shiftInput ? shiftInput.value : row.cells[2].textContent.trim()
-                    };
-                }).filter(s => s.name);
+                const staffList = Array.from(document.getElementById('staffTableBody').rows)
+                    .filter(row => row.cells.length >= 3)
+                    .map(row => {
+                        const nameInput = row.cells[0].querySelector('input');
+                        const roleInput = row.cells[1].querySelector('input');
+                        const shiftInput = row.cells[2].querySelector('select');
+                        
+                        return {
+                            name: nameInput ? nameInput.value : row.cells[0].textContent.trim(),
+                            role: roleInput ? roleInput.value : row.cells[1].textContent.trim(),
+                            shift: shiftInput ? shiftInput.value : row.cells[2].textContent.trim()
+                        };
+                    }).filter(s => s.name);
 
                 const reqStaff = parseInt(document.getElementById('reqStaff').value) || 0;
                 const actStaff = parseInt(document.getElementById('actStaff').value) || 0;

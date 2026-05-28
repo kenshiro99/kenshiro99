@@ -283,8 +283,8 @@ canvas{display:block;width:100%;height:130px;background:#fff;cursor:crosshair;to
       <p>ข้อมูลบันทึกลงระบบแล้ว</p>
       <div class="rdid" id="op05ResultDocId">—</div>
       <div class="r-acts">
-        <button class="rbtn rb-view" id="op05ViewBtn" onclick="viewGeneratedReport()">📄 ดูใบรายงาน / พิมพ์</button>
-        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+        <button type="button" class="rbtn rb-view" id="op05ViewBtn" onclick="viewGeneratedReport()">📄 ดูใบรายงาน / พิมพ์</button>
+        <button type="button" class="rbtn rb-new" onclick="window.location.href='staff.html'">❌ ปิดหน้านี้</button>
       </div>
     </div>
 
@@ -425,15 +425,10 @@ function autoFillUser() {
 // ============================================================
 async function fetchUnits() {
   try {
-    let query = supabaseClient.from('units').select('*').order('unit_name');
-    const lvl = userData && userData.level ? userData.level.toLowerCase() : '';
-    if (lvl !== 'admin' && lvl !== 'manager') {
-      const myZone = (userData.zone || userData.area || '').trim();
-      if (myZone) query = query.eq('zone', myZone);
-    }
-    const { data, error } = await query;
+    const { data, error } = await supabaseClient.from('units').select('*').order('unit_name');
     if (error) throw error;
     unitsData = data || [];
+    console.log("OP05: Loaded units count =", unitsData.length);
   } catch (e) {
     console.error("Fetch Units Error:", e);
     unitsData = [];
@@ -445,12 +440,28 @@ async function fetchUnits() {
 // ============================================================
 function handleUnitInput(val) {
   const box = document.getElementById('op05UnitSuggestions');
-  const matches = !val
-    ? unitsData
-    : unitsData.filter(u =>
-        u.unit_name.toLowerCase().includes(val.toLowerCase()) ||
-        (u.unit_code && u.unit_code.toLowerCase().includes(val.toLowerCase()))
-      );
+  const searchVal = val.toLowerCase().trim();
+  const myZone = userData && (userData.zone || userData.area || '').trim().toLowerCase();
+  const lvl = userData && userData.level ? userData.level.toLowerCase() : '';
+
+  const matches = unitsData.filter(u => {
+    // 1. ค้นหาจากชื่อหน่วยงาน หรือรหัสหน่วยงาน
+    const searchMatch = !searchVal || 
+                       (u.unit_name || '').toLowerCase().includes(searchVal) ||
+                       (u.unit_code || '').toLowerCase().includes(searchVal);
+    
+    // 2. ตรวจสอบเงื่อนไขเขต (Zone) อย่างยืดหยุ่น (แอดมิน/เมเนเจอร์ ค้นหาได้ทุกที่, ทั่วไปเห็นเฉพาะเขตตัวเอง)
+    const uZone = (u.zone || '').trim().toLowerCase();
+    const myZoneClean = myZone ? myZone.replace('เขต', '').replace('zone', '').trim() : '';
+    const uZoneClean = uZone.replace('เขต', '').replace('zone', '').trim();
+    
+    const zoneMatch = (lvl === 'admin' || lvl === 'manager' || !myZone || 
+                      uZone === myZone || 
+                      (uZoneClean && myZoneClean && uZoneClean === myZoneClean) ||
+                      (myZone && uZone && (uZone.includes(myZone) || myZone.includes(uZone))));
+                      
+    return searchMatch && zoneMatch;
+  });
 
   if (matches.length > 0) {
     box.innerHTML = matches.map(u => `
@@ -461,7 +472,20 @@ function handleUnitInput(val) {
     `).join('');
     box.classList.add('open');
   } else {
-    box.innerHTML = '<div style="padding:12px;text-align:center;color:#9AABC2;font-size:12px">ไม่พบข้อมูลหน่วยงาน</div>';
+    let diagHtml = '';
+    if (unitsData.length === 0) {
+      diagHtml = `<div style="padding:12px;text-align:center;color:#c0392b;font-size:12px;font-weight:600;">
+        ⚠️ ไม่พบข้อมูลหน่วยงานในระบบ (ตรวจพบ 0 รายการ)
+      </div>`;
+    } else {
+      diagHtml = `<div style="padding:12px;text-align:center;color:#9AABC2;font-size:12px;">
+        ไม่พบข้อมูลหน่วยงานที่ตรงเงื่อนไข<br>
+        <span style="font-size:10px;color:#9AABC2;display:block;margin-top:4px;">
+          (มีในระบบ ${unitsData.length} รายการ | เขตผู้ใช้: ${userData && userData.zone ? userData.zone : 'ไม่ระบุ'})
+        </span>
+      </div>`;
+    }
+    box.innerHTML = diagHtml;
     box.classList.add('open');
   }
 }

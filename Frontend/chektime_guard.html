@@ -207,7 +207,11 @@
         }
 
         async function initSystem() {
-            const session = localStorage.getItem('nextgen_user');
+            let session = localStorage.getItem('nextgen_user');
+            if (!session && sessionStorage.getItem('nextgen_user')) {
+                localStorage.setItem('nextgen_user', sessionStorage.getItem('nextgen_user'));
+                session = sessionStorage.getItem('nextgen_user');
+            }
             if (!session) return window.location.href = '../index.html';
             currentUser = JSON.parse(session);
             document.getElementById('userZone').innerText = `เขตพื้นที่: ${currentUser.zone || currentUser.area || 'ทั่วไป'}`;

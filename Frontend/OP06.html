@@ -6,6 +6,10 @@
 <title>OP06 — รายงานการรวมแถว | Nextgen System</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
 <style>
 :root{--navy:#1B2A4A;--navy2:#243560;--gold:#C9920C;--gold-l:#F0B429;--gold-ll:#FEF3C7;--green:#0D7A4E;--green-bg:#E6F4EE;--red:#C0392B;--red-bg:#FDECEA;--blue:#1A56DB;--blue-bg:#EEF4FF;--orange:#D97706;--orange-bg:#FEF3C7;--gray:#F4F6F9;--gray2:#E8ECF2;--gray3:#9AABC2;--white:#fff;--r:10px;--rs:7px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -41,8 +45,8 @@ body{font-family:'Sarabun',sans-serif;background:#edf0f7;color:var(--navy);min-h
 .shift-btn.pm.active .sb-title,.shift-btn.pm.active .sb-sub{color:#fff}
 .shift-divider{width:2px;background:var(--gray2)}
 
-.card{background:#fff;border-radius:var(--r);border:1px solid var(--gray2);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(27,42,74,.06)}
-.card-head{padding:10px 15px;display:flex;align-items:center;gap:9px}
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--gray2);margin-bottom:12px;overflow:visible;box-shadow:0 1px 4px rgba(27,42,74,.06)}
+.card-head{padding:10px 15px;display:flex;align-items:center;gap:9px;border-top-left-radius:var(--r);border-top-right-radius:var(--r)}
 .ch-am{background:var(--navy)}
 .ch-pm{background:#92400E}
 .c-num{width:22px;height:22px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -51,6 +55,16 @@ body{font-family:'Sarabun',sans-serif;background:#edf0f7;color:var(--navy);min-h
 .c-title{font-size:13px;font-weight:600;color:#fff}
 .c-sub{font-size:10px;color:rgba(255,255,255,.5);margin-left:auto}
 .card-body{padding:14px 15px;display:flex;flex-direction:column;gap:11px}
+
+/* ========== AUTOCOMPLETE ========== */
+.field-relative{position:relative;z-index:120}
+.unit-suggestions{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border-radius:var(--rs);border:1.5px solid var(--gray2);box-shadow:0 8px 24px rgba(27,42,74,.12);z-index:50;max-height:280px;overflow-y:auto;display:none}
+.unit-suggestions.open{display:block}
+.sug-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray2);transition:background .1s}
+.sug-item:last-child{border-bottom:none}
+.sug-item:hover{background:var(--gray)}
+.sug-name{font-size:13px;font-weight:600;color:var(--navy)}
+.sug-code{font-size:10px;color:var(--gray3);margin-top:2px;font-family:'IBM Plex Mono',monospace}
 
 .field{display:flex;flex-direction:column;gap:4px}
 .gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -141,6 +155,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 .field-error input,.field-error select{border-color:var(--red)!important}
 .back-btn{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;items-center:center;gap:6px}
+input:disabled,select:disabled{background:#f0f2f7!important;color:#9AABC2!important;cursor:not-allowed!important;opacity:0.85}
 
 @media(max-width:480px){.gr{grid-template-columns:1fr}.photo-grid{grid-template-columns:repeat(2,1fr)}.sum-row{grid-template-columns:1fr 1fr}}
 @media print{.hdr .hdr-prog,.tab-bar,.sub-btn,.result-wrap,.back-btn{display:none!important}.form-section{display:block!important}.hdr{position:static}.card{break-inside:avoid;box-shadow:none}}
@@ -153,8 +168,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     <div class="brand">
       <button class="back-btn" onclick="window.location.href='staff.html'">← กลับ</button>
       <div class="bname" style="margin-left:10px">
-        <div class="co">NEXTGEN SYSTEM CENTER</div>
         <div class="dt">OP06 — รายงานการรวมแถว</div>
+        <div class="co">NEXTGEN SYSTEM CENTER</div>
       </div>
     </div>
     <div class="stamp">
@@ -203,9 +218,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <input type="hidden" id="tsISO">
         </div>
         <div class="gr">
-          <div class="field" id="fam-site">
+          <div class="field field-relative" id="fam-site">
             <label>ชื่อหน่วยงาน<span class="req">*</span></label>
-            <input type="text" id="am-site" placeholder="ชื่อไซต์งาน">
+            <input type="text" id="am-site" placeholder="ชื่อไซต์งาน" autocomplete="off" oninput="handleUnitInput(this.value, 'am')" onfocus="handleUnitInput('', 'am')">
+            <div id="am-suggestions" class="unit-suggestions"></div>
           </div>
           <div class="field" id="fam-zone">
             <label>เขต<span class="req">*</span></label>
@@ -287,7 +303,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
     <button class="sub-btn sub-am" id="am-sub" onclick="submitForm('am')">
       <div class="spin" id="am-spin" style="display:none"></div>
-      <span id="am-sub-txt">บันทึกรายงานรวมแถวเช้า OP06-AM</span>
+      <span id="am-sub-txt">บันทึกรายงาน</span>
     </button>
     <div class="result-wrap" id="am-result-card">
       <div style="font-size:32px;margin-bottom:6px">✅</div>
@@ -296,7 +312,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="rdid" id="am-rdid">—</div>
       <div class="r-acts">
         <button id="am-view-btn" class="rbtn rb-pdf" style="background:#C9920C !important; color:#1B2A4A !important;">📄 ดูใบรายงาน / พิมพ์</button>
-        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+        <button type="button" class="rbtn rb-new" onclick="window.location.href='staff.html'">❌ ปิดหน้านี้</button>
       </div>
     </div>
 
@@ -309,9 +325,10 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="card-head ch-pm"><div class="c-num num-pm">1</div><div class="c-title">ข้อมูลพื้นฐาน — ผลัดเย็น</div><div class="c-sub">PM Basic Info</div></div>
       <div class="card-body">
         <div class="gr">
-          <div class="field" id="fpm-site">
+          <div class="field field-relative" id="fpm-site">
             <label>ชื่อหน่วยงาน<span class="req">*</span></label>
-            <input type="text" id="pm-site" placeholder="ชื่อไซต์งาน">
+            <input type="text" id="pm-site" placeholder="ชื่อไซต์งาน" autocomplete="off" oninput="handleUnitInput(this.value, 'pm')" onfocus="handleUnitInput('', 'pm')">
+            <div id="pm-suggestions" class="unit-suggestions"></div>
           </div>
           <div class="field" id="fpm-zone">
             <label>เขต<span class="req">*</span></label>
@@ -393,7 +410,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
     <button class="sub-btn sub-pm" id="pm-sub" onclick="submitForm('pm')">
       <div class="spin" id="pm-spin" style="display:none"></div>
-      <span id="pm-sub-txt">บันทึกรายงานรวมแถวเย็น OP06-PM</span>
+      <span id="pm-sub-txt">บันทึกรายงาน</span>
     </button>
     <div class="result-wrap" id="pm-result-card">
       <div style="font-size:32px;margin-bottom:6px">✅</div>
@@ -402,7 +419,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="rdid" id="pm-rdid">—</div>
       <div class="r-acts">
         <button id="pm-view-btn" class="rbtn rb-pdf" style="background:#C9920C !important; color:#1B2A4A !important;">📄 ดูใบรายงาน / พิมพ์</button>
-        <button class="rbtn rb-new" onclick="location.reload()">+ ใหม่</button>
+        <button type="button" class="rbtn rb-new" onclick="window.location.href='staff.html'">❌ ปิดหน้านี้</button>
       </div>
     </div>
 
@@ -438,17 +455,128 @@ const state = {
 let currentShift = 'am';
 let currentTab = 'am';
 let userData = null;
+let unitsData = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initPortal();
   initTS();
+  await fetchUnits();
   ['am','pm'].forEach(s => {
     initRows(s, 5);
     initChk(s);
     initPhotos(s);
+    initFlatpickr(s);
   });
-  setDefaults();
 });
+
+async function fetchUnits() {
+  try {
+    const { data, error } = await supabaseClient.from('units').select('*').order('unit_name');
+    if (error) throw error;
+    unitsData = data || [];
+  } catch (e) { console.error("Fetch Units Error:", e); unitsData = []; }
+}
+
+function handleUnitInput(val, shift) {
+  const box = document.getElementById(shift + '-suggestions');
+  const searchVal = val.toLowerCase().trim();
+  const myZone = userData && (userData.zone || userData.area || '').trim().toLowerCase();
+  const lvl = userData && userData.level ? userData.level.toLowerCase() : '';
+  
+  const matches = unitsData.filter(u => {
+    const searchMatch = !searchVal || 
+                       (u.unit_name || '').toLowerCase().includes(searchVal) ||
+                       (u.unit_code || '').toLowerCase().includes(searchVal);
+    
+    const uZone = (u.zone || '').trim().toLowerCase();
+    const myZoneClean = myZone ? myZone.replace('เขต', '').replace('zone', '').trim() : '';
+    const uZoneClean = uZone.replace('เขต', '').replace('zone', '').trim();
+    
+    const zoneMatch = (lvl === 'admin' || lvl === 'manager' || !myZone || 
+                      uZone === myZone || 
+                      (uZoneClean && myZoneClean && uZoneClean === myZoneClean) ||
+                      (myZone && uZone && (uZone.includes(myZone) || myZone.includes(uZone))));
+                      
+    return searchMatch && zoneMatch;
+  });
+
+  if (matches.length > 0) {
+    box.innerHTML = matches.map(u => `
+      <div class="sug-item" onclick="selectUnit('${u.unit_name.replace(/'/g,"\\'")}', '${shift}', '${u.zone || ''}')">
+        <div class="sug-name">${u.unit_name}</div>
+        <div class="sug-code">${u.unit_code || ''} ${u.zone ? '| ' + u.zone : ''}</div>
+      </div>
+    `).join('');
+    box.classList.add('open');
+  } else {
+    let diagHtml = '';
+    if (unitsData.length === 0) {
+      diagHtml = `<div style="padding:12px;text-align:center;color:#c0392b;font-size:12px;font-weight:600;">
+        ⚠️ ไม่พบข้อมูลหน่วยงานในระบบ (ตรวจพบ 0 รายการ)<br>
+        <span style="font-size:10px;color:#9AABC2;font-weight:normal;display:block;margin-top:4px;">อาจเกิดจากความผิดพลาดในการเชื่อมต่อหรือตาราง units ว่าง</span>
+      </div>`;
+    } else {
+      diagHtml = `<div style="padding:12px;text-align:center;color:#9AABC2;font-size:12px;">
+        ไม่พบข้อมูลหน่วยงานที่ตรงเงื่อนไข<br>
+        <span style="font-size:10px;color:#9AABC2;display:block;margin-top:4px;">
+          (มีในระบบ ${unitsData.length} รายการ | เขตผู้ใช้: ${userData && userData.zone ? userData.zone : 'ไม่ระบุ'} | คำค้น: ${searchVal || 'ว่าง'})
+        </span>
+      </div>`;
+    }
+    box.innerHTML = diagHtml;
+    box.classList.add('open');
+  }
+}
+
+function selectUnit(name, shift, zone) {
+  document.getElementById(shift + '-site').value = name;
+  document.getElementById(shift + '-suggestions').classList.remove('open');
+  if (zone) {
+    const zSel = document.getElementById(shift + '-zone');
+    let exists = Array.from(zSel.options).some(o => o.value === zone);
+    if (!exists) zSel.add(new Option(zone, zone));
+    zSel.value = zone;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  ['am', 'pm'].forEach(shift => {
+    const box = document.getElementById(shift + '-suggestions');
+    const input = document.getElementById(shift + '-site');
+    if (box && !box.contains(e.target) && e.target !== input) {
+      box.classList.remove('open');
+    }
+  });
+});
+
+function initFlatpickr(shift) {
+  const now = new Date();
+  const thaiTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  
+  flatpickr('#' + shift + '-date', {
+    locale: "th", dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y",
+    defaultDate: thaiTime, disableMobile: true,
+    formatDate: function(date, format) {
+      if (format === "d/m/Y") {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear() + 543;
+        return `${d}/${m}/${y}`;
+      }
+      return flatpickr.formatDate(date, format);
+    }
+  });
+
+  const defaultTs = shift === 'am' ? "06:00" : "18:00";
+  const defaultTe = shift === 'am' ? "06:30" : "18:30";
+
+  flatpickr('#' + shift + '-ts', {
+    enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, defaultDate: defaultTs
+  });
+  flatpickr('#' + shift + '-te', {
+    enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, defaultDate: defaultTe
+  });
+}
 
 function initPortal() {
   const session = localStorage.getItem('nextgen_user');
@@ -474,8 +602,25 @@ function initPortal() {
             }
         }
         
+        // Disable commander dropdown to forbid editing
+        cmdSelect.disabled = true;
+        
         // Auto fill zone/site if available
-        if (userData.zone) document.getElementById(`${s}-zone`).value = userData.zone;
+        if (userData.zone) {
+            const zSel = document.getElementById(`${s}-zone`);
+            
+            // Normalize zone (e.g. "Zone 1" -> "เขต 1")
+            let zoneValue = userData.zone;
+            if (zoneValue === 'Zone 1') zoneValue = 'เขต 1';
+            if (zoneValue === 'Zone 2') zoneValue = 'เขต 2';
+            
+            let exists = Array.from(zSel.options).some(o => o.value === zoneValue);
+            if (!exists) zSel.add(new Option(zoneValue, zoneValue));
+            zSel.value = zoneValue;
+            
+            // Disable zone dropdown to forbid editing
+            zSel.disabled = true;
+        }
         if (userData.unit) document.getElementById(`${s}-site`).value = userData.unit;
     });
   }
@@ -510,13 +655,7 @@ function initTS() {
   document.getElementById('tsHdr').textContent = `${dd}/${mm}/${by} ${hh}:${mn}`;
 }
 
-function setDefaults() {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  ['am','pm'].forEach(s => {
-    document.getElementById(`${s}-date`).value = today;
-  });
-}
+
 
 function switchShift(shift) {
   currentShift = shift;

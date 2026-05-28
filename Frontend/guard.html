@@ -267,7 +267,11 @@
 
         async function initPortal() {
             try {
-                const session = localStorage.getItem('nextgen_user');
+                let session = localStorage.getItem('nextgen_user');
+                if (!session && sessionStorage.getItem('nextgen_user')) {
+                    localStorage.setItem('nextgen_user', sessionStorage.getItem('nextgen_user'));
+                    session = sessionStorage.getItem('nextgen_user');
+                }
                 if (!session) throw new Error();
                 userData = JSON.parse(session);
 
