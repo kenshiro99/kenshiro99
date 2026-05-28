@@ -579,6 +579,7 @@
 
                 // บันทึก Session
                 localStorage.setItem('nextgen_user', JSON.stringify(data));
+                sessionStorage.setItem('nextgen_user', JSON.stringify(data));
 
                 // Success Animation
                 // ตัดคำนำหน้าชื่อออกเพื่อความสวยงาม
@@ -683,6 +684,7 @@
         window.onload = () => {
             // เคลียร์ session เก่าเพื่อบังคับให้ล็อกอินใหม่ทุกครั้งตามความต้องการ
             localStorage.removeItem('nextgen_user');
+            sessionStorage.removeItem('nextgen_user');
             console.log("System Ready. Please login.");
 
             // AI Greeting Logic

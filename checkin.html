@@ -277,7 +277,11 @@
         // --- 2. AUTHENTICATION ---
         function checkAuth() {
             try {
-                const sessionString = localStorage.getItem('nextgen_user');
+                let sessionString = localStorage.getItem('nextgen_user');
+                if (!sessionString && sessionStorage.getItem('nextgen_user')) {
+                    localStorage.setItem('nextgen_user', sessionStorage.getItem('nextgen_user'));
+                    sessionString = sessionStorage.getItem('nextgen_user');
+                }
                 if (!sessionString) throw new Error('No session');
                 
                 userData = JSON.parse(sessionString);
