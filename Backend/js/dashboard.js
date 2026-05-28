@@ -14,13 +14,6 @@
             userData = JSON.parse(sessionStorage.getItem('nextgen_user'));
         }
 
-        // 📱 Unconditional Debug Alert เพื่อความชัวร์ 100% ว่าทำงานบนทุกอุปกรณ์
-        if (!userData) {
-            alert("📢 [NEXTGEN Debug System]\nไม่พบข้อมูลล็อกอินเลยในเครื่องนี้ (ทั้ง localStorage และ sessionStorage เป็น NULL)\n\nระบบจะนำคุณกลับไปหน้าล็อกอิน...");
-        } else {
-            alert("📢 [NEXTGEN Debug System]\nพบเซสชันผู้ใช้บนอุปกรณ์นี้!\n- ชื่อ: " + userData.name + "\n- ระดับสิทธิ์ (level): '" + userData.level + "'\n- รหัสพนักงาน: " + userData.emp_id + "\n- สถานะพนักงาน: " + userData.status);
-        }
-
         if (!userData || !userData.level) {
             window.location.href = '../index.html';
         } else {
