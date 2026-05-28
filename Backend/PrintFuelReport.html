@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พิมพ์ใบอนุมัติจ่ายค่าน้ำมันรถฝ่ายปฏิบัติการ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: white;
+            color: black;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        @page {
+            size: landscape;
+            margin: 6mm 10mm 6mm 10mm;
+        }
+
+        .print-container {
+            width: 100%;
+        }
+
+        .print-page {
+            page-break-after: always;
+            break-after: page;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 190mm; /* A4 Landscape usable height with 6mm margins is ~198mm */
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .print-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+        }
+
+        /* Header style */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #0f172a;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 16px;
+        }
+
+        .logo-text h1 {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .logo-text p {
+            font-size: 7px;
+            font-weight: 700;
+            margin: 0;
+            color: #64748b;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+
+        .document-badge {
+            text-align: right;
+        }
+
+        .badge-text {
+            padding: 1.5px 6px;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 8px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-id {
+            font-size: 7px;
+            color: #94a3b8;
+            margin: 2px 0 0 0;
+            font-family: monospace;
+        }
+
+        /* Title Section */
+        .report-title-section {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .report-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin: 0;
+            color: #000;
+            line-height: 1.2;
+        }
+
+        .report-date {
+            font-size: 10px;
+            font-weight: 600;
+            color: #475569;
+            margin: 2px 0 0 0;
+        }
+
+        /* Table Design */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        th, td {
+            border: 1px solid #475569;
+            padding: 5px 3px;
+            font-size: 9px;
+            color: #000;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        tr.data-row:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .font-mono {
+            font-family: monospace;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .font-black {
+            font-weight: 800;
+        }
+
+        /* Signatures */
+        .signatures-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+            margin-top: 10px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .sig-box {
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 14px 10px;
+        }
+
+        .sig-title {
+            font-size: 9px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+        }
+
+        .sig-line {
+            border-bottom: 1.5px dotted #000;
+            margin: 48px auto 8px;
+            width: 85%;
+        }
+
+        .sig-name {
+            font-size: 11px;
+            color: #1e293b;
+            margin: 10px 0 6px 0;
+            font-weight: 600;
+        }
+
+        .sig-position {
+            font-size: 9.5px;
+            color: #475569;
+            margin: 4px 0 6px 0;
+        }
+
+        .sig-date {
+            font-size: 10px;
+            color: #475569;
+            margin: 12px 0 0 0;
+        }
+
+        /* Page Footer */
+        .page-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 5px;
+            margin-top: auto;
+            font-size: 7.5px;
+            font-family: monospace;
+            color: #64748b;
+        }
+
+        .page-num {
+            font-weight: 700;
+            color: black;
+        }
+
+        /* Controls for manual reprint or debugging if needed */
+        .no-print-controls {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .btn-print {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: all 0.2s;
+        }
+
+        .btn-print:hover {
+            background-color: #1e293b;
+        }
+
+        @media print {
+            .no-print-controls {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print-controls">
+        <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> พิมพ์อีกครั้ง</button>
+        <button class="btn-print" onclick="window.close()" style="background-color: #ef4444;"><i class="fas fa-times"></i> ปิดหน้านี้</button>
+    </div>
+
+    <div id="printContainer" class="print-container">
+        <!-- Rendered by JS -->
+    </div>
+
+    <script>
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const printData = JSON.parse(localStorage.getItem('NEXTGEN_print_fuel_data'));
+            if (!printData) {
+                alert("ไม่พบข้อมูลรายงานที่จะพิมพ์");
+                window.close();
+                return;
+            }
+
+            const parseThaiDate = (raw) => {
+                const parts = raw.split('/');
+                let d = parseInt(parts[0]);
+                let m = parseInt(parts[1]) - 1;
+                let y = parseInt(parts[2]);
+                if (y > 2400) y -= 543;
+                return new Date(y, m, d);
+            };
+
+            const startDateObj = parseThaiDate(printData.startDateStr);
+
+            // Compute Col Sums & Grand Total
+            let totalColSums = {};
+            for(let i=0; i<printData.daysCount; i++) totalColSums[i] = 0;
+            let grandTotal = 0;
+            let grandDeduction = 0;
+            let grandNet = 0;
+
+            const fuelDeductions = printData.fuelDeductions || {};
+
+            printData.supIds.forEach(id => {
+                const sums = printData.dailySums[id];
+                for(let i=0; i<printData.daysCount; i++) {
+                    totalColSums[i] += sums[i] || 0;
+                }
+                let rowTotal = 0;
+                for(let i=0; i<printData.daysCount; i++) rowTotal += sums[i] || 0;
+                const deduction = parseFloat(fuelDeductions[id]) || 0;
+                const net = Math.max(0, rowTotal - deduction);
+
+                grandTotal += rowTotal;
+                grandDeduction += deduction;
+                grandNet += net;
+            });
+
+            // Pre-build rows
+            const allRows = printData.supIds.map((id, index) => {
+                const sums = printData.dailySums[id];
+                let rowTotal = 0;
+                for(let i=0; i<printData.daysCount; i++) rowTotal += sums[i] || 0;
+                const deduction = parseFloat(fuelDeductions[id]) || 0;
+                const net = Math.max(0, rowTotal - deduction);
+
+                const savedRem = printData.remarks[id] || '';
+                let daysHtml = '';
+                for (let i = 0; i < printData.daysCount; i++) {
+                    const val = sums[i] || 0;
+                    daysHtml += `<td class="text-center font-mono">${val > 0 ? val.toFixed(2) : '-'}</td>`;
+                }
+
+                return `
+                    <tr class="data-row">
+                        <td class="text-center font-mono">${index + 1}</td>
+                        <td class="text-center font-mono font-bold">${id}</td>
+                        <td class="font-bold">${printData.staffMap[id].name}</td>
+                        <td>${printData.staffMap[id].position}</td>
+                        ${daysHtml}
+                        <td class="text-right font-mono font-bold">${rowTotal > 0 ? rowTotal.toFixed(2) : '-'}</td>
+                        <td class="text-right font-mono font-bold" style="color: #b91c1c;">${deduction > 0 ? deduction.toFixed(2) : '-'}</td>
+                        <td class="text-right font-mono font-bold" style="color: #15803d;">${net > 0 ? net.toFixed(2) : '-'}</td>
+                        <td class="text-center">${printData.staffMap[id].vehicle}</td>
+                        <td style="font-size: 8px; font-weight: 500; white-space: normal; word-break: break-word; max-width: 130px;">${savedRem}</td>
+                    </tr>
+                `;
+            });
+
+            // Dynamic Pagination Engine
+            const pages = [];
+            let tempRows = [...allRows];
+
+            const maxNormal = 15;
+            const maxLast = 11;
+
+            if (tempRows.length <= maxLast) {
+                pages.push(tempRows);
+            } else if (tempRows.length <= maxNormal) {
+                const splitIndex = Math.ceil(tempRows.length / 2);
+                pages.push(tempRows.splice(0, splitIndex));
+                pages.push(tempRows);
+            } else {
+                while (tempRows.length > 0) {
+                    if (tempRows.length <= maxLast) {
+                        pages.push(tempRows);
+                        tempRows = [];
+                    } else if (tempRows.length <= maxNormal) {
+                        const splitIndex = Math.ceil(tempRows.length / 2);
+                        pages.push(tempRows.splice(0, splitIndex));
+                        pages.push(tempRows);
+                        tempRows = [];
+                    } else {
+                        const remainingAfterNormal = tempRows.length - maxNormal;
+                        if (remainingAfterNormal <= maxLast) {
+                            pages.push(tempRows.splice(0, maxNormal));
+                        } else if (remainingAfterNormal <= maxNormal) {
+                            pages.push(tempRows.splice(0, maxNormal));
+                            const splitIndex = Math.ceil(tempRows.length / 2);
+                            pages.push(tempRows.splice(0, splitIndex));
+                            pages.push(tempRows);
+                            tempRows = [];
+                        } else {
+                            pages.push(tempRows.splice(0, maxNormal));
+                        }
+                    }
+                }
+            }
+
+            const totalPages = pages.length;
+            const container = document.getElementById('printContainer');
+
+            // Build dynamic headers & footers
+            let theadHtml = `
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">ลำดับ</th>
+                        <th style="width: 7%;">รหัสพนักงาน</th>
+                        <th style="width: 13%;">ชื่อ-นามสกุล</th>
+                        <th style="width: 10%;">ตำแหน่ง</th>
+            `;
+            for (let i = 0; i < printData.daysCount; i++) {
+                const d = new Date(startDateObj);
+                d.setDate(d.getDate() + i);
+                const ds = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${String(d.getFullYear() + 543).slice(2)}`;
+                theadHtml += `<th style="width: 6%; font-size: 8.5px;">${ds}</th>`;
+            }
+            theadHtml += `
+                        <th style="width: 8%;">รวมน้ำมัน</th>
+                        <th style="width: 8%;">หักเบิกสำรอง</th>
+                        <th style="width: 8%;">จ่ายจริง</th>
+                        <th style="width: 11%;">ยานพาหนะ</th>
+                        <th style="width: 13%;">หมายเหตุ</th>
+                    </tr>
+                </thead>
+            `;
+
+            let tfootHtml = `
+                <tfoot>
+                    <tr style="background-color: #f1f5f9; font-weight: 800;">
+                        <td colspan="4" class="text-right" style="padding: 6px; font-size: 9.5px;">ยอดรวมค่าน้ำมันทั้งหมด</td>
+            `;
+            for (let i = 0; i < printData.daysCount; i++) {
+                const totalVal = totalColSums[i];
+                tfootHtml += `<td class="text-center font-mono" style="font-size: 9px;">${totalVal > 0 ? totalVal.toFixed(2) : '-'}</td>`;
+            }
+            tfootHtml += `
+                        <td class="text-right font-mono" style="font-size: 9.5px; font-weight: 900;">${grandTotal > 0 ? grandTotal.toFixed(2) : '-'}</td>
+                        <td class="text-right font-mono" style="font-size: 9.5px; font-weight: 900; color: #b91c1c;">${grandDeduction > 0 ? grandDeduction.toFixed(2) : '-'}</td>
+                        <td class="text-right font-mono" style="font-size: 10px; font-weight: 900; color: #15803d;">${grandNet > 0 ? grandNet.toFixed(2) : '-'}</td>
+                        <td colspan="2" style="background-color: white; border: none;"></td>
+                    </tr>
+                </tfoot>
+            `;
+
+            const signaturesHtml = `
+                <div class="signatures-container">
+                    <div class="sig-box">
+                        <p class="sig-title">ผู้จัดทำรายงาน</p>
+                        <div class="sig-line"></div>
+                        <p class="sig-name">( ลงชื่อ ............................................................................ )</p>
+                        <p class="sig-position">ตำแหน่ง: ............................................................................</p>
+                        <p class="sig-date">วันที่ ............. / ............. / .............</p>
+                    </div>
+                    <div class="sig-box">
+                        <p class="sig-title">ผู้ตรวจสอบ</p>
+                        <div class="sig-line"></div>
+                        <p class="sig-name">( ลงชื่อ ............................................................................ )</p>
+                        <p class="sig-position">ตำแหน่ง: ............................................................................</p>
+                        <p class="sig-date">วันที่ ............. / ............. / .............</p>
+                    </div>
+                    <div class="sig-box">
+                        <p class="sig-title">ผู้อนุมัติ</p>
+                        <div class="sig-line"></div>
+                        <p class="sig-name">( ลงชื่อ ............................................................................ )</p>
+                        <p class="sig-position">ตำแหน่ง: ............................................................................</p>
+                        <p class="sig-date">วันที่ ............. / ............. / .............</p>
+                    </div>
+                </div>
+            `;
+
+            // Render each page
+            for (let i = 0; i < totalPages; i++) {
+                const pageNum = i + 1;
+                const pageRows = pages[i];
+                const isLastPage = (pageNum === totalPages);
+
+                let rowsHtml = pageRows.join('');
+                let pageTfoot = isLastPage ? tfootHtml : '';
+                let pageSignatures = isLastPage ? signaturesHtml : '';
+
+                const pageHtml = `
+                    <div class="print-page">
+                        <div class="header-container">
+                            <div class="logo-section">
+                                <div class="logo-icon">
+                                    <i class="fas fa-gas-pump"></i>
+                                </div>
+                                <div class="logo-text">
+                                    <h1>NEXTGEN SECURITY</h1>
+                                    <p>OPERATIONAL INTELLIGENCE & MANAGEMENT PORTAL</p>
+                                </div>
+                            </div>
+                            <div class="document-badge">
+                                <span class="badge-text">เอกสารอนุมัติภายใน</span>
+                                <p class="doc-id">GEN-FUEL-REP-01</p>
+                            </div>
+                        </div>
+
+                        <div class="report-title-section">
+                            <h2 class="report-title">ใบอนุมัติจ่ายค่าน้ำมันรถฝ่ายปฏิบัติการ</h2>
+                            <p class="report-date">${printData.printDateRangeText}</p>
+                        </div>
+
+                        <table style="margin-top: 5px;">
+                            ${theadHtml}
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                            ${pageTfoot}
+                        </table>
+
+                        ${pageSignatures}
+
+                        <div class="page-footer">
+                            <span style="font-weight: bold;">NEXTGEN SECURITY SYSTEMS • OPERATIONAL FUEL REPORT</span>
+                            <span class="page-num">หน้า ${pageNum} / ${totalPages}</span>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += pageHtml;
+            }
+
+            // Print Trigger
+            setTimeout(() => {
+                window.print();
+            }, 600);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Work Time Report - NEXTGEN</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Flatpickr for Calendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="config.js"></script>
+    <script src="js/sidebar.js"></script>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Autocomplete dropdown */
+        .ac-wrapper {
+            position: relative;
+        }
+
+        .ac-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+            z-index: 9999;
+            max-height: 180px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            display: none;
+        }
+
+        .ac-dropdown.open {
+            display: block;
+        }
+
+        .ac-item {
+            padding: 7px 12px;
+            font-size: 11px;
+            color: #cbd5e1;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ac-item:last-child {
+            border-bottom: none;
+        }
+
+        .ac-item:hover,
+        .ac-item.selected {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .ac-item mark {
+            background: transparent;
+            color: #f59e0b;
+            font-weight: 900;
+        }
+
+        .ac-dropdown::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .ac-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 4px;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #020617;
+            color: white;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.8);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+
+        .table-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .table-scrollbar::-webkit-scrollbar-track:vertical {
+            background: transparent;
+            margin-top: 55px;
+            margin-bottom: 16px;
+        }
+        .table-scrollbar::-webkit-scrollbar-track:horizontal {
+            background: transparent;
+            margin-left: 16px;
+            margin-right: 16px;
+        }
+
+        .active-sup-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 1.5px 5px;
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-left: 2px solid rgba(16, 185, 129, 0.5);
+            color: #cbd5e1;
+            font-size: 8.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 16px;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .active-sup-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            border-left-color: #10b981;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+        }
+
+        .active-sup-led {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 4px #10b981;
+            flex-shrink: 0;
+            animation: ledPulse 1.8s infinite ease-in-out;
+        }
+
+        @keyframes ledPulse {
+            0%, 100% {
+                transform: scale(0.85);
+                opacity: 0.6;
+                box-shadow: 0 0 3px rgba(16, 185, 129, 0.4);
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+                box-shadow: 0 0 6px rgba(16, 185, 129, 0.9);
+            }
+        }
+
+        @media print {
+            .no-print,
+            .sidebar,
+            .md\:hidden,
+            #sidebarOverlay {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 4px !important;
+            }
+            body {
+                background: white;
+                color: black;
+                font-size: 10px;
+            }
+            .glass-card {
+                border: 1px solid #e2e8f0 !important;
+                background: white !important;
+                backdrop-filter: none !important;
+                box-shadow: none !important;
+                border-radius: 8px !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse;
+                font-size: 9px;
+                page-break-inside: auto;
+            }
+            thead tr {
+                background: #f1f5f9 !important;
+                background-image: none !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                color: #1e293b !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 6px 8px !important;
+                font-size: 9px !important;
+                font-weight: 700 !important;
+            }
+            td {
+                border: 1px solid #e2e8f0 !important;
+                color: #1e293b !important;
+                padding: 5px 8px !important;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            .text-amber-500 { color: #b45309 !important; }
+            .text-emerald-400 { color: #059669 !important; }
+            /* fit table to page width */
+            #mainTableScroll {
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            #mainTableScroll table {
+                min-width: unset !important;
+            }
+            /* hide icon columns in print */
+            th:nth-child(n+10), td:nth-child(n+10) {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Sticky Header -->
+    <div
+        class="md:hidden fixed top-0 left-0 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 z-40 flex justify-between items-center p-2 px-4 shadow-2xl no-print">
+        <div class="flex items-center gap-3">
+            <img id="mobileUserImg" src="../img/logo-1.jpg"
+                onerror="this.src='https://ui-avatars.com/api/?name=NEXTGEN&background=f59e0b&color=fff'"
+                class="w-12 h-12 rounded-full border-2 border-amber-500 shadow-lg shadow-amber-500/20">
+            <div class="flex flex-col">
+                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXTGEN</span>
+                <span class="text-[8px] text-amber-500 font-bold tracking-[2px] uppercase">System Center</span>
+            </div>
+        </div>
+        <button onclick="toggleSidebar()"
+            class="text-white text-xl w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] border border-slate-800">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden no-print"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar-container" class="sidebar flex flex-col no-print"></aside>
+
+    <main class="main-content p-2 md:p-4 h-screen flex flex-col overflow-hidden">
+        <div class="w-full px-1 md:px-2 flex-1 min-h-0 flex flex-col">
+            <!-- Header -->
+            <header
+                class="flex flex-row justify-between items-center gap-3 mb-3 border-b border-white/10 pb-3 mt-14 md:mt-0">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <i class="fas fa-user-clock text-lg text-black"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black uppercase tracking-tighter text-white">สรุปเวลาปฏิบัติงาน <span
+                                class="text-amber-500">สายตรวจ</span></h1>
+                        <p class="text-slate-500 text-[9px] font-bold uppercase tracking-widest">
+                            Supervisor Work Time</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 no-print">
+                    <button onclick="exportToExcel()"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1 border border-emerald-500/20 shadow-lg shadow-emerald-600/10">
+                        <i class="fas fa-file-excel"></i> ดาวน์โหลด Excel
+                    </button>
+                    <button onclick="window.print()"
+                        class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-black transition-all border border-white/10 flex items-center gap-1">
+                        <i class="fas fa-print"></i> พิมพ์
+                    </button>
+                    <button onclick="fetchLogs()"
+                        class="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-black hover:bg-amber-400 transition-all flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> รีเฟรช
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-1 mb-1 no-print" style="height:180px;">
+                <!-- Bar Chart -->
+                <div class="glass-card rounded-2xl border-l-4 border-amber-500 overflow-hidden" style="height:180px; padding:10px 12px 8px;">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                        <div style="width:3px;height:22px;background:linear-gradient(180deg,#f59e0b,#d97706);border-radius:2px;flex-shrink:0;"></div>
+                        <div>
+                            <div style="color:#f59e0b;font-size:10px;font-weight:900;letter-spacing:.08em;line-height:1.2;">ย้อนหลัง 7 วัน</div>
+                            <div style="color:#94a3b8;font-size:8.5px;font-weight:700;letter-spacing:.05em;line-height:1.2;">หน่วยงานที่เข้าตรวจต่อสายตรวจ</div>
+                        </div>
+                    </div>
+                    <div class="relative" style="height: 138px;">
+                        <canvas id="todayChart"></canvas>
+                    </div>
+                </div>
+                <!-- Stats Right -->
+                <div class="flex flex-col gap-1" style="height:180px;">
+                    <!-- จำนวนเข้าพบผู้ว่าจ้าง ประจำสัปดาห์ -->
+                    <div class="glass-card p-3 rounded-2xl border-l-4 border-emerald-500 flex flex-col overflow-hidden" style="height:86px;">
+                        <div class="flex items-center gap-1.5 mb-1 shrink-0">
+                            <i class="fas fa-chart-line text-emerald-400 text-[9px]"></i>
+                            <p class="text-emerald-400 text-[9px] font-bold uppercase tracking-widest">เข้าพบผู้ว่าจ้าง ประจำสัปดาห์</p>
+                        </div>
+                        <div style="flex:1; min-height:0; position:relative;">
+                            <canvas id="meetingChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- สายตรวจที่ Active -->
+                    <div class="glass-card rounded-2xl border-l-4 border-blue-500 flex flex-col overflow-hidden" style="height:86px;padding:6px 10px 4px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;flex-shrink:0;">
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                <div style="width:5px;height:5px;border-radius:50%;background:#60a5fa;box-shadow:0 0 5px #60a5fa;animation:pulse 2s infinite;flex-shrink:0;"></div>
+                                <span style="color:#60a5fa;font-size:8.5px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;">สายตรวจ Active</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:3px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:0.5px 6px;">
+                                <span id="activeCount" style="color:#60a5fa;font-size:10px;font-weight:900;">0</span>
+                                <span style="color:#64748b;font-size:7.5px;"> คน</span>
+                            </div>
+                        </div>
+                        <div id="activeSupsContainer" style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:2.5px;overflow-y:auto;align-content:start;padding:1px 0;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass-card px-4 py-3 rounded-2xl mb-1 no-print border border-white/5"
+                style="position:relative; z-index:50; overflow:visible;">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end" style="overflow:visible;">
+                    <div class="space-y-1 ac-wrapper">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">ชื่อสายตรวจ /
+                            รหัส</label>
+                        <input type="text" id="searchName" placeholder="พิมพ์ชื่อ หรือ รหัส..." autocomplete="off"
+                            oninput="acInput(this,'searchName','name')" onkeydown="acKeydown(event,this,'name')"
+                            onfocus="acInput(this,'searchName','name')"
+                            class="w-full bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 transition-all outline-none">
+                        <div id="ac-name" class="ac-dropdown"></div>
+                    </div>
+                    <div class="space-y-1 ac-wrapper">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">หน่วยงาน /
+                            เขต</label>
+                        <input type="text" id="searchUnit" placeholder="พิมพ์ชื่อหน่วย หรือ เขต..." autocomplete="off"
+                            oninput="acInput(this,'searchUnit','unit')" onkeydown="acKeydown(event,this,'unit')"
+                            onfocus="acInput(this,'searchUnit','unit')"
+                            class="w-full bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 transition-all outline-none">
+                        <div id="ac-unit" class="ac-dropdown"></div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">
+                            ตั้งแต่วันที่ <span class="text-slate-600 normal-case font-normal">(พ.ศ.)</span>
+                        </label>
+                        <input type="text" id="startDate" placeholder="วว/ดด/ปปปป"
+                            class="w-full bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 transition-all outline-none placeholder-slate-700 tracking-widest font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">
+                            ถึงวันที่ <span class="text-slate-600 normal-case font-normal">(พ.ศ.)</span>
+                        </label>
+                        <input type="text" id="endDate" placeholder="วว/ดด/ปปปป"
+                            class="w-full bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 transition-all outline-none placeholder-slate-700 tracking-widest font-mono">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="applyFilters()"
+                            class="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                            <i class="fas fa-search"></i> ค้นหาข้อมูล
+                        </button>
+                        <button onclick="resetFilters()"
+                            class="px-3 bg-white/5 hover:bg-white/10 text-white text-[10px] rounded-lg border border-white/10 transition-all"
+                            title="ล้างค่า">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card rounded-2xl border border-white/5 shadow-2xl flex flex-col relative overflow-hidden flex-1 min-h-0 mb-4">
+                <div id="mainTableScroll" class="overflow-auto custom-scrollbar table-scrollbar flex-1 min-h-0">
+                    <table class="w-full text-left" style="min-width:1000px;border-collapse:separate;border-spacing:0;">
+                        <!-- STICKY HEADER -->
+                        <thead>
+                            <tr>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:75px;white-space:nowrap;">
+                                    <span style="color:#f59e0b;font-size:10px;font-weight:900;letter-spacing:.05em;">ลำดับที่</span>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;width:120px;white-space:nowrap;">
+                                    <div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-calendar-alt" style="color:#f59e0b;font-size:9px;"></i><span style="color:#cbd5e1;font-size:10px;font-weight:900;">วันที่</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:90px;white-space:nowrap;">
+                                    <div style="display:flex;align-items:center;justify-content:center;gap:4px;"><i class="fas fa-id-card" style="color:#f59e0b;font-size:9px;"></i><span style="color:#cbd5e1;font-size:10px;font-weight:900;">รหัส</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;width:170px;white-space:nowrap;">
+                                    <div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-user-shield" style="color:#f59e0b;font-size:9px;"></i><span style="color:#f59e0b;font-size:10px;font-weight:900;">สายตรวจ</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;width:170px;white-space:nowrap;">
+                                    <div style="display:flex;align-items:center;gap:4px;"><i class="fas fa-building" style="color:#64748b;font-size:9px;"></i><span style="color:#cbd5e1;font-size:10px;font-weight:900;">หน่วยงาน</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:90px;white-space:nowrap;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><i class="fas fa-sign-in-alt" style="color:#10b981;font-size:9px;"></i><span style="color:#10b981;font-size:9px;font-weight:900;">เข้า</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:90px;white-space:nowrap;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;font-size:9px;"></i><span style="color:#f59e0b;font-size:9px;font-weight:900;">ออก</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:100px;white-space:nowrap;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><i class="fas fa-stopwatch" style="color:#94a3b8;font-size:9px;"></i><span style="color:#cbd5e1;font-size:9px;font-weight:900;">ระยะเวลา</span></div>
+                                </th>
+                                <th style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:110px;white-space:nowrap;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><i class="fas fa-wifi" style="color:#94a3b8;font-size:9px;"></i><span style="color:#cbd5e1;font-size:9px;font-weight:900;">สถานะ</span></div>
+                                </th>
+                                <th class="no-print" style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:60px;white-space:nowrap;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><i class="fas fa-map-pin" style="color:#475569;font-size:9px;"></i><span style="color:#475569;font-size:9px;font-weight:900;">พิกัด</span></div>
+                                </th>
+                                <th class="no-print" style="position:sticky;top:0;z-index:30;background:#0d1526;border-bottom:1px solid rgba(245,158,11,0.4);padding:5px 10px;text-align:center;width:100px;white-space:nowrap;">
+                                    <div style="display:flex;align-items:center;justify-content:center;gap:4px;"><i class="fas fa-sliders-h" style="color:#475569;font-size:9px;"></i><span style="color:#475569;font-size:9px;font-weight:900;">จัดการ</span></div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsBody" class="divide-y divide-white/5 text-sm">
+                            <tr>
+                                <td colspan="11" class="px-6 py-10 text-center text-slate-500 italic">
+                                    กำลังดึงข้อมูล...มีประสิทธิภาพสูงสุด</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination UI Controls -->
+                <div class="flex justify-between items-center px-4 py-2 bg-[#0f172a]/60 border-t border-white/5 no-print">
+                    <span class="text-xs text-slate-400 font-bold" id="pageInfo">แสดงรายการ 0-0 จาก 0 รายการ</span>
+                    <div class="flex items-center gap-1.5">
+                        <button id="prevPageBtn" onclick="changePage(-1)" class="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-black hover:bg-white/10 disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1">
+                            <i class="fas fa-chevron-left text-[9px]"></i> ก่อนหน้า
+                        </button>
+                        <div id="pageNumbersContainer" class="flex gap-1 items-center">
+                            <!-- Dynamic Page Numbers -->
+                        </div>
+                        <button id="nextPageBtn" onclick="changePage(1)" class="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-black hover:bg-white/10 disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1">
+                            ถัดไป <i class="fas fa-chevron-right text-[9px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let allLogs = [];
+        let todayChartInstance = null;
+        let meetingChartInstance = null;
+        let groupedLogsData = {};
+        let acSelectedIdx = { name: -1, unit: -1 };
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let currentFilteredData = [];
+
+        // ---- Autocomplete Logic ----
+        function acGetSuggestions(type, query) {
+            const q = query.trim().toLowerCase();
+            if (!q) return [];
+            const seen = new Set();
+            const results = [];
+            const entries = Object.values(groupedLogsData);
+            entries.forEach(log => {
+                if (type === 'name') {
+                    const name = (log.name || '').trim();
+                    const id = String(log.emp_id || '').trim();
+                    if (name && name.toLowerCase().includes(q) && !seen.has(name)) {
+                        seen.add(name); results.push({ label: name, sub: id });
+                    }
+                    if (id && id.toLowerCase().includes(q) && !seen.has(id)) {
+                        seen.add(id); results.push({ label: id, sub: name });
+                    }
+                } else {
+                    const unit = (log.unit_name || '').trim();
+                    if (unit && unit.toLowerCase().includes(q) && !seen.has(unit)) {
+                        seen.add(unit); results.push({ label: unit, sub: '' });
+                    }
+                }
+            });
+            return results.slice(0, 10);
+        }
+
+        function acHighlight(text, query) {
+            const q = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return text.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>');
+        }
+
+        function acInput(input, inputId, type) {
+            const dropId = type === 'name' ? 'ac-name' : 'ac-unit';
+            const drop = document.getElementById(dropId);
+            const q = input.value;
+            acSelectedIdx[type] = -1;
+            const suggestions = acGetSuggestions(type, q);
+            if (!suggestions.length || !q.trim()) { drop.classList.remove('open'); drop.innerHTML = ''; return; }
+            drop.innerHTML = suggestions.map((s, i) => `
+                <div class="ac-item" data-idx="${i}" data-val="${s.label}"
+                    onmousedown="acSelect('${inputId}','${type}','${s.label.replace(/'/g, "\\'")}')">
+                    ${acHighlight(s.label, q)}
+                    ${s.sub ? `<span style="opacity:0.45;font-size:10px;margin-left:6px;">${s.sub}</span>` : ''}
+                </div>`).join('');
+            drop.classList.add('open');
+        }
+
+        function acSelect(inputId, type, value) {
+            document.getElementById(inputId).value = value;
+            const dropId = type === 'name' ? 'ac-name' : 'ac-unit';
+            document.getElementById(dropId).classList.remove('open');
+            applyFilters();
+        }
+
+        function acKeydown(e, input, type) {
+            const dropId = type === 'name' ? 'ac-name' : 'ac-unit';
+            const drop = document.getElementById(dropId);
+            const items = drop.querySelectorAll('.ac-item');
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                acSelectedIdx[type] = Math.min(acSelectedIdx[type] + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                acSelectedIdx[type] = Math.max(acSelectedIdx[type] - 1, 0);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (acSelectedIdx[type] >= 0) {
+                    const val = items[acSelectedIdx[type]].dataset.val;
+                    acSelect(input.id, type, val);
+                } else { applyFilters(); drop.classList.remove('open'); }
+                return;
+            } else if (e.key === 'Escape') {
+                drop.classList.remove('open'); return;
+            } else { return; }
+            items.forEach((el, i) => el.classList.toggle('selected', i === acSelectedIdx[type]));
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ac-wrapper')) {
+                document.querySelectorAll('.ac-dropdown').forEach(d => d.classList.remove('open'));
+            }
+        });
+
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('hidden');
+        }
+
+        // Auto-insert slashes: DD/MM/YYYY (พ.ศ.)
+        function thaiDateMask(input) {
+            let v = input.value.replace(/[^\d]/g, ''); // digits only
+            let out = '';
+            if (v.length > 2) out = v.slice(0, 2) + '/';
+            else out = v;
+            if (v.length > 4) out += v.slice(2, 4) + '/';
+            else if (v.length > 2) out += v.slice(2);
+            if (v.length > 4) out += v.slice(4, 8);
+            input.value = out;
+        }
+
+        // Strip Thai honorific prefixes then keep first+last name
+        function stripPrefix(fullName) {
+            const prefixes = ['นางสาว', 'นาง', 'นาย', 'ด.ช.', 'ด.ญ.', 'พ.ต.อ.', 'พ.ต.ท.', 'พ.ต.ต.', 'ร.ต.อ.', 'ร.ต.ท.', 'ร.ต.ต.', 'จ.ส.ต.', 'ส.ต.อ.', 'ส.ต.ท.', 'ส.ต.ต.'];
+            let name = (fullName || 'N/A').trim();
+            for (const p of prefixes) {
+                if (name.startsWith(p)) { name = name.slice(p.length).trim(); break; }
+            }
+            return name.split(/\s+/).slice(0, 2).join(' ');
+        }
+
+        function renderTodayChart(logs) {
+            const nowBKK = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+            
+            // Calculate Bangkok date strings for the latest 7 days (including today)
+            const past7Days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(nowBKK.getTime() - i * 24 * 60 * 60 * 1000);
+                past7Days.push(d.toISOString().split('T')[0]);
+            }
+
+            const todayLogs = logs.filter(log => {
+                if (log.action_type !== 'check_in' && log.action_type !== 'check_out') return false;
+                const ts = new Date(log.timestamp.replace(' ', 'T').replace(/\+00$/, '+00:00'));
+                const localDate = new Date(ts.getTime() + 7 * 60 * 60 * 1000);
+                const localDateStr = localDate.toISOString().split('T')[0];
+                return past7Days.includes(localDateStr);
+            });
+
+            const supUnitMap = {};
+            todayLogs.forEach(log => {
+                const name = stripPrefix(log.name);
+                if (!supUnitMap[name]) supUnitMap[name] = new Set();
+                supUnitMap[name].add(log.unit_name);
+            });
+
+            const labels = Object.keys(supUnitMap);
+            const canvas = document.getElementById('todayChart');
+
+            if (labels.length === 0) {
+                if (todayChartInstance) { todayChartInstance.destroy(); todayChartInstance = null; }
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            if (todayChartInstance) { todayChartInstance.destroy(); todayChartInstance = null; }
+
+            const maxUnits = Math.max(...labels.map(n => supUnitMap[n].size), 1);
+            const container = canvas.parentElement;
+
+            // Palette: each supervisor gets one base color
+            const palette = [
+                { base: '#f59e0b', glow: 'rgba(245,158,11,0.6)', dim: 'rgba(245,158,11,0.12)' },
+                { base: '#10b981', glow: 'rgba(16,185,129,0.6)', dim: 'rgba(16,185,129,0.12)' },
+                { base: '#3b82f6', glow: 'rgba(59,130,246,0.6)', dim: 'rgba(59,130,246,0.12)' },
+                { base: '#a855f7', glow: 'rgba(168,85,247,0.6)', dim: 'rgba(168,85,247,0.12)' },
+                { base: '#ef4444', glow: 'rgba(239,68,68,0.6)', dim: 'rgba(239,68,68,0.12)' },
+                { base: '#06b6d4', glow: 'rgba(6,182,212,0.6)', dim: 'rgba(6,182,212,0.12)' },
+                { base: '#ec4899', glow: 'rgba(236,72,153,0.6)', dim: 'rgba(236,72,153,0.12)' },
+                { base: '#84cc16', glow: 'rgba(132,204,22,0.6)', dim: 'rgba(132,204,22,0.12)' },
+            ];
+
+            // Fixed pixel block size (equalizer style)
+            const BLOCK_H = 10; // px height of each LED block
+            const BLOCK_GAP = 2; // px gap between blocks (dark separator)
+
+            function draw() {
+                const dpr = window.devicePixelRatio || 1;
+                const W = Math.max(container.offsetWidth, 100);
+                const H = Math.max(container.offsetHeight, 100);
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                ctx.clearRect(0, 0, W, H);
+
+                const padTop = 16, padBottom = 60, padLeft = 28, padRight = 10;
+                const chartW = W - padLeft - padRight;
+                const chartH = H - padTop - padBottom;
+
+                // Dynamic slots to prevent overflow
+                const maxAllowedSlots = Math.floor((chartH + BLOCK_GAP) / (2 + BLOCK_GAP));
+                let unitsPerSlot = 1;
+                if (maxUnits > maxAllowedSlots) {
+                    unitsPerSlot = Math.ceil(maxUnits / maxAllowedSlots);
+                }
+                const TOTAL_SLOTS = Math.max(Math.ceil(maxUnits / unitsPerSlot), 6);
+                
+                const slotH = (chartH - BLOCK_GAP * (TOTAL_SLOTS - 1)) / TOTAL_SLOTS;
+                const bH = Math.max(2, Math.floor(slotH));
+                const baseY = padTop + chartH; // bottom edge
+
+                // Bar layout
+                const barW = Math.max(14, Math.min(52, chartW / (labels.length * 1.7)));
+                const spacing = (chartW - barW * labels.length) / (labels.length + 1);
+
+                // Y-axis slot numbers
+                for (let i = 1; i <= TOTAL_SLOTS; i++) {
+                    if (TOTAL_SLOTS > 10 && i % Math.ceil(TOTAL_SLOTS/5) !== 0 && i !== TOTAL_SLOTS && i !== 1) continue;
+                    const blockTop = baseY - i * (bH + BLOCK_GAP);
+                    const midY = blockTop + bH / 2;
+                    ctx.fillStyle = 'rgba(100,116,139,0.4)';
+                    ctx.font = '8px monospace';
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(i * unitsPerSlot, padLeft - 4, midY);
+                }
+
+                labels.forEach((name, supIdx) => {
+                    const unitCount = supUnitMap[name].size;
+                    const col = palette[supIdx % palette.length];
+                    const x = padLeft + spacing + supIdx * (barW + spacing);
+
+                    const filledSlots = Math.ceil(unitCount / unitsPerSlot);
+                    // Draw all slots (from top = TOTAL_SLOTS down to 1)
+                    for (let slot = 1; slot <= TOTAL_SLOTS; slot++) {
+                        const blockTop = baseY - slot * (bH + BLOCK_GAP);
+                        const isFilled = slot <= filledSlots;
+                        const ratio = slot / TOTAL_SLOTS; // 1 = top, near 0 = bottom
+
+                        // Filled LED block
+                        ctx.beginPath();
+                        ctx.roundRect(x, blockTop, barW, bH, 2);
+
+                        if (isFilled) {
+                            // Gradient brightness: top slots slightly brighter
+                            const alpha = 0.65 + ratio * 0.3;
+                            ctx.fillStyle = col.base + Math.round(alpha * 255).toString(16).padStart(2, '0');
+                            ctx.fill();
+
+                            // Inner highlight (top shimmer)
+                            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                            ctx.fillRect(x + 2, blockTop + 1, barW - 4, Math.max(2, bH * 0.25));
+
+                            // Glow effect for top block
+                            if (slot === filledSlots) {
+                                ctx.shadowColor = col.base;
+                                ctx.shadowBlur = 8;
+                                ctx.beginPath();
+                                ctx.roundRect(x, blockTop, barW, bH, 2);
+                                ctx.fillStyle = col.base + 'AA';
+                                ctx.fill();
+                                ctx.shadowBlur = 0;
+                            }
+                        } else {
+                            // Dim/unlit LED
+                            ctx.fillStyle = col.dim;
+                            ctx.fill();
+                            // Very subtle grid dot
+                            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Count badge above top block
+                    if (unitCount > 0) {
+                        const topBlockY = baseY - filledSlots * (bH + BLOCK_GAP);
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = col.base;
+                        ctx.font = 'bold 10px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(unitCount, x + barW / 2, topBlockY - 3);
+                    }
+
+                    // Name label below bar — diagonal/angled for full first+last name
+                    ctx.shadowBlur = 0;
+                    ctx.save();
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = 'bold 9px Sarabun, sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    const labelX = x + barW / 2;
+                    const labelY = H - padBottom + 8;
+                    ctx.translate(labelX, labelY);
+                    ctx.rotate(-Math.PI / 4); // -45 degrees
+                    ctx.fillText(name, 0, 0);
+                    ctx.restore();
+                });
+
+                // Scanline overlay (subtle horizontal lines across chart for sci-fi effect)
+                ctx.fillStyle = 'rgba(0,0,0,0.06)';
+                for (let y = padTop; y < padTop + chartH; y += 4) {
+                    ctx.fillRect(padLeft, y, chartW, 1);
+                }
+            }
+
+            draw();
+            const ro = new ResizeObserver(() => draw());
+            ro.observe(container);
+            todayChartInstance = {
+                destroy() {
+                    ro.disconnect();
+                    const c = canvas.getContext('2d');
+                    c.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            };
+        }
+
+        function renderWeeklyMeetings(logs) {
+            const nowBKK = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+            const past7Days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(nowBKK.getTime() - i * 24 * 60 * 60 * 1000);
+                past7Days.push(d.toISOString().split('T')[0]);
+            }
+
+            const meetingCounts = {};
+            logs.forEach(log => {
+                if (log.action_type !== 'check_in') return;
+                const ts = new Date(log.timestamp.replace(' ', 'T').replace(/\+00$/, '+00:00'));
+                const localDate = new Date(ts.getTime() + 7 * 60 * 60 * 1000);
+                const localDateStr = localDate.toISOString().split('T')[0];
+                if (past7Days.includes(localDateStr)) {
+                    const name = stripPrefix(log.name);
+                    meetingCounts[name] = (meetingCounts[name] || 0) + 1;
+                }
+            });
+
+            const canvas = document.getElementById('meetingChart');
+            if (!canvas) return;
+
+            // Destroy old chart instance
+            if (meetingChartInstance) {
+                meetingChartInstance.destroy();
+                meetingChartInstance = null;
+            }
+
+            const entries = Object.entries(meetingCounts).sort((a, b) => b[1] - a[1]);
+
+            if (entries.length === 0) {
+                // Show placeholder text on canvas
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.offsetWidth || 200;
+                canvas.height = canvas.parentElement.offsetHeight || 60;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(100,116,139,0.5)';
+                ctx.font = '11px Sarabun, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('ไม่มีข้อมูลในสัปดาห์นี้', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            const labels = entries.map(([name]) => name);
+            const data = entries.map(([, count]) => count);
+
+            // Stock-style line chart
+            meetingChartInstance = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'จำนวนเข้าพบ',
+                        data,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        pointBackgroundColor: data.map((v, i) => i === data.length - 1 ? '#f59e0b' : '#10b981'),
+                        pointBorderColor: '#0f172a',
+                        pointBorderWidth: 2,
+                        pointRadius: data.map((v, i) => i === data.length - 1 ? 5 : 3),
+                        pointHoverRadius: 7,
+                        fill: true,
+                        backgroundColor: (ctx) => {
+                            const chart = ctx.chart;
+                            const { ctx: c2d, chartArea } = chart;
+                            if (!chartArea) return 'rgba(16,185,129,0.08)';
+                            const gradient = c2d.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, 'rgba(16,185,129,0.28)');
+                            gradient.addColorStop(0.6, 'rgba(16,185,129,0.06)');
+                            gradient.addColorStop(1, 'rgba(16,185,129,0.0)');
+                            return gradient;
+                        },
+                        tension: 0.35,
+                        segment: {
+                            borderColor: ctx => {
+                                const i = ctx.p1DataIndex;
+                                if (data[i] > data[i-1]) return '#10b981'; // up = green
+                                if (data[i] < data[i-1]) return '#f87171'; // down = red
+                                return '#94a3b8'; // flat = grey
+                            }
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    animation: { duration: 800, easing: 'easeInOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` เข้าพบ ${ctx.parsed.y} ครั้ง`,
+                                labelColor: ctx => ({
+                                    borderColor: '#10b981',
+                                    backgroundColor: '#10b981',
+                                    borderWidth: 2,
+                                    borderRadius: 4
+                                })
+                            },
+                            backgroundColor: 'rgba(15,23,42,0.97)',
+                            borderColor: 'rgba(16,185,129,0.5)',
+                            borderWidth: 1,
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#10b981',
+                            padding: 10,
+                            displayColors: true,
+                            caretSize: 6,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: 'rgba(226,232,240,0.6)',
+                                font: { size: 8, family: 'Sarabun', weight: 'bold' },
+                                maxRotation: 0
+                            },
+                            grid: { color: 'rgba(255,255,255,0.025)', drawBorder: false },
+                            border: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'rgba(100,116,139,0.6)',
+                                font: { size: 8, family: 'Sarabun' },
+                                stepSize: 1,
+                                maxTicksLimit: 4
+                            },
+                            grid: { color: 'rgba(255,255,255,0.035)', drawBorder: false },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        async function fetchLogs() {
+            try {
+                // ขั้นที่ 1: ไปหามาก่อนว่าใครบ้างที่เป็น Supervisor จากตาราง staff
+                const { data: staffData, error: staffError } = await supabaseClient
+                    .from('staff')
+                    .select('emp_id')
+                    .ilike('level', 'supervisor'); // ค้นหาคำว่า supervisor แบบไม่สนตัวเล็ก/ใหญ่
+
+                if (staffError) throw staffError;
+
+                // จับรหัสพนักงานมารวมกันเป็นกลุ่ม
+                const supIds = staffData.map(s => s.emp_id);
+
+                // ถ้าไม่มี Supervisor ในระบบเลย ก็ให้ตารางว่างไป
+                if (supIds.length === 0) {
+                    allLogs = [];
+                    processGroupedData(allLogs);
+                    renderFilteredTable([]);
+                    return;
+                }
+
+                // ขั้นที่ 2: ดึงประวัติเข้า-ออก เฉพาะคนที่มีรหัสตรงกับกลุ่ม Supervisor
+                let startISO = null;
+                let endISO = null;
+                const startRaw = document.getElementById('startDate').value;
+                const endRaw = document.getElementById('endDate').value;
+
+                if (startRaw && endRaw) {
+                    const parseThaiDate = (raw) => {
+                        const parts = raw.split('/');
+                        let d = parseInt(parts[0]);
+                        let m = parseInt(parts[1]) - 1;
+                        let y = parseInt(parts[2]);
+                        if (y > 2400) y -= 543;
+                        return new Date(y, m, d);
+                    };
+
+                    const startD = parseThaiDate(startRaw);
+                    const endD = parseThaiDate(endRaw);
+
+                    startISO = `${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2, '0')}-${String(startD.getDate()).padStart(2, '0')}T00:00:00+07:00`;
+                    endISO = `${endD.getFullYear()}-${String(endD.getMonth()+1).padStart(2, '0')}-${String(endD.getDate()).padStart(2, '0')}T23:59:59+07:00`;
+                }
+
+                // Query duty_logs for supervisors individually with parallel paginated fetches (up to 3000 rows per supervisor) to bypass server-side row caps
+                const logPromises = [];
+                supIds.forEach((supId) => {
+                    for (let page = 0; page < 3; page++) {
+                        let q = supabaseClient
+                            .from('duty_logs')
+                            .select('name, emp_id, unit_name, gps_location, timestamp, action_type')
+                            .eq('emp_id', supId);
+                        if (startISO) q = q.gte('timestamp', startISO);
+                        if (endISO) q = q.lte('timestamp', endISO);
+                        logPromises.push(
+                            q.order('timestamp', { ascending: false })
+                             .range(page * 1000, (page + 1) * 1000 - 1)
+                             .then(r => {
+                                 if (r.error) throw r.error;
+                                 return r.data || [];
+                             })
+                        );
+                    }
+                });
+
+                const logResults = await Promise.all(logPromises);
+                const combinedLogs = [];
+                logResults.forEach(subLogs => combinedLogs.push(...subLogs));
+
+                // Sort combined logs by timestamp descending (most recent first)
+                allLogs = combinedLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                // ประมวลผลข้อมูลลงตารางและกราฟ
+                processGroupedData(allLogs);
+                renderFilteredTable(Object.values(groupedLogsData));
+                renderTodayChart(allLogs);
+                renderWeeklyMeetings(allLogs);
+
+            } catch (err) {
+                console.error("FetchLogs Error:", err);
+                document.getElementById('logsBody').innerHTML = `<tr><td colspan="10" class="text-center py-10 text-red-500 font-bold">ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Separate grouping logic to make it reusable
+        function processGroupedData(logs) {
+            groupedLogsData = {}; // Reset global
+            let debugCount = 0;
+
+            logs.forEach(log => {
+                if (!log.timestamp) return;
+
+                // Get Date Key directly from string "YYYY-MM-DD"
+                // Handle formats: "2026-05-11 08:45" or "2026-05-11T08:45"
+                const dateKey = log.timestamp.substring(0, 10).replace('T', '');
+                const key = `${log.emp_id}_${log.unit_name}_${dateKey}`;
+
+                if (debugCount < 5) {
+                    console.log("Debug DateKey Sample:", { raw: log.timestamp, dateKey });
+                    debugCount++;
+                }
+
+                const parseTS = (str) => {
+                    if (!str) return null;
+                    return new Date(str.replace(' ', 'T').replace(/\+00$/, '+00:00'));
+                };
+                const ts = parseTS(log.timestamp);
+
+                if (!groupedLogsData[key]) {
+                    groupedLogsData[key] = {
+                        name: log.name,
+                        emp_id: log.emp_id,
+                        unit_name: log.unit_name,
+                        zone: log.zone || '',
+                        check_in_ts: null,
+                        check_out_ts: null,
+                        lat: log.gps_location?.split(',')[0]?.trim() || '',
+                        lng: log.gps_location?.split(',')[1]?.trim() || '',
+                        dateKey
+                    };
+                }
+
+                if (log.action_type === 'check_in') {
+                    if (!groupedLogsData[key].check_in_ts || ts < groupedLogsData[key].check_in_ts) {
+                        groupedLogsData[key].check_in_ts = ts;
+                    }
+                }
+                if (log.action_type === 'check_out') {
+                    if (!groupedLogsData[key].check_out_ts || ts > groupedLogsData[key].check_out_ts) {
+                        groupedLogsData[key].check_out_ts = ts;
+                    }
+                }
+            });
+        }
+
+        function renderTable(logs) {
+            const tbody = document.getElementById('logsBody');
+            let totalMins = 0;
+            let activeSups = new Set();
+            const nowBKK = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+            const todayStr = nowBKK.toISOString().split('T')[0];
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-500">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+
+            // Robust Date Parser (handles "2026-05-11 08:45:31+00")
+            const parseTS = (str) => {
+                if (!str) return null;
+                // Convert "YYYY-MM-DD HH:MM:SS+00" -> "YYYY-MM-DDTHH:MM:SS+00:00"
+                return new Date(str.replace(' ', 'T').replace(/\+00$/, '+00:00'));
+            };
+
+            // Group logs: key = emp_id + unit_name + date (LOCAL date from timestamp)
+            const groupedLogs = {};
+            logs.forEach(log => {
+                const ts = parseTS(log.timestamp);
+                if (!ts) return;
+                // Use local date (Bangkok = UTC+7)
+                const localDate = new Date(ts.getTime() + 7 * 60 * 60 * 1000);
+                const dateKey = localDate.toISOString().split('T')[0];
+                const key = `${log.emp_id}_${log.unit_name}_${dateKey}`;
+
+                if (!groupedLogs[key]) {
+                    groupedLogs[key] = {
+                        name: log.name,
+                        emp_id: log.emp_id,
+                        unit_name: log.unit_name,
+                        check_in_ts: null,
+                        check_out_ts: null,
+                        lat: log.gps_location?.split(',')[0]?.trim() || '',
+                        lng: log.gps_location?.split(',')[1]?.trim() || '',
+                        dateKey
+                    };
+                }
+
+                if (log.action_type === 'check_in') {
+                    // Keep earliest check_in
+                    if (!groupedLogs[key].check_in_ts || ts < groupedLogs[key].check_in_ts) {
+                        groupedLogs[key].check_in_ts = ts;
+                    }
+                }
+                if (log.action_type === 'check_out') {
+                    // Keep latest check_out
+                    if (!groupedLogs[key].check_out_ts || ts > groupedLogs[key].check_out_ts) {
+                        groupedLogs[key].check_out_ts = ts;
+                    }
+                }
+            });
+
+            // Sort by check_in descending
+            const displayLogs = Object.values(groupedLogs).sort((a, b) => {
+                if (!a.check_in_ts) return 1;
+                if (!b.check_in_ts) return -1;
+                return b.check_in_ts - a.check_in_ts;
+            });
+
+            tbody.innerHTML = displayLogs.map((log, index) => {
+                const cin = log.check_in_ts;
+                const cout = log.check_out_ts;
+
+                // Thai Date (local Bangkok time)
+                let dStr = '-';
+                if (cin) {
+                    const localCin = new Date(cin.getTime() + 7 * 60 * 60 * 1000);
+                    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                    dStr = `${localCin.getUTCDate()} ${thaiMonths[localCin.getUTCMonth()]} ${localCin.getUTCFullYear() + 543}`;
+                }
+
+                // Time strings (local Bangkok)
+                const toLocalTime = (d) => {
+                    if (!d) return '-';
+                    const local = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+                    const h = String(local.getUTCHours()).padStart(2, '0');
+                    const m = String(local.getUTCMinutes()).padStart(2, '0');
+                    return `${h}:${m} น.`;
+                };
+
+                // Duration in minutes
+                let mins = 0;
+                let secs = 0;
+                let durationText = '-';
+                let hasDuration = false;
+                if (cin && cout && cout > cin) {
+                    const diffMs = cout - cin;
+                    secs = Math.floor(diffMs / 1000);
+                    mins = Math.floor(diffMs / 60000);
+                    hasDuration = true;
+                    totalMins += mins;
+                    if (mins === 0) {
+                        durationText = `${secs} วินาที`;
+                    } else {
+                        const h = Math.floor(mins / 60);
+                        const m = mins % 60;
+                        durationText = h > 0 ? `${h} ชม. ${m} น.` : `${m} น.`;
+                    }
+                }
+
+                if (log.name && log.dateKey === todayStr) activeSups.add(log.name);
+
+                const statusBadge = cout
+                    ? `<span class="px-2 py-1 rounded-full text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1 justify-center w-fit mx-auto"><i class="fas fa-car-side"></i> กำลังเดินทาง</span>`
+                    : `<span class="px-2 py-1 rounded-full text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse flex items-center gap-1 justify-center w-fit mx-auto"><i class="fas fa-building"></i> อยู่ในหน่วยงาน</span>`;
+
+                const cinISO = cin ? cin.toISOString() : '';
+                const coutISO = cout ? cout.toISOString() : '';
+                const safeUnit = (log.unit_name || '').replace(/"/g, '&quot;');
+                return `
+                    <tr class="hover:bg-white/[0.03] transition-colors border-b border-white/5">
+                        <td class="px-3 py-0.5 text-center text-slate-600 font-mono text-xs">${index + 1}</td>
+                        <td class="px-3 py-0.5 font-bold text-slate-300 text-sm">${dStr}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-amber-500/70 text-xs font-bold">${log.emp_id || '-'}</td>
+                        <td class="px-3 py-0.5 font-black text-amber-500">${log.name || '-'}</td>
+                        <td class="px-3 py-0.5 text-slate-400 text-sm font-semibold">${log.unit_name || '-'}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-emerald-400 font-bold text-sm">${toLocalTime(cin)}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-amber-400 font-bold text-sm">${toLocalTime(cout)}</td>
+                        <td class="px-3 py-0.5 text-center">
+                            <span class="font-black text-sm ${hasDuration ? 'text-amber-500' : 'text-slate-600'}">${durationText}</span>
+                        </td>
+                        <td class="px-3 py-0.5 text-center">${statusBadge}</td>
+                        <td class="px-3 py-0.5 text-center no-print">
+                            ${log.lat && log.lng ? '<a href="https://www.google.com/maps?q=' + log.lat + ',' + log.lng + '" target="_blank" class="text-blue-500 hover:text-blue-400 transition-colors"><i class="fas fa-map-marker-alt text-lg"></i></a>' : '-'}
+                        </td>
+                        <td class="px-1.5 py-0.5 text-center no-print" style="width:72px;">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                                <button class="btn-edit" style="width:22px;height:22px;border-radius:6px;background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="แก้ไข" onmouseover="this.style.background='rgba(245,158,11,0.85)';this.style.color='#000'" onmouseout="this.style.background='rgba(245,158,11,0.12)';this.style.color='#f59e0b'"
+                                    data-empid="${log.emp_id}" data-unit="${safeUnit}" data-datekey="${log.dateKey}" data-cin="${cinISO}" data-cout="${coutISO}">
+                                    <i class="fas fa-pen" style="font-size:8px;"></i>
+                                </button>
+                                <button class="btn-delete" style="width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="ลบ" onmouseover="this.style.background='rgba(239,68,68,0.85)';this.style.color='#fff'" onmouseout="this.style.background='rgba(239,68,68,0.1)';this.style.color='#f87171'"
+                                    data-empid="${log.emp_id}" data-unit="${safeUnit}" data-datekey="${log.dateKey}">
+                                    <i class="fas fa-trash" style="font-size:8px;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Update Stats
+            const elSups = document.getElementById('activeSupsContainer');
+            const elCount = document.getElementById('activeCount');
+            if (elSups) {
+                if (activeSups.size === 0) {
+                    elSups.innerHTML = '<div class="text-xs text-slate-500 italic mt-1 w-full text-center">ไม่มีสายตรวจที่ Active</div>';
+                } else {
+                    elSups.innerHTML = Array.from(activeSups).map((name, idx) => {
+                        const short = stripPrefix(name);
+                        return `<div title="${name}" class="active-sup-item"><span class="active-sup-led"></span>${short}</div>`;
+                    }).join('');
+                }
+            }
+            if (elCount) {
+                elCount.innerText = activeSups.size;
+            }
+
+            // Add Unique Units Count as Sticky Footer
+            if (displayLogs.length > 0) {
+                const uniqueUnits = new Set(displayLogs.map(l => l.unit_name)).size;
+                const existingFooter = tbody.parentElement.querySelector('tfoot');
+                if (existingFooter) existingFooter.remove();
+
+                const footerHtml = `
+                    <tfoot style="background:#0f172a;border-top:2px solid rgba(16,185,129,0.2);">
+                        <tr class="font-black">
+                            <td colspan="4" class="px-6 py-1 text-right text-emerald-500 uppercase tracking-widest text-[10px]">จำนวนหน่วยงานที่เข้าตรวจรวม:</td>
+                            <td class="px-6 py-1 text-left">
+                                <span class="text-lg text-emerald-400 font-black">${uniqueUnits} <span class="text-xs font-normal text-slate-500">หน่วยงาน</span></span>
+                            </td>
+                            <td colspan="5" class="no-print"></td>
+                        </tr>
+                    </tfoot>
+                `;
+                tbody.insertAdjacentHTML('afterend', footerHtml);
+            }
+        }
+
+        async function applyFilters() {
+            // Re-query database dynamically for the selected date range to support 1-year historical search!
+            await fetchLogs();
+
+            const nameSearch = document.getElementById('searchName').value.trim().toLowerCase();
+            const unitSearch = document.getElementById('searchUnit').value.trim().toLowerCase();
+
+            const displayLogs = Object.values(groupedLogsData);
+
+            const filtered = displayLogs.filter(log => {
+                const matchesNameOrId = !nameSearch ||
+                    (log.name && log.name.toLowerCase().includes(nameSearch)) ||
+                    (log.emp_id && String(log.emp_id).toLowerCase().includes(nameSearch));
+
+                const matchesUnitOrZone = !unitSearch ||
+                    (log.unit_name && log.unit_name.toLowerCase().includes(unitSearch)) ||
+                    (log.zone && log.zone.toLowerCase().includes(unitSearch));
+
+                return matchesNameOrId && matchesUnitOrZone;
+            });
+
+            renderFilteredTable(filtered);
+        }
+
+        async function resetFilters() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchUnit').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            await fetchLogs();
+        }
+
+        // Helper to render filtered data
+        function renderFilteredTable(filteredData, resetPage = true) {
+            if (resetPage) {
+                currentPage = 1;
+            }
+            currentFilteredData = filteredData || [];
+            const tbody = document.getElementById('logsBody');
+            let activeSups = new Set();
+            const nowBKK = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+            const todayStr = nowBKK.toISOString().split('T')[0];
+            
+            if (!currentFilteredData || currentFilteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-10 text-slate-500 italic">ไม่พบข้อมูลตามเงื่อนไขที่ระบุ</td></tr>';
+                const existingFooter = tbody.parentElement.querySelector('tfoot');
+                if (existingFooter) existingFooter.remove();
+                
+                // Reset stats when empty
+                const elSups = document.getElementById('activeSupsContainer');
+                const elCount = document.getElementById('activeCount');
+                if (elSups) elSups.innerHTML = '<div class="text-xs text-slate-500 italic mt-1 w-full text-center">ไม่มีสายตรวจที่ Active</div>';
+                if (elCount) elCount.innerText = "0";
+                
+                // Reset pagination info
+                document.getElementById('pageInfo').innerText = 'แสดงรายการ 0-0 จาก 0 รายการ';
+                document.getElementById('prevPageBtn').disabled = true;
+                document.getElementById('nextPageBtn').disabled = true;
+                const pContainer = document.getElementById('pageNumbersContainer');
+                if (pContainer) pContainer.innerHTML = '';
+                return;
+            }
+
+            // Sort by check_in descending
+            const sortedData = currentFilteredData.sort((a, b) => (b.check_in_ts || 0) - (a.check_in_ts || 0));
+
+            // Calculate pagination slices
+            const totalItems = sortedData.length;
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            
+            // Clamp currentPage
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, totalItems);
+            const paginatedData = sortedData.slice(startIndex, endIndex);
+
+            // Update page controls
+            document.getElementById('pageInfo').innerText = `แสดงรายการ ${startIndex + 1}-${endIndex} จาก ${totalItems} รายการ`;
+            document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage === totalPages || totalPages === 0);
+            renderPageNumbers(totalPages);
+
+            tbody.innerHTML = paginatedData.map((log, sliceIndex) => {
+                const index = startIndex + sliceIndex; // Keep absolute index
+                const cin = log.check_in_ts;
+                const cout = log.check_out_ts;
+
+                let dStr = '-';
+                if (cin) {
+                    const localCin = new Date(cin.getTime() + 7 * 60 * 60 * 1000);
+                    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                    dStr = `${localCin.getUTCDate()} ${thaiMonths[localCin.getUTCMonth()]} ${localCin.getUTCFullYear() + 543}`;
+                }
+
+                const toLocalTime = (d) => {
+                    if (!d) return '-';
+                    const local = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+                    return `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')} น.`;
+                };
+
+                let durationText = '-';
+                let hasDuration = false;
+                if (cin && cout && cout > cin) {
+                    const diffMs = cout - cin;
+                    const mins = Math.floor(diffMs / 60000);
+                    const secs = Math.floor(diffMs / 1000);
+                    hasDuration = true;
+                    durationText = mins === 0 ? `${secs} วินาที` : (Math.floor(mins / 60) > 0 ? `${Math.floor(mins / 60)} ชม. ${mins % 60} น.` : `${mins % 60} น.`);
+                }
+
+                const statusBadge = cout
+                    ? `<span class="px-2 py-1 rounded-full text-[9px] bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1 justify-center w-fit mx-auto"><i class="fas fa-car-side"></i> กำลังเดินทาง</span>`
+                    : `<span class="px-2 py-1 rounded-full text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse flex items-center gap-1 justify-center w-fit mx-auto"><i class="fas fa-building"></i> อยู่ในหน่วยงาน</span>`;
+
+                const cinISO = cin ? cin.toISOString() : '';
+                const coutISO = cout ? cout.toISOString() : '';
+                const safeUnit = (log.unit_name || '').replace(/"/g, '&quot;');
+                return `
+                    <tr class="hover:bg-white/[0.03] transition-colors border-b border-white/5">
+                        <td class="px-3 py-0.5 text-center text-slate-600 font-mono text-xs">${index + 1}</td>
+                        <td class="px-3 py-0.5 font-bold text-slate-300 text-sm">${dStr}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-amber-500/70 text-xs font-bold">${log.emp_id || '-'}</td>
+                        <td class="px-3 py-0.5 font-black text-amber-500">${log.name || '-'}</td>
+                        <td class="px-3 py-0.5 text-slate-400 text-sm font-semibold">${log.unit_name || '-'}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-emerald-400 font-bold text-sm">${toLocalTime(cin)}</td>
+                        <td class="px-3 py-0.5 text-center font-mono text-amber-400 font-bold text-sm">${toLocalTime(cout)}</td>
+                        <td class="px-3 py-0.5 text-center"><span class="font-black text-sm ${hasDuration ? 'text-amber-500' : 'text-slate-600'}">${durationText}</span></td>
+                        <td class="px-3 py-0.5 text-center">${statusBadge}</td>
+                        <td class="px-3 py-0.5 text-center no-print">
+                            ${log.lat && log.lng ? '<a href="https://www.google.com/maps?q=' + log.lat + ',' + log.lng + '" target="_blank" class="text-blue-500 hover:text-blue-400 transition-colors"><i class="fas fa-map-marker-alt text-lg"></i></a>' : '-'}
+                        </td>
+                        <td class="px-1.5 py-0.5 text-center no-print" style="width:72px;">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                                <button class="btn-edit" style="width:22px;height:22px;border-radius:6px;background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="แก้ไข" onmouseover="this.style.background='rgba(245,158,11,0.85)';this.style.color='#000'" onmouseout="this.style.background='rgba(245,158,11,0.12)';this.style.color='#f59e0b'"
+                                    data-empid="${log.emp_id}" data-unit="${safeUnit}" data-datekey="${log.dateKey}" data-cin="${cinISO}" data-cout="${coutISO}">
+                                    <i class="fas fa-pen" style="font-size:8px;"></i>
+                                </button>
+                                <button class="btn-delete" style="width:22px;height:22px;border-radius:6px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="ลบ" onmouseover="this.style.background='rgba(239,68,68,0.85)';this.style.color='#fff'" onmouseout="this.style.background='rgba(239,68,68,0.1)';this.style.color='#f87171'"
+                                    data-empid="${log.emp_id}" data-unit="${safeUnit}" data-datekey="${log.dateKey}">
+                                    <i class="fas fa-trash" style="font-size:8px;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Calculate active list based on all sortedData, not just current slice
+            sortedData.forEach(log => {
+                if (log.name && log.dateKey === todayStr) activeSups.add(log.name);
+            });
+
+            // Update Stats
+            const elSups = document.getElementById('activeSupsContainer');
+            const elCount = document.getElementById('activeCount');
+            if (elSups) {
+                if (activeSups.size === 0) {
+                    elSups.innerHTML = '<div class="text-xs text-slate-500 italic mt-1 w-full text-center">ไม่มีสายตรวจที่ Active</div>';
+                } else {
+                    elSups.innerHTML = Array.from(activeSups).map((name, idx) => {
+                        const short = stripPrefix(name);
+                        return `<div title="${name}" class="active-sup-item"><span class="active-sup-led"></span>${short}</div>`;
+                    }).join('');
+                }
+            }
+            if (elCount) {
+                elCount.innerText = activeSups.size;
+            }
+
+            const uniqueUnits = new Set(sortedData.map(l => l.unit_name)).size;
+            const existingFooter = tbody.parentElement.querySelector('tfoot');
+            if (existingFooter) existingFooter.remove();
+            const footerHtml = `
+                <tfoot style="background:#0f172a;border-top:2px solid rgba(16,185,129,0.2);">
+                    <tr class="font-black">
+                        <td colspan="4" class="px-6 py-1 text-right text-emerald-500 uppercase tracking-widest text-[10px]">จำนวนหน่วยงานที่เข้าตรวจรวม:</td>
+                        <td class="px-6 py-1 text-left">
+                            <span class="text-lg text-emerald-400 font-black">${uniqueUnits} <span class="text-xs font-normal text-slate-500">หน่วยงาน</span></span>
+                        </td>
+                        <td colspan="5" class="no-print"></td>
+                    </tr>
+                </tfoot>
+            `;
+            tbody.insertAdjacentHTML('afterend', footerHtml);
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderFilteredTable(currentFilteredData, false);
+        }
+
+        function renderPageNumbers(totalPages) {
+            const container = document.getElementById('pageNumbersContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+
+            const maxVisible = 5;
+            let pages = [];
+
+            if (totalPages <= maxVisible) {
+                for (let i = 1; i <= totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(1);
+                
+                let start = Math.max(2, currentPage - 1);
+                let end = Math.min(totalPages - 1, currentPage + 1);
+
+                if (currentPage <= 3) {
+                    end = 4;
+                } else if (currentPage >= totalPages - 2) {
+                    start = totalPages - 3;
+                }
+
+                if (start > 2) {
+                    pages.push('...');
+                }
+
+                for (let i = start; i <= end; i++) {
+                    pages.push(i);
+                }
+
+                if (end < totalPages - 1) {
+                    pages.push('...');
+                }
+
+                pages.push(totalPages);
+            }
+
+            pages.forEach(p => {
+                if (p === '...') {
+                    const el = document.createElement('span');
+                    el.className = 'px-2 text-slate-500 font-mono text-xs select-none';
+                    el.innerText = '...';
+                    container.appendChild(el);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = `w-7 h-7 rounded-lg text-xs font-black transition-all duration-200 ${
+                        p === currentPage 
+                            ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20' 
+                            : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
+                    }`;
+                    btn.innerText = p;
+                    btn.onclick = () => {
+                        currentPage = p;
+                        renderFilteredTable(currentFilteredData, false);
+                    };
+                    container.appendChild(btn);
+                }
+            });
+        }
+
+        function exportToExcel() {
+            if (!currentFilteredData || currentFilteredData.length === 0) {
+                alert('ไม่มีข้อมูลสำหรับส่งออก!');
+                return;
+            }
+
+            // Sort data like the table representation
+            const sortedData = [...currentFilteredData].sort((a, b) => (b.check_in_ts || 0) - (a.check_in_ts || 0));
+
+            const excelRows = sortedData.map((log, index) => {
+                const cin = log.check_in_ts;
+                const cout = log.check_out_ts;
+
+                let dateStr = '-';
+                if (cin) {
+                    const localCin = new Date(cin.getTime() + 7 * 60 * 60 * 1000);
+                    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                    dateStr = `${localCin.getUTCDate()} ${thaiMonths[localCin.getUTCMonth()]} ${localCin.getUTCFullYear() + 543}`;
+                }
+
+                const toLocalTimeStr = (d) => {
+                    if (!d) return '-';
+                    const local = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+                    return `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')} น.`;
+                };
+
+                let durationText = '-';
+                if (cin && cout && cout > cin) {
+                    const diffMs = cout - cin;
+                    const mins = Math.floor(diffMs / 60000);
+                    const secs = Math.floor(diffMs / 1000);
+                    durationText = mins === 0 ? `${secs} วินาที` : (Math.floor(mins / 60) > 0 ? `${Math.floor(mins / 60)} ชม. ${mins % 60} น.` : `${mins % 60} น.`);
+                }
+
+                const statusText = cout ? 'กำลังเดินทาง' : 'อยู่ในหน่วยงาน';
+
+                return {
+                    'ลำดับที่': index + 1,
+                    'วันที่': dateStr,
+                    'รหัสสายตรวจ': log.emp_id || '-',
+                    'ชื่อสายตรวจ': log.name || '-',
+                    'หน่วยงานที่ตรวจ': log.unit_name || '-',
+                    'เวลาเข้า': toLocalTimeStr(cin),
+                    'เวลาออก': toLocalTimeStr(cout),
+                    'ระยะเวลาตรวจ': durationText,
+                    'สถานะการทำงาน': statusText
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'รายงานเวลาปฏิบัติงาน');
+
+            // Autofit columns
+            const maxLens = {};
+            excelRows.forEach(row => {
+                Object.keys(row).forEach(key => {
+                    const val = String(row[key] || '');
+                    maxLens[key] = Math.max(maxLens[key] || 10, val.length + 4);
+                });
+            });
+            worksheet['!cols'] = Object.keys(maxLens).map(key => ({ wch: maxLens[key] }));
+
+            // Save file
+            const dateRangeStr = document.getElementById('startDate').value.replace(/\//g, '-') + '_ถึง_' + document.getElementById('endDate').value.replace(/\//g, '-');
+            XLSX.writeFile(workbook, `รายงานเวลาปฏิบัติงาน_สายตรวจ_${dateRangeStr}.xlsx`);
+        }
+
+        const mainScroll = document.getElementById('mainTableScroll');
+
+        // ===== Event Delegation for Edit/Delete buttons =====
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+            if (editBtn) {
+                const d = editBtn.dataset;
+                openEditModal(d.empid, d.unit, d.datekey, d.cin, d.cout);
+            }
+            if (deleteBtn) {
+                const d = deleteBtn.dataset;
+                deleteLog(d.empid, d.unit, d.datekey);
+            }
+        });
+
+
+        // --- Calendar Setup via Flatpickr ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const fpConfig = {
+                locale: "th",
+                dateFormat: "d/m/Y",
+                allowInput: true,
+                formatDate: (date, format, locale) => {
+                    const d = String(date.getDate()).padStart(2, '0');
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const y = date.getFullYear() + 543;
+                    return `${d}/${m}/${y}`;
+                },
+                parseDate: (datestr, format) => {
+                    const parts = datestr.split('/');
+                    if(parts.length === 3) {
+                        return new Date(parts[2] - 543, parts[1] - 1, parts[0]);
+                    }
+                    return null;
+                },
+                onChange: function() {
+                    fetchLogs();
+                }
+            };
+            
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = now;
+
+            flatpickr("#startDate", { ...fpConfig, defaultDate: firstDay });
+            flatpickr("#endDate", { ...fpConfig, defaultDate: lastDay });
+            
+            fetchLogs(); // Call on initial load after setting default dates
+        });
+
+        // ==================== EDIT / DELETE LOG FUNCTIONS ====================
+
+        // State สำหรับ Modal แก้ไข
+        let editState = { empId: '', unitName: '', dateKey: '', cinISO: '', coutISO: '' };
+
+        function openEditModal(empId, unitName, dateKey, cinISO, coutISO) {
+            editState = { empId, unitName, dateKey, cinISO, coutISO };
+
+            // แปลง ISO -> local datetime-local value (YYYY-MM-DDTHH:MM)
+            const toLocalInput = (iso) => {
+                if (!iso) return '';
+                const d = new Date(iso);
+                const local = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+                const pad = n => String(n).padStart(2,'0');
+                return `${local.getUTCFullYear()}-${pad(local.getUTCMonth()+1)}-${pad(local.getUTCDate())}T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
+            };
+
+            document.getElementById('editEmpInfo').innerText = `${empId} | ${unitName} | ${dateKey}`;
+            document.getElementById('editCheckIn').value = toLocalInput(cinISO);
+            document.getElementById('editCheckOut').value = toLocalInput(coutISO);
+            document.getElementById('editLogModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editLogModal').classList.add('hidden');
+        }
+
+        async function saveEditLog() {
+            const { empId, unitName, dateKey } = editState;
+            const cinVal = document.getElementById('editCheckIn').value;
+            const coutVal = document.getElementById('editCheckOut').value;
+
+            if (!cinVal) return alert('กรุณากรอกเวลาเข้าก่อนนะครับบอส!');
+
+            // แปลง local time -> UTC ISO
+            const toUTC = (localStr) => {
+                if (!localStr) return null;
+                const d = new Date(localStr); // treated as local
+                return new Date(d.getTime() - 7 * 60 * 60 * 1000).toISOString();
+            };
+
+            const newCinUTC  = toUTC(cinVal);
+            const newCoutUTC = coutVal ? toUTC(coutVal) : null;
+
+            try {
+                // อัปเดต check_in: หาแถวที่ตรงกับ emp_id + unit_name + dateKey + action_type='check_in'
+                if (newCinUTC) {
+                    const { error: e1 } = await supabaseClient
+                        .from('duty_logs')
+                        .update({ timestamp: newCinUTC })
+                        .eq('emp_id', empId)
+                        .eq('unit_name', unitName)
+                        .eq('action_type', 'check_in')
+                        .gte('timestamp', dateKey + 'T00:00:00+00:00')
+                        .lte('timestamp', dateKey + 'T23:59:59+00:00');
+                    if (e1) throw e1;
+                }
+
+                // อัปเดต check_out
+                if (newCoutUTC) {
+                    const { error: e2 } = await supabaseClient
+                        .from('duty_logs')
+                        .update({ timestamp: newCoutUTC })
+                        .eq('emp_id', empId)
+                        .eq('unit_name', unitName)
+                        .eq('action_type', 'check_out')
+                        .gte('timestamp', dateKey + 'T00:00:00+00:00')
+                        .lte('timestamp', dateKey + 'T23:59:59+00:00');
+                    if (e2) throw e2;
+                }
+
+                alert('✅ แก้ไขเวลาเรียบร้อยครับบอส!');
+                closeEditModal();
+                fetchLogs();
+            } catch (err) {
+                console.error('SaveEditLog Error:', err);
+                alert('ไม่สามารถแก้ไขได้: ' + err.message);
+            }
+        }
+
+        async function deleteLog(empId, unitName, dateKey) {
+            if (!confirm(`⚠️ ยืนยันลบรายการ check-in/out ของ ${empId} ที่หน่วย "${unitName}" วันที่ ${dateKey} ใช่ไหมครับบอส?`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('duty_logs')
+                    .delete()
+                    .eq('emp_id', empId)
+                    .eq('unit_name', unitName)
+                    .gte('timestamp', dateKey + 'T00:00:00+00:00')
+                    .lte('timestamp', dateKey + 'T23:59:59+00:00');
+
+                if (error) throw error;
+
+                alert('🗑️ ลบรายการเรียบร้อยครับบอส!');
+                fetchLogs();
+            } catch (err) {
+                console.error('DeleteLog Error:', err);
+                alert('ไม่สามารถลบได้: ' + err.message);
+            }
+        }
+
+    </script>
+
+    <!-- ========== EDIT LOG MODAL ========== -->
+    <div id="editLogModal" class="fixed inset-0 z-[9999] flex items-center justify-center hidden no-print">
+        <!-- Backdrop -->
+        <div onclick="closeEditModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <!-- Card -->
+        <div class="relative z-10 w-full max-w-sm mx-4 bg-[#0f172a] rounded-2xl border border-amber-500/20 shadow-2xl shadow-amber-500/10 p-5">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center">
+                        <i class="fas fa-edit text-black text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-black text-sm uppercase tracking-tight">แก้ไขเวลาสายตรวจ</h3>
+                        <p class="text-slate-500 text-[9px] font-bold uppercase tracking-widest">Duty Log Editor</p>
+                    </div>
+                </div>
+                <button onclick="closeEditModal()" class="text-slate-500 hover:text-white transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <!-- Info -->
+            <div class="mb-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+                <p id="editEmpInfo" class="text-amber-400 font-black text-[10px] font-mono tracking-wider">-</p>
+            </div>
+            <!-- Fields -->
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="text-[9px] font-black text-emerald-400 uppercase tracking-widest ml-1 block mb-1">
+                        <i class="fas fa-sign-in-alt mr-1"></i>เวลาเข้า (Check In)
+                    </label>
+                    <input type="datetime-local" id="editCheckIn"
+                        class="w-full bg-black/40 border border-emerald-500/30 rounded-lg py-2 px-3 text-white text-sm focus:border-emerald-500 transition-all outline-none font-mono">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-amber-400 uppercase tracking-widest ml-1 block mb-1">
+                        <i class="fas fa-sign-out-alt mr-1"></i>เวลาออก (Check Out)
+                    </label>
+                    <input type="datetime-local" id="editCheckOut"
+                        class="w-full bg-black/40 border border-amber-500/30 rounded-lg py-2 px-3 text-white text-sm focus:border-amber-500 transition-all outline-none font-mono">
+                    <p class="text-slate-600 text-[8px] mt-1 ml-1">* ถ้ายังไม่ check out สามารถเว้นว่างได้</p>
+                </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex gap-2">
+                <button onclick="closeEditModal()" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-black border border-white/10 transition-all">
+                    ยกเลิก
+                </button>
+                <button onclick="saveEditLog()" class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-black transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1">
+                    <i class="fas fa-save"></i> บันทึก
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

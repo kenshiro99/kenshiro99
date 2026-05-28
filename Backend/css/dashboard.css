@@ -2,7 +2,7 @@
             --bg: #020617;
             --card: #0f172a;
             --accent: #f59e0b;
-            --sidebar-w: 260px;
+            --sidebar-w: 200px;
         }
 
         body {
@@ -38,7 +38,7 @@
         }
 
         .menu-header {
-            padding: 12px 20px 4px;
+            padding: 12px 16px 4px;
             font-size: 10px;
             font-weight: 800;
             color: #475569;
@@ -47,16 +47,16 @@
         }
 
         .menu-item {
-            padding: 8px 16px;
-            margin: 2px 12px;
+            padding: 8px 12px;
+            margin: 2px 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: #94a3b8;
             border-radius: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 14px;
+            font-size: 13px;
             border: 1px solid transparent;
         }
 
@@ -101,8 +101,7 @@
         table td { padding: 4px 12px !important; font-size: 11px !important; }
 
         .data-card:hover {
-            border-color: rgba(245, 158, 11, 0.2);
-            transform: translateY(-2px);
+            border-color: rgba(245, 158, 11, 0.3);
         }
 
         /* --- Custom Scrollbar --- */
@@ -227,6 +226,18 @@
             background: var(--accent);
         }
 
+        /* --- Responsive UI Scaling --- */
+        @media (max-width: 1440px) {
+            html {
+                font-size: 14px;
+            }
+        }
+        @media (max-width: 1024px) {
+            html {
+                font-size: 12px;
+            }
+        }
+
         /* --- Mobile --- */
         @media (max-width: 768px) {
             .sidebar {
@@ -259,7 +270,7 @@
         }
 
         .submenu-item {
-            padding: 8px 16px 8px 48px;
+            padding: 8px 12px 8px 30px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -284,3 +295,97 @@
         .menu-item.has-submenu.open .arrow {
             transform: rotate(180deg);
         }
+
+        /* --- AI ASSISTANT STYLES --- */
+        .ai-assistant-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 9999;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .ai-assistant-container.dragging {
+            transition: none;
+            cursor: move;
+        }
+        .ai-assistant-container.left-side {
+            align-items: flex-start;
+        }
+        .ai-bubble {
+            position: relative;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 13px;
+            max-width: 220px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(245, 158, 11, 0.1);
+            animation: fadeInRight 0.5s ease-out, bubble-glow-amber 4s infinite;
+            color: white;
+            text-align: right;
+            transition: all 0.3s ease;
+        }
+        .ai-assistant-container.left-side .ai-bubble {
+            text-align: left;
+            animation: fadeInLeft 0.5s ease-out, bubble-glow-amber 4s infinite;
+        }
+        .ai-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 30px;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(30, 41, 59, 0.9);
+            transition: all 0.3s ease;
+        }
+        .ai-assistant-container.left-side .ai-bubble::after {
+            right: auto;
+            left: 30px;
+        }
+        @keyframes bubble-glow-amber {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.3); }
+            50% { border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(245, 158, 11, 0.2); }
+        }
+        .ai-mascot-wrapper {
+            width: 100px;
+            height: 100px;
+            cursor: grab;
+            transition: transform 0.3s ease;
+            animation: float-ai 4s ease-in-out infinite;
+        }
+        .ai-mascot-wrapper:active {
+            cursor: grabbing;
+        }
+        .ai-video-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            mix-blend-mode: normal;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+            pointer-events: none;
+        }
+        @keyframes float-ai {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.5); }

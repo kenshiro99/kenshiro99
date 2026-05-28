@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Approval Report - NEXTGEN</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="config.js"></script>
+    <script src="js/sidebar.js"></script>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #020617;
+            color: white;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.8);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Sticky Header -->
+    <div
+        class="md:hidden fixed top-0 left-0 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 z-40 flex justify-between items-center p-2 px-4 shadow-2xl no-print">
+        <div class="flex items-center gap-3">
+            <img id="mobileUserImg" src="../img/logo-1.jpg"
+                onerror="this.src='https://ui-avatars.com/api/?name=NEXTGEN&background=f59e0b&color=fff'"
+                class="w-12 h-12 rounded-full border-2 border-amber-500 shadow-lg shadow-amber-500/20">
+            <div class="flex flex-col">
+                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXTGEN</span>
+                <span class="text-[8px] text-amber-500 font-bold tracking-[2px] uppercase">System Center</span>
+            </div>
+        </div>
+        <button onclick="toggleSidebar()"
+            class="text-white text-xl w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] border border-slate-800">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden no-print"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar-container" class="sidebar flex flex-col no-print"></aside>
+
+    <main class="main-content p-2 md:p-4 pb-20">
+        <div class="w-full max-w-[98%] 2xl:max-w-[99%] mx-auto px-1 md:px-2">
+            <!-- Header (Screen) -->
+            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 border-b border-white/10 pb-3 mt-14 md:mt-0 no-print">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <i class="fas fa-gas-pump text-lg text-black"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 class="text-xl font-black uppercase tracking-tighter text-white">ใบอนุมัติจ่ายค่าน้ำมันรถ<span
+                                class="text-amber-500">ฝ่ายปฏิบัติการ</span></h1>
+                        <p class="text-slate-500 text-[9px] font-bold uppercase tracking-widest">
+                            Fuel Report</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                    <button onclick="prepareAndPrint()"
+                        class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-black transition-all border border-white/10 flex items-center gap-1">
+                        <i class="fas fa-print"></i> พิมพ์ใบอนุมัติ
+                    </button>
+                    <button onclick="fetchFuelData()"
+                        class="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-black hover:bg-amber-400 transition-all flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> สร้างรายงาน
+                    </button>
+                </div>
+            </header>
+
+            <!-- Filters -->
+            <div class="glass-card px-4 py-3 rounded-2xl mb-4 no-print border border-white/5 shadow-xl relative z-50">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="space-y-1 w-full md:w-56">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">
+                            ระบุวันที่เริ่มต้น (พ.ศ.) 
+                        </label>
+                        <div class="relative cursor-pointer">
+                            <input type="text" id="startDate" readonly placeholder="คลิกเพื่อเลือกวัน..."
+                                class="w-full bg-black/40 border border-white/10 rounded-lg py-2 pl-3 pr-10 text-white text-sm focus:border-amber-500 transition-all outline-none cursor-pointer tracking-widest font-mono">
+                            <i class="far fa-calendar-alt absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1 w-full md:w-56">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest ml-1">
+                            ระบุวันสิ้นสุด (พ.ศ.) 
+                        </label>
+                        <div class="relative cursor-pointer">
+                            <input type="text" id="endDate" readonly placeholder="คลิกเพื่อเลือกวัน..."
+                                class="w-full bg-black/40 border border-white/10 rounded-lg py-2 pl-3 pr-10 text-white text-sm focus:border-amber-500 transition-all outline-none cursor-pointer tracking-widest font-mono">
+                            <i class="far fa-calendar-alt absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs text-slate-400"><i class="fas fa-info-circle text-amber-500"></i> ระบบจะคำนวณและประมวลผลข้อมูลให้อัตโนมัติทันทีเมื่อมีการเปลี่ยนแปลงช่วงวันที่</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print Header -->
+            <div class="hidden print:block mb-6">
+                <div class="flex justify-between items-center border-b-2 border-slate-800 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-700">
+                            <i class="fas fa-gas-pump text-base text-amber-500"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-black tracking-tight text-slate-900 uppercase">NEXTGEN SECURITY</h1>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">OPERATIONAL INTELLIGENCE & MANAGEMENT PORTAL</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-800 rounded text-[9px] font-bold tracking-widest uppercase shadow-sm">
+                            เอกสารอนุมัติภายใน
+                        </span>
+                        <p class="text-[8px] text-slate-400 mt-0.5 font-mono">GEN-FUEL-REP-01</p>
+                    </div>
+                </div>
+                <div class="text-center mt-4">
+                    <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">ใบอนุมัติจ่ายค่าน้ำมันรถฝ่ายปฏิบัติการ</h2>
+                    <p id="printDateRange" class="text-xs font-semibold text-slate-600 mt-0.5">ประจำวันที่ ...................................................</p>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="glass-card rounded-[32px] border border-white/5 shadow-2xl flex flex-col relative overflow-hidden print:border-none print:shadow-none print:rounded-none print:overflow-visible">
+                <div class="overflow-auto custom-scrollbar print:overflow-visible print:max-h-none" style="max-height: calc(100vh - 280px); min-height: 350px; padding: 0 4px 4px 4px;">
+                    <table class="w-full text-left border-collapse min-w-[1200px] print:min-w-0">
+                        <thead class="bg-[#0f172a] text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-widest border-b border-white/10 sticky top-0 z-20 shadow-xl print:text-black">
+                            <tr id="tableHeaderRow">
+                                <!-- Generated by JS -->
+                            </tr>
+                        </thead>
+                        <tbody id="reportDataBody" class="divide-y divide-white/5 text-sm print:divide-gray-300">
+                            <tr>
+                                <td colspan="15" class="px-6 py-10 text-center text-slate-500 italic">
+                                    <i class="fas fa-calendar-alt text-3xl mb-3 block text-slate-700"></i>
+                                    กรุณาระบุวันที่เริ่มต้นและสิ้นสุด หรือคลิกปุ่ม "สร้างรายงาน" ด้านบน
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot id="reportFooter" class="bg-[#0f172a] text-amber-400 font-black border-t border-white/10 print:bg-gray-100 print:text-black hidden">
+                            <!-- Generated by JS -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Print Signatures (Visible only on print) -->
+            <div class="hidden print:grid print-signatures text-black text-xs">
+                <div class="sig-box">
+                    <p class="font-black text-slate-800">ผู้จัดทำรายงาน</p>
+                    <div class="sig-line"></div>
+                    <p class="text-slate-600 font-medium">( ลงชื่อ ............................................................ )</p>
+                    <p class="text-[9px] text-slate-400 mt-1">ตำแหน่ง: ผู้จัดการฝ่ายปฏิบัติการ</p>
+                    <p class="text-[8px] text-slate-400 mt-0.5">วันที่ _______/_______/_______</p>
+                </div>
+                <div class="sig-box">
+                    <p class="font-black text-slate-800">ผู้ตรวจสอบ</p>
+                    <div class="sig-line"></div>
+                    <p class="text-slate-600 font-medium">( ลงชื่อ ............................................................ )</p>
+                    <p class="text-[9px] text-slate-400 mt-1">ตำแหน่ง: ผู้อำนวยการฝ่ายการเงิน</p>
+                    <p class="text-[8px] text-slate-400 mt-0.5">วันที่ _______/_______/_______</p>
+                </div>
+                <div class="sig-box">
+                    <p class="font-black text-slate-800">ผู้อนุมัติ</p>
+                    <div class="sig-line"></div>
+                    <p class="text-slate-600 font-medium">( ลงชื่อ ............................................................ )</p>
+                    <p class="text-[9px] text-slate-400 mt-1">ตำแหน่ง: กรรมการผู้จัดการใหญ่</p>
+                    <p class="text-[8px] text-slate-400 mt-0.5">วันที่ _______/_______/_______</p>
+                </div>
+            </div>
+
+            </div>
+            
+            <!-- Remove old fixed print footer as we use JS generated pages -->
+
+
+            <!-- Back Button -->
+            <div class="mt-6 flex justify-center no-print">
+                <button onclick="window.location.href='SupervisorTravelReport.html'"
+                    class="px-6 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white font-black transition-all border border-white/10 flex items-center gap-2 shadow-lg">
+                    <i class="fas fa-arrow-left"></i> กลับหน้า รายงานการเดินทาง
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Custom BE Calendar Picker -->
+    <div id="beDatePicker" class="hidden absolute z-50 w-72 bg-slate-950/95 border border-amber-500/30 rounded-2xl p-4 shadow-2xl backdrop-blur-md select-none no-print">
+        <div class="flex justify-between items-center mb-3">
+            <button id="calPrevBtn" type="button" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-amber-500 hover:text-black text-white text-xs transition-all flex items-center justify-center">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="flex gap-1 items-center">
+                <select id="calMonthSelect" class="bg-black/80 border border-white/10 rounded px-1.5 py-0.5 text-xs text-amber-500 font-bold focus:outline-none cursor-pointer">
+                    <option value="0">ม.ค.</option>
+                    <option value="1">ก.พ.</option>
+                    <option value="2">มี.ค.</option>
+                    <option value="3">เม.ย.</option>
+                    <option value="4">พ.ค.</option>
+                    <option value="5">มิ.ย.</option>
+                    <option value="6">ก.ค.</option>
+                    <option value="7">ส.ค.</option>
+                    <option value="8">ก.ย.</option>
+                    <option value="9">ต.ค.</option>
+                    <option value="10">พ.ย.</option>
+                    <option value="11">ธ.ค.</option>
+                </select>
+                <select id="calYearSelect" class="bg-black/80 border border-white/10 rounded px-1.5 py-0.5 text-xs text-amber-500 font-bold focus:outline-none cursor-pointer">
+                    <!-- Years rendered dynamically -->
+                </select>
+            </div>
+            <button id="calNextBtn" type="button" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-amber-500 hover:text-black text-white text-xs transition-all flex items-center justify-center">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2">
+            <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
+        </div>
+        <div id="calDaysGrid" class="grid grid-cols-7 gap-1">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+
+    <script>
+        // --- REAL-TIME FUEL RATES ENGINE ---
+        window.fuelRates = { gasoline: 5.0, diesel: 4.5, motorcycle: 3.0, road_multiplier: 1.35 };
+
+        async function loadFuelRates() {
+            const local = localStorage.getItem('NEXTGEN_fuel_rates');
+            if (local) {
+                try {
+                    window.fuelRates = JSON.parse(local);
+                } catch (e) {}
+            }
+
+            if (window.supabaseClient) {
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('fuel_settings')
+                        .select('key, value');
+                    
+                    if (!error && data && data.length > 0) {
+                        const rates = {};
+                        data.forEach(item => {
+                            rates[item.key] = parseFloat(item.value);
+                        });
+                        if (rates.gasoline || rates.diesel || rates.motorcycle || rates.road_multiplier) {
+                            window.fuelRates = {
+                                gasoline: rates.gasoline || window.fuelRates.gasoline,
+                                diesel: rates.diesel || window.fuelRates.diesel,
+                                motorcycle: rates.motorcycle || window.fuelRates.motorcycle,
+                                road_multiplier: rates.road_multiplier || window.fuelRates.road_multiplier
+                            };
+                            localStorage.setItem('NEXTGEN_fuel_rates', JSON.stringify(window.fuelRates));
+                        }
+                    }
+                } catch (err) {
+                    console.log("Supabase fuel load failed in SupervisorFuelReport:", err);
+                }
+            }
+        }
+
+        // --- CUSTOM THAI BE DATEPICKER ENGINE ---
+        let calState = {
+            currentMonth: 0, // 0-11
+            currentYear: 2569, // BE Year
+            activeInputId: null
+        };
+
+        function initCustomDatePicker() {
+            const picker = document.getElementById('beDatePicker');
+            const monthSelect = document.getElementById('calMonthSelect');
+            const yearSelect = document.getElementById('calYearSelect');
+            const prevBtn = document.getElementById('calPrevBtn');
+            const nextBtn = document.getElementById('calNextBtn');
+
+            // Populate Year Select (2560 to 2585)
+            let yearHtml = '';
+            for(let y = 2560; y <= 2585; y++) {
+                yearHtml += `<option value="${y}">${y}</option>`;
+            }
+            yearSelect.innerHTML = yearHtml;
+
+            // Input triggers
+            ['startDate', 'endDate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openCalendar(id);
+                });
+            });
+
+            // Change handlers
+            monthSelect.addEventListener('change', () => {
+                calState.currentMonth = parseInt(monthSelect.value);
+                renderCalendarDays();
+            });
+
+            yearSelect.addEventListener('change', () => {
+                calState.currentYear = parseInt(yearSelect.value);
+                renderCalendarDays();
+            });
+
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                calState.currentMonth--;
+                if (calState.currentMonth < 0) {
+                    calState.currentMonth = 11;
+                    calState.currentYear--;
+                }
+                updateDropdownsAndRender();
+            });
+
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                calState.currentMonth++;
+                if (calState.currentMonth > 11) {
+                    calState.currentMonth = 0;
+                    calState.currentYear++;
+                }
+                updateDropdownsAndRender();
+            });
+
+            // Close on click outside
+            document.addEventListener('click', (e) => {
+                if (!picker.classList.contains('hidden') && !picker.contains(e.target) && e.target.id !== 'startDate' && e.target.id !== 'endDate') {
+                    picker.classList.add('hidden');
+                }
+            });
+        }
+
+        function openCalendar(inputId) {
+            calState.activeInputId = inputId;
+            const input = document.getElementById(inputId);
+            const picker = document.getElementById('beDatePicker');
+
+            const rect = input.getBoundingClientRect();
+            picker.style.top = `${rect.bottom + window.scrollY + 6}px`;
+            picker.style.left = `${rect.left + window.scrollX}px`;
+
+            const parts = input.value.split('/');
+            if(parts.length === 3) {
+                const d = parseInt(parts[0]);
+                const m = parseInt(parts[1]) - 1;
+                const y = parseInt(parts[2]);
+                if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+                    calState.currentMonth = m;
+                    calState.currentYear = y;
+                }
+            } else {
+                const today = new Date();
+                calState.currentMonth = today.getMonth();
+                calState.currentYear = today.getFullYear() + 543;
+            }
+
+            picker.classList.remove('hidden');
+            updateDropdownsAndRender();
+        }
+
+        function updateDropdownsAndRender() {
+            document.getElementById('calMonthSelect').value = calState.currentMonth;
+            document.getElementById('calYearSelect').value = calState.currentYear;
+            renderCalendarDays();
+        }
+
+        function renderCalendarDays() {
+            const grid = document.getElementById('calDaysGrid');
+            grid.innerHTML = '';
+
+            const ceYear = calState.currentYear - 543;
+            const month = calState.currentMonth;
+
+            const firstDayOfMonth = new Date(ceYear, month, 1).getDay();
+            const daysInMonth = new Date(ceYear, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(ceYear, month, 0).getDate();
+
+            let activeDay = -1;
+            const currentVal = document.getElementById(calState.activeInputId).value;
+            const parts = currentVal.split('/');
+            if(parts.length === 3) {
+                const d = parseInt(parts[0]);
+                const m = parseInt(parts[1]) - 1;
+                const y = parseInt(parts[2]);
+                if (m === month && y === calState.currentYear) {
+                    activeDay = d;
+                }
+            }
+
+            let html = '';
+
+            for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                const d = daysInPrevMonth - i;
+                html += `<div class="p-1 text-slate-700 text-center text-xs font-mono select-none pointer-events-none">${d}</div>`;
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isActive = (d === activeDay);
+                const activeClasses = isActive 
+                    ? 'bg-amber-500 text-black font-extrabold shadow-lg shadow-amber-500/20 rounded border border-amber-400' 
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white rounded cursor-pointer';
+
+                html += `
+                    <div onclick="selectCalDate(${d})" 
+                         class="p-1 text-center text-xs font-mono transition-all flex items-center justify-center h-7 w-7 mx-auto ${activeClasses}">
+                        ${d}
+                    </div>
+                `;
+            }
+
+            const totalCells = firstDayOfMonth + daysInMonth;
+            const nextDays = 42 - totalCells;
+            for (let d = 1; d <= nextDays; d++) {
+                html += `<div class="p-1 text-slate-700 text-center text-xs font-mono select-none pointer-events-none">${d}</div>`;
+            }
+
+            grid.innerHTML = html;
+        }
+
+        function getDaysCount(start, end) {
+            const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            return Math.max(1, Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1);
+        }
+
+        function getBangkokDateStr(date) {
+            if (!date) return '';
+            const utc = date.getTime();
+            const bangkokTime = new Date(utc + (7 * 60 * 60 * 1000));
+            const y = bangkokTime.getUTCFullYear();
+            const m = String(bangkokTime.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(bangkokTime.getUTCDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+
+
+        function selectCalDate(day) {
+            const formattedDay = String(day).padStart(2, '0');
+            const formattedMonth = String(calState.currentMonth + 1).padStart(2, '0');
+            const input = document.getElementById(calState.activeInputId);
+            
+            input.value = `${formattedDay}/${formattedMonth}/${calState.currentYear}`;
+            document.getElementById('beDatePicker').classList.add('hidden');
+            
+            if (calState.activeInputId === 'startDate') {
+                const parts = input.value.split('/');
+                const dateObj = new Date(parseInt(parts[2]) - 543, parseInt(parts[1]) - 1, parseInt(parts[0]));
+                
+                const endVal = document.getElementById('endDate').value;
+                const endParts = endVal.split('/');
+                let days = 1;
+                if(endParts.length === 3) {
+                    const endDateObj = new Date(parseInt(endParts[2]) - 543, parseInt(endParts[1]) - 1, parseInt(endParts[0]));
+                    days = getDaysCount(dateObj, endDateObj);
+                }
+                initTableHeader(dateObj, days);
+            } else if (calState.activeInputId === 'endDate') {
+                const startVal = document.getElementById('startDate').value;
+                const startParts = startVal.split('/');
+                if(startParts.length === 3) {
+                    const startDateObj = new Date(parseInt(startParts[2]) - 543, parseInt(startParts[1]) - 1, parseInt(startParts[0]));
+                    const parts = input.value.split('/');
+                    const endDateObj = new Date(parseInt(parts[2]) - 543, parseInt(parts[1]) - 1, parseInt(parts[0]));
+                    const days = getDaysCount(startDateObj, endDateObj);
+                    initTableHeader(startDateObj, days);
+                }
+            }
+            
+            // Auto-fetch data when date is changed
+            fetchFuelData();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const today = new Date();
+            const d = String(today.getDate()).padStart(2, '0');
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const y = today.getFullYear() + 543;
+            
+            document.getElementById('startDate').value = `${d}/${m}/${y}`;
+            document.getElementById('endDate').value = `${d}/${m}/${y}`;
+            
+            // Initialize Custom Date Picker
+            initCustomDatePicker();
+            
+            initTableHeader(new Date(today.getFullYear(), today.getMonth(), today.getDate()), 1);
+            
+            // Load fuel rates dynamically first
+            await loadFuelRates();
+
+            // Auto-fetch data on initial page load
+            fetchFuelData();
+        });
+
+        // Custom JS Print
+        function prepareAndPrint() {
+            if (!window.lastReportData) {
+                alert('กรุณากดปุ่มประมวลผลข้อมูลก่อนทำการพิมพ์');
+                return;
+            }
+
+            const printData = {
+                ...window.lastReportData,
+                remarks: window.fuelRemarks || {}
+            };
+
+            localStorage.setItem('NEXTGEN_print_fuel_data', JSON.stringify(printData));
+            window.open('PrintFuelReport.html', '_blank');
+        }
+
+        // Haversine Distance Calculation (Same as Travel Report)
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const mult = (window.fuelRates && window.fuelRates.road_multiplier) ? parseFloat(window.fuelRates.road_multiplier) : 1.35;
+            return R * c * mult;
+        }
+
+        const parseTS = (str) => {
+            if (!str) return null;
+            return new Date(str.replace(' ', 'T').replace(/\+00$/, '+00:00'));
+        };
+
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+        function initTableHeader(startDateObj, daysCount) {
+            const tr = document.getElementById('tableHeaderRow');
+            let html = `
+                <th class="px-3 py-1 text-center w-12 bg-[#0f172a] print:bg-gray-100">ลำดับที่</th>
+                <th class="px-3 py-1 text-center w-24 bg-[#0f172a] print:bg-gray-100">รหัสพนักงาน</th>
+                <th class="px-3 py-1 w-40 bg-[#0f172a] print:bg-gray-100">ชื่อ-นามสกุล</th>
+                <th class="px-3 py-1 w-28 bg-[#0f172a] print:bg-gray-100">ตำแหน่ง</th>
+            `;
+            
+            for (let i = 0; i < daysCount; i++) {
+                const d = new Date(startDateObj);
+                d.setDate(d.getDate() + i);
+                const ds = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${String(d.getFullYear() + 543).slice(2)}`;
+                html += `<th class="px-2 py-1 text-center w-20 bg-[#0f172a] text-emerald-400 print:text-black print:bg-gray-100">${ds}</th>`;
+            }
+
+            html += `
+                <th class="px-3 py-1 text-right w-24 bg-[#0f172a] text-emerald-400 print:text-black print:bg-gray-100">รวมน้ำมัน</th>
+                <th class="px-3 py-1 text-center w-28 bg-[#0f172a] text-rose-400 print:text-black print:bg-gray-100 no-print">หักเบิกสำรอง</th>
+                <th class="px-3 py-1 text-right w-28 bg-[#0f172a] text-amber-500 print:text-black print:bg-gray-100">ยอดจ่ายสุทธิ</th>
+                <th class="px-3 py-1 text-center w-16 bg-[#0f172a] print:bg-gray-100 no-print">ประวัติ</th>
+                <th class="px-3 py-1 text-center w-28 bg-[#0f172a] print:bg-gray-100">ยานพาหนะ</th>
+                <th class="px-3 py-1 w-32 bg-[#0f172a] print:bg-gray-100">หมายเหตุ</th>
+            `;
+            tr.innerHTML = html;
+
+            // Update Print Header
+            const endD = new Date(startDateObj);
+            endD.setDate(endD.getDate() + daysCount - 1);
+            
+            const strStart = `${startDateObj.getDate()} ${thaiMonths[startDateObj.getMonth()]}`;
+            const strEnd = `${endD.getDate()} ${thaiMonths[endD.getMonth()]} ${endD.getFullYear() + 543}`;
+            document.getElementById('printDateRange').innerText = `ประจำวันที่ ${strStart} ถึง ${strEnd} (รวม ${daysCount} วัน)`;
+        }
+
+        async function fetchFuelData() {
+            const startRaw = document.getElementById('startDate').value;
+            const endRaw = document.getElementById('endDate').value;
+            if (startRaw.length !== 10 || endRaw.length !== 10) {
+                alert("กรุณาระบุวันที่เริ่มต้นและสิ้นสุดให้ถูกต้อง (วว/ดด/ปปปป)");
+                return;
+            }
+
+            const parseThaiDate = (raw) => {
+                const parts = raw.split('/');
+                let d = parseInt(parts[0]);
+                let m = parseInt(parts[1]) - 1;
+                let y = parseInt(parts[2]);
+                if (y > 2400) y -= 543;
+                return new Date(y, m, d);
+            };
+
+            const startDateObj = parseThaiDate(startRaw);
+            const endDateObj = parseThaiDate(endRaw);
+
+            if (endDateObj < startDateObj) {
+                alert("วันสิ้นสุดต้องมากกว่าหรือเท่ากับวันเริ่มต้น");
+                return;
+            }
+
+            const daysCount = getDaysCount(startDateObj, endDateObj);
+            
+            if (daysCount > 31) {
+                alert("เพื่อประสิทธิภาพที่ดี ไม่ควรดูข้อมูลเกิน 31 วันในครั้งเดียว");
+                return;
+            }
+
+            initTableHeader(startDateObj, daysCount);
+
+            document.getElementById('reportDataBody').innerHTML = `
+                <tr><td colspan="${4 + daysCount + 3}" class="px-6 py-10 text-center text-amber-500 font-bold italic">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังดึงข้อมูล...
+                </td></tr>
+            `;
+
+            try {
+                // 1. Get Supervisors
+                const { data: staffData, error: staffError } = await supabaseClient
+                    .from('staff')
+                    .select('*')
+                    .ilike('level', 'supervisor');
+
+                if (staffError) throw staffError;
+
+                const staffMap = {};
+                staffData.forEach(s => {
+                    let rawRate = 5; // Default for cars
+                    if (s.vehicle_rate !== undefined && s.vehicle_rate !== null) {
+                        rawRate = parseFloat(s.vehicle_rate);
+                    }
+                    
+                    let rate = rawRate;
+                    let vName = '';
+                    
+                    if (rawRate === 3.0) {
+                        rate = parseFloat(window.fuelRates.motorcycle);
+                        vName = `จักรยานยนต์ (${rate.toFixed(1)})`;
+                    } else if (rawRate === 4.5) {
+                        rate = parseFloat(window.fuelRates.diesel);
+                        vName = `รถกระบะดีเซล (${rate.toFixed(1)})`;
+                    } else if (rawRate === 5.0) {
+                        rate = parseFloat(window.fuelRates.gasoline);
+                        vName = `รถยนต์ (เบนซิน) (${rate.toFixed(1)})`;
+                    } else {
+                        vName = `รถแต่ง/ระบุเอง (${rate.toFixed(1)})`;
+                    }
+
+                    staffMap[s.emp_id] = {
+                        name: s.name || s.firstname || '-',
+                        position: s.role || '-',
+                        vehicle: vName,
+                        rate: rate
+                    };
+                });
+                const supIds = Object.keys(staffMap);
+
+                if (supIds.length === 0) {
+                    renderEmpty(daysCount); return;
+                }
+
+                // Build expected Thailand BE date strings (YYYY-MM-DD) for each day in range in Asia/Bangkok
+                const dateStrings = [];
+                for (let i = 0; i < daysCount; i++) {
+                    const tempD = new Date(startDateObj);
+                    tempD.setDate(tempD.getDate() + i);
+                    dateStrings.push(getBangkokDateStr(tempD));
+                }
+
+                // Query database in optimized queries for each supervisor for the entire date range
+                const startStr = `${dateStrings[0]}T00:00:00+07:00`;
+                const endStr = `${dateStrings[dateStrings.length - 1]}T23:59:59+07:00`;
+
+                const logPromises = supIds.map(async (supId) => {
+                    const { data, error } = await supabaseClient
+                        .from('duty_logs')
+                        .select('*')
+                        .eq('emp_id', supId)
+                        .gte('timestamp', startStr)
+                        .lte('timestamp', endStr)
+                        .order('timestamp', { ascending: true })
+                        .limit(3000); // 3000 per supervisor is extremely safe
+
+                    if (error) throw error;
+                    return data || [];
+                });
+
+                const logResults = await Promise.all(logPromises);
+                const logs = [];
+                logResults.forEach(subLogs => logs.push(...subLogs));
+
+                // Sort logs by timestamp ascending
+                logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                const activeTrips = {};
+                const dailySums = {}; 
+                
+                supIds.forEach(id => {
+                    dailySums[id] = {};
+                    for(let i=0; i<daysCount; i++) dailySums[id][i] = 0;
+                });
+
+                logs.forEach(log => {
+                    if (!log.timestamp) return;
+                    const empId = log.emp_id;
+
+                    if (log.action_type === 'check_out') {
+                        activeTrips[empId] = log;
+                    } else if (log.action_type === 'check_in') {
+                        const lastCheckout = activeTrips[empId];
+                        if (lastCheckout) {
+                            const leaveTs = parseTS(lastCheckout.timestamp);
+                            const arriveTs = parseTS(log.timestamp);
+
+                            if (leaveTs && arriveTs) {
+                                const diffHours = (arriveTs - leaveTs) / (1000 * 60 * 60);
+                                if (diffHours >= 0 && diffHours < 12 && lastCheckout.unit_name !== log.unit_name) {
+                                    let distance = 0;
+                                    const fromLoc = lastCheckout.gps_location?.split(',');
+                                    const toLoc = log.gps_location?.split(',');
+                                    if (fromLoc?.length >= 2 && toLoc?.length >= 2) {
+                                        distance = getDistanceFromLatLonInKm(
+                                            parseFloat(fromLoc[0]), parseFloat(fromLoc[1]),
+                                            parseFloat(toLoc[0]), parseFloat(toLoc[1])
+                                        );
+                                    }
+                                    
+                                    const cost = distance * staffMap[empId].rate;
+                                    
+                                    // Match by exact Sweden-format local Thailand date string
+                                    const arriveDateStr = arriveTs.toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' });
+                                    const dayIndex = dateStrings.indexOf(arriveDateStr);
+                                    
+                                    if (dayIndex !== -1) {
+                                        dailySums[empId][dayIndex] += cost;
+                                    }
+                                }
+                            }
+                            delete activeTrips[empId];
+                        }
+                    }
+                });
+
+                // Fetch advances / deductions for this date range in parallel
+                let advancesMap = {};
+                if (window.supabaseClient) {
+                    try {
+                        const startISO = getBangkokDateStr(startDateObj);
+                        const endISO = getBangkokDateStr(endDateObj);
+                        const { data: advData, error: advError } = await supabaseClient
+                            .from('fuel_advances')
+                            .select('*')
+                            .lte('start_date', endISO)
+                            .gte('end_date', startISO);
+                            
+                        if (!advError && advData) {
+                            advData.forEach(a => {
+                                let formattedRemarks = a.remarks || '';
+                                if (a.created_at) {
+                                    const cDate = new Date(a.created_at);
+                                    const dStr = `${cDate.getDate()}/${cDate.getMonth()+1}/${cDate.getFullYear()+543}`;
+                                    if (formattedRemarks) {
+                                        formattedRemarks = `${formattedRemarks} (วันที่เบิก: ${dStr})`;
+                                    } else {
+                                        formattedRemarks = `วันที่เบิก: ${dStr}`;
+                                    }
+                                }
+                                
+                                if (!advancesMap[a.emp_id]) {
+                                    advancesMap[a.emp_id] = { amount: 0, remarksList: [] };
+                                }
+                                advancesMap[a.emp_id].amount += (parseFloat(a.amount) || 0);
+                                if (formattedRemarks) {
+                                    advancesMap[a.emp_id].remarksList.push(formattedRemarks);
+                                }
+                            });
+                            
+                            for (let emp in advancesMap) {
+                                advancesMap[emp].remarks = advancesMap[emp].remarksList.join(' | ');
+                            }
+                        }
+                    } catch(err) {
+                        console.warn("Error fetching advances:", err);
+                    }
+                }
+
+                renderReport(supIds, staffMap, dailySums, daysCount, advancesMap);
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                document.getElementById('reportDataBody').innerHTML = `<tr><td colspan="${4 + daysCount + 3}" class="text-center py-10 text-red-500 font-bold">Error: ${err.message}</td></tr>`;
+            }
+        }
+
+        function renderEmpty(daysCount) {
+            document.getElementById('reportDataBody').innerHTML = `<tr><td colspan="${4 + daysCount + 3}" class="text-center py-10 text-slate-500">ไม่พบข้อมูลพนักงาน</td></tr>`;
+            document.getElementById('reportFooter').classList.add('hidden');
+        }
+
+        window.fuelRemarks = window.fuelRemarks || {};
+        window.fuelDeductions = window.fuelDeductions || {};
+
+        function renderReport(supIds, staffMap, dailySums, daysCount, advancesMap = {}) {
+            let html = '';
+            let totalColSums = {};
+            for(let i=0; i<daysCount; i++) totalColSums[i] = 0;
+            let grandTotal = 0;
+            let grandDeductions = 0;
+            let grandNet = 0;
+            let index = 1;
+
+            supIds.forEach(id => {
+                const sums = dailySums[id];
+                let rowTotal = 0;
+                for(let i=0; i<daysCount; i++) rowTotal += sums[i];
+                
+                if (rowTotal > 0 || true) { 
+                    // Prefill from advancesMap if loaded, else use local cache/empty
+                    let dbAmount = 0;
+                    let dbRemarks = '';
+                    if (advancesMap[id]) {
+                        dbAmount = advancesMap[id].amount;
+                        dbRemarks = advancesMap[id].remarks;
+                    }
+
+                    if (window.fuelDeductions[id] === undefined) {
+                        window.fuelDeductions[id] = dbAmount;
+                    }
+                    if (window.fuelRemarks[id] === undefined || window.fuelRemarks[id] === '') {
+                        window.fuelRemarks[id] = dbRemarks;
+                    }
+
+                    const deduction = window.fuelDeductions[id] || 0;
+                    const netTotal = Math.max(0, rowTotal - deduction);
+                    const savedRem = window.fuelRemarks[id] || '';
+
+                    html += `<tr class="hover:bg-white/[0.03] transition-colors print:border-b print:border-gray-300" id="row-${id}">
+                        <td class="px-3 py-1.5 text-center text-slate-500 font-mono text-xs">${index++}</td>
+                        <td class="px-3 py-1.5 text-center font-mono font-bold text-amber-500/80 print:text-black">${id}</td>
+                        <td class="px-3 py-1.5 font-bold text-white print:text-black">${staffMap[id].name}</td>
+                        <td class="px-3 py-1.5 text-xs text-slate-400 print:text-gray-700">${staffMap[id].position}</td>
+                    `;
+
+                    for (let i = 0; i < daysCount; i++) {
+                        const val = sums[i];
+                        totalColSums[i] += val;
+                        html += `<td class="px-2 py-1.5 text-center font-mono ${val > 0 ? 'text-emerald-400' : 'text-slate-600'} print:text-black">${val > 0 ? val.toFixed(2) : '-'}</td>`;
+                    }
+
+                    grandTotal += rowTotal;
+                    grandDeductions += deduction;
+                    grandNet += netTotal;
+
+                    html += `
+                        <td class="px-3 py-1.5 text-right font-mono font-black text-emerald-400 print:text-black">${rowTotal > 0 ? rowTotal.toFixed(2) : '-'}</td>
+                        <td class="px-3 py-1.5 text-center no-print">
+                            <div class="flex items-center gap-1 justify-center">
+                                <input type="number" step="1" min="0" placeholder="0" value="${deduction || ''}"
+                                    oninput="updateRowDeduction('${id}', ${rowTotal}, this.value)"
+                                    class="w-20 bg-black/40 border border-white/10 focus:border-rose-500 rounded text-center text-xs text-rose-400 py-1 font-bold outline-none transition-all">
+                                <button onclick="saveRowDeduction('${id}')" 
+                                    class="w-6 h-6 rounded bg-rose-500/10 hover:bg-[#b91c1c] hover:text-white text-rose-400 text-[10px] font-bold border border-rose-500/20 flex items-center justify-center transition-all" title="บันทึกยอดหัก">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-3 py-1.5 text-right font-mono font-black text-amber-500 print:text-black" id="net-${id}">${netTotal > 0 ? netTotal.toFixed(2) : '-'}</td>
+                        <td class="px-3 py-1.5 text-center no-print">
+                            <button onclick="viewDeductionHistory('${id}')"
+                                class="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500 hover:text-white text-blue-400 text-xs border border-blue-500/20 flex items-center justify-center mx-auto transition-all" title="ดูประวัติการเบิก">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </td>
+                        <td class="px-3 py-1.5 text-center text-xs text-slate-400 print:text-black">${staffMap[id].vehicle}</td>
+                        <td class="px-2 py-1.5 text-xs text-slate-500">
+                            <input type="text" placeholder="ระบุหมายเหตุ..." value="${savedRem}"
+                                oninput="window.fuelRemarks['${id}'] = this.value"
+                                class="w-full bg-transparent border-b border-white/5 focus:border-amber-500/50 outline-none text-xs text-slate-300 px-1 py-0.5 transition-all print:text-black print:border-none print:placeholder-transparent placeholder-slate-700">
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            document.getElementById('reportDataBody').innerHTML = html;
+
+            const tfoot = document.getElementById('reportFooter');
+            let fHtml = `
+                <tr>
+                    <td colspan="4" class="px-4 py-1 text-right font-black">ยอดรวมค่าน้ำมันทั้งหมด</td>
+            `;
+            for(let i=0; i<daysCount; i++) {
+                fHtml += `<td class="px-2 py-1 text-center font-mono font-bold print:text-black">${totalColSums[i] > 0 ? totalColSums[i].toFixed(2) : '-'}</td>`;
+            }
+            fHtml += `
+                    <td class="px-3 py-1 text-right font-mono font-black text-emerald-400 print:text-black">${grandTotal > 0 ? grandTotal.toFixed(2) : '-'}</td>
+                    <td class="px-3 py-1 text-center font-mono font-black text-rose-400 print:text-black no-print">${grandDeductions > 0 ? grandDeductions.toFixed(2) : '-'}</td>
+                    <td class="px-3 py-1 text-right font-mono font-black text-lg text-amber-500 print:text-black">${grandNet > 0 ? grandNet.toFixed(2) : '-'}</td>
+                    <td colspan="3" class="bg-[#0f172a] print:bg-white"></td>
+                </tr>
+            `;
+            tfoot.innerHTML = fHtml;
+            tfoot.classList.remove('hidden');
+
+            // Store globally for print file
+            window.lastReportData = {
+                supIds,
+                staffMap,
+                dailySums,
+                daysCount,
+                fuelDeductions: window.fuelDeductions,
+                fuelRemarks: window.fuelRemarks,
+                startDateStr: document.getElementById('startDate').value,
+                endDateStr: document.getElementById('endDate').value,
+                printDateRangeText: document.getElementById('printDateRange').innerText
+            };
+        }
+
+        window.updateRowDeduction = function(id, total, val) {
+            const parsed = parseFloat(val) || 0;
+            window.fuelDeductions[id] = parsed;
+            const net = Math.max(0, total - parsed);
+            const netEl = document.getElementById(`net-${id}`);
+            if (netEl) {
+                netEl.innerText = net > 0 ? net.toFixed(2) : '-';
+            }
+            recalculateFooterTotals();
+        };
+
+        window.recalculateFooterTotals = function() {
+            if (!window.lastReportData) return;
+            const supIds = window.lastReportData.supIds;
+            const dailySums = window.lastReportData.dailySums;
+            const daysCount = window.lastReportData.daysCount;
+
+            let grandTotal = 0;
+            let grandDeductions = 0;
+            let grandNet = 0;
+
+            supIds.forEach(id => {
+                const sums = dailySums[id];
+                let rowTotal = 0;
+                for(let i=0; i<daysCount; i++) rowTotal += sums[i];
+                const deduction = window.fuelDeductions[id] || 0;
+                const netTotal = Math.max(0, rowTotal - deduction);
+
+                grandTotal += rowTotal;
+                grandDeductions += deduction;
+                grandNet += netTotal;
+            });
+
+            const tfoot = document.getElementById('reportFooter');
+            if (tfoot) {
+                let totalColSums = {};
+                for(let i=0; i<daysCount; i++) totalColSums[i] = 0;
+                supIds.forEach(id => {
+                    const sums = dailySums[id];
+                    for(let i=0; i<daysCount; i++) totalColSums[i] += sums[i];
+                });
+
+                let fHtml = `
+                    <tr>
+                        <td colspan="4" class="px-4 py-1 text-right font-black">ยอดรวมค่าน้ำมันทั้งหมด</td>
+                `;
+                for(let i=0; i<daysCount; i++) {
+                    fHtml += `<td class="px-2 py-1 text-center font-mono font-bold print:text-black">${totalColSums[i] > 0 ? totalColSums[i].toFixed(2) : '-'}</td>`;
+                }
+                fHtml += `
+                        <td class="px-3 py-1 text-right font-mono font-black text-emerald-400 print:text-black">${grandTotal > 0 ? grandTotal.toFixed(2) : '-'}</td>
+                        <td class="px-3 py-1 text-center font-mono font-black text-rose-400 print:text-black no-print">${grandDeductions > 0 ? grandDeductions.toFixed(2) : '-'}</td>
+                        <td class="px-3 py-1 text-right font-mono font-black text-lg text-amber-500 print:text-black">${grandNet > 0 ? grandNet.toFixed(2) : '-'}</td>
+                        <td colspan="3" class="bg-[#0f172a] print:bg-white"></td>
+                    </tr>
+                `;
+                tfoot.innerHTML = fHtml;
+            }
+
+            window.lastReportData.fuelDeductions = window.fuelDeductions;
+            window.lastReportData.fuelRemarks = window.fuelRemarks;
+        };
+
+        window.saveRowDeduction = async function(id) {
+            const amount = window.fuelDeductions[id] || 0;
+            const remarks = window.fuelRemarks[id] || '';
+            const startRaw = document.getElementById('startDate').value;
+            const endRaw = document.getElementById('endDate').value;
+
+            if (!startRaw || !endRaw) {
+                alert("ข้อมูลวันที่ไม่ครบถ้วน"); return;
+            }
+
+            const parseThaiDate = (raw) => {
+                const parts = raw.split('/');
+                let d = parseInt(parts[0]);
+                let m = parseInt(parts[1]) - 1;
+                let y = parseInt(parts[2]);
+                if (y > 2400) y -= 543;
+                return new Date(y, m, d);
+            };
+
+            const startD = parseThaiDate(startRaw);
+            const endD = parseThaiDate(endRaw);
+            const startISO = getBangkokDateStr(startD);
+            const endISO = getBangkokDateStr(endD);
+
+            const currentUser = JSON.parse(localStorage.getItem('nextgen_user'));
+            const creator = currentUser ? `${currentUser.name} (${currentUser.emp_id})` : 'Admin';
+
+            if (window.supabaseClient) {
+                try {
+                    const payload = {
+                        emp_id: id,
+                        start_date: startISO,
+                        end_date: endISO,
+                        amount: amount,
+                        remarks: remarks,
+                        created_by: creator
+                    };
+
+                    const { error } = await supabaseClient
+                        .from('fuel_advances')
+                        .upsert(payload, { onConflict: 'emp_id,start_date,end_date' });
+
+                    if (error) throw error;
+                    alert("💾 บันทึกยอดหักเงินเบิกสะสมสำเร็จเรียบร้อยครับบอส!");
+                } catch(err) {
+                    console.error("Deduction Save Error:", err);
+                    alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+                }
+            } else {
+                alert("เชื่อมต่อฐานข้อมูลล้มเหลว (บันทึกเฉพาะหน่วยความจำชั่วคราว)");
+            }
+        };
+
+        window.closeAdvanceAuditModal = function() {
+            const modal = document.getElementById('advanceAuditModal');
+            if (modal) {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        };
+
+        window.viewDeductionHistory = async function(empId) {
+            const employeeName = (window.lastReportData && window.lastReportData.staffMap[empId]) 
+                ? window.lastReportData.staffMap[empId].name 
+                : empId;
+
+            document.getElementById('auditEmployeeInfo').innerText = `[${empId}] ${employeeName}`;
+            
+            const tbody = document.getElementById('auditHistoryBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-3 py-6 text-center text-amber-500 italic">
+                        <i class="fas fa-spinner fa-spin mr-1"></i> กำลังโหลดประวัติ...
+                    </td>
+                </tr>
+            `;
+
+            const modal = document.getElementById('advanceAuditModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            if (window.supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('fuel_advances')
+                        .select('*')
+                        .eq('emp_id', empId)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="px-3 py-6 text-center text-slate-500 italic">
+                                    ไม่พบประวัติการหักเบิกสำรองย้อนหลังของสายตรวจท่านนี้
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(item => {
+                        const startD = new Date(item.start_date);
+                        const endD = new Date(item.end_date);
+                        const rangeStr = `${startD.getDate()}/${startD.getMonth()+1}/${startD.getFullYear()+543} - ${endD.getDate()}/${endD.getMonth()+1}/${endD.getFullYear()+543}`;
+                        const creator = item.created_by || '-';
+                        return `
+                            <tr class="hover:bg-white/[0.02] transition-all">
+                                <td class="px-3 py-1 font-mono text-[10px] text-slate-400">${rangeStr}</td>
+                                <td class="px-3 py-1 text-right font-mono font-bold text-rose-400">${parseFloat(item.amount).toFixed(2)}</td>
+                                <td class="px-3 py-1 text-slate-300 max-w-[120px] truncate" title="${item.remarks || ''}">${item.remarks || '-'}</td>
+                                <td class="px-3 py-1 text-slate-400 truncate max-w-[100px]" title="${creator}">${creator}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch(err) {
+                    console.error("Error loading audit history:", err);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-3 py-6 text-center text-rose-500 font-bold">
+                                เกิดข้อผิดพลาด: ${err.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-3 py-6 text-center text-slate-500 italic">
+                            ระบบเชื่อมต่อแบบ Local เท่านั้น ไม่สามารถดึงประวัติได้
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    </script>
+
+    <!-- Audit Advances History Modal -->
+    <div id="advanceAuditModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4 transition-all duration-300 no-print">
+        <div class="glass-card w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl p-6 relative overflow-hidden" style="background: rgba(15, 23, 42, 0.95);">
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4 relative z-10">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-history text-rose-400 text-base"></i>
+                    <h3 class="text-white text-sm font-black tracking-wide uppercase">ประวัติการเบิกสำรองค่าน้ำมันย้อนหลัง</h3>
+                </div>
+                <button onclick="closeAdvanceAuditModal()" class="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+
+            <div class="relative z-10">
+                <div class="mb-3 px-3 py-2 bg-white/5 rounded-xl border border-white/5">
+                    <span class="text-[9px] text-amber-500 font-bold block uppercase tracking-widest">ข้อมูลพนักงาน</span>
+                    <span class="text-white text-sm font-black" id="auditEmployeeInfo">---</span>
+                </div>
+                
+                <div class="overflow-y-auto max-h-[250px] custom-scrollbar mb-4 border border-white/5 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-white/5 text-slate-400 text-[10px] uppercase font-bold border-b border-white/10">
+                                <th class="px-3 py-1">รอบวันที่เริ่มต้น-สิ้นสุด</th>
+                                <th class="px-3 py-1 text-right">ยอดหักเงิน</th>
+                                <th class="px-3 py-1">หมายเหตุ</th>
+                                <th class="px-3 py-1">ผู้บันทึก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditHistoryBody" class="divide-y divide-white/5 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex">
+                    <button onclick="closeAdvanceAuditModal()" class="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black text-xs py-2 rounded-lg transition-all text-center">
+                        ปิดหน้าต่าง
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

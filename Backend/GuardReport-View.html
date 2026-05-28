@@ -1,0 +1,487 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXTGEN Report — รายละเอียดการปฏิบัติงานรายบุคคล</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        :root {
+            --navy: #0f172a;
+            --amber: #f59e0b;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-400: #94a3b8;
+            --slate-600: #475569;
+            --slate-900: #0f172a;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--slate-100);
+            color: var(--slate-900);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.3cm;
+            }
+            body { 
+                background: white !important; 
+                padding: 0 !important; 
+                display: block !important;
+                overflow: hidden !important;
+            }
+            .page { 
+                width: 100% !important; 
+                min-height: auto !important;
+                box-shadow: none !important; 
+                border-radius: 0 !important; 
+                margin: 0 !important; 
+                border: none !important;
+                transform: scale(0.94);
+                transform-origin: top center;
+                overflow: hidden !important;
+            }
+            .no-print { display: none !important; }
+            .data-strip-row { flex-direction: row !important; display: flex !important; }
+            .bg-slate-50\/50 { background-color: #f8fafc !important; }
+            .header-bar { 
+                background-color: #0f172a !important; 
+                border-bottom-color: #f59e0b !important;
+                padding: 2px 24px !important;
+            }
+            th { 
+                background-color: #f8fafc !important; 
+                color: #0f172a !important; 
+                font-weight: 900 !important;
+                padding: 4px 16px !important;
+                font-size: 10px !important;
+            }
+            td { 
+                padding: 2px 16px !important; 
+                font-size: 11px !important;
+                font-weight: 700 !important;
+            }
+            .px-8.py-3 {
+                padding-left: 32px !important;
+                padding-right: 32px !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            .pt-8 {
+                padding-top: 2rem !important;
+            }
+            .mt-8 {
+                margin-top: 1rem !important;
+            }
+            .space-y-3 {
+                margin-top: 0 !important;
+            }
+            .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0.15rem !important;
+            }
+        }
+
+        .header-bar {
+            background: var(--navy);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--amber);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .doc-meta {
+            text-align: right;
+            color: white;
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--slate-400);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .field-box {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 14px;
+        }
+
+        .stat-card {
+            border: 1px solid var(--slate-200);
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--slate-50);
+            color: var(--slate-900);
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 16px;
+            border-bottom: 2px solid var(--slate-200);
+        }
+
+        td {
+            padding: 2px 16px;
+            border-bottom: 1px solid var(--slate-100);
+            font-size: 11px;
+            color: var(--slate-900);
+            font-weight: 600;
+        }
+
+        .signature-line {
+            width: 180px;
+            border-bottom: 2px solid var(--slate-400);
+            margin: 0 auto 5px;
+            height: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page rounded-t-2xl">
+        <!-- Header -->
+        <div class="header-bar rounded-t-2xl">
+            <div class="brand-logo">
+                <img src="../img/logo-1.jpg" class="w-10 h-10 rounded-lg shadow-md border border-white/20 object-cover">
+                <div>
+                    <h1 class="text-white text-base font-black uppercase tracking-tight m-0 leading-none">รายงานสรุปผลการปฏิบัติงาน</h1>
+                    <p class="text-white/60 text-[8px] font-bold tracking-[2px] uppercase m-0 mt-0.5">NEXTGEN Security System</p>
+                </div>
+            </div>
+            <div class="doc-meta">
+                <p class="text-[8px] font-bold opacity-60 uppercase leading-none">รหัสเอกสาร</p>
+                <p class="text-amber-500 font-mono text-[10px] font-bold tracking-widest mt-0.5">NXG-G-ATT-001</p>
+            </div>
+        </div>
+
+        <!-- Content Body -->
+        <div class="py-3 space-y-3 flex-1">
+            
+            <!-- Full-Width Data Strip -->
+            <div class="bg-white border-y border-slate-200 shadow-sm overflow-hidden">
+                <div class="data-strip-row flex flex-col md:flex-row">
+                    <!-- Left: Identity Info -->
+                    <div class="flex-1 p-3 px-8 flex items-center gap-4 bg-slate-50/50">
+                        <div class="border-r border-slate-200 pr-4">
+                            <span class="text-[7px] font-black text-slate-900 uppercase block mb-0.5">รหัสพนักงาน</span>
+                            <p class="text-xs font-black text-amber-600 font-mono leading-none" id="staffId">-</p>
+                        </div>
+                        <div class="flex-1 border-r border-slate-200 pr-4">
+                            <span class="text-[7px] font-black text-slate-900 uppercase block mb-0.5">ชื่อ-นามสกุล</span>
+                            <p class="text-sm font-black text-slate-900 leading-none" id="staffName">กำลังโหลด...</p>
+                        </div>
+                        <div class="pr-2">
+                            <span class="text-[7px] font-black text-slate-900 uppercase block mb-0.5">หน่วยงาน / ตำแหน่ง</span>
+                            <p class="text-[9px] font-black text-slate-900 leading-none" id="staffUnit">-</p>
+                        </div>
+                    </div>
+                    <!-- Right: Performance Mini-Counters -->
+                    <div class="flex items-center gap-0 border-t md:border-t-0 md:border-l border-slate-200 bg-white pr-8">
+                        <div class="px-3 py-1.5 text-center border-r border-slate-100 min-w-[55px] ml-4">
+                            <p class="text-[7px] font-black text-slate-500 uppercase mb-0.5">มาทำงาน</p>
+                            <p class="text-xs font-black text-emerald-600 leading-none" id="statWork">0</p>
+                        </div>
+                        <div class="px-3 py-1.5 text-center border-r border-slate-100 min-w-[55px]">
+                            <p class="text-[7px] font-black text-slate-500 uppercase mb-0.5">ลางาน</p>
+                            <p class="text-xs font-black text-blue-600 leading-none" id="statLeave">0</p>
+                        </div>
+                        <div class="px-3 py-1.5 text-center border-r border-slate-100 min-w-[55px]">
+                            <p class="text-[7px] font-black text-slate-500 uppercase mb-0.5">ขาดงาน</p>
+                            <p class="text-xs font-black text-red-600 leading-none" id="statAbsent">0</p>
+                        </div>
+                        <div class="px-3 py-1.5 text-center border-r border-slate-100 min-w-[55px]">
+                            <p class="text-[7px] font-black text-slate-500 uppercase mb-0.5">มาสาย</p>
+                            <p class="text-xs font-black text-amber-600 leading-none" id="statLate">0</p>
+                        </div>
+                        <div class="px-3 py-1.5 text-center min-w-[55px]">
+                            <p class="text-[7px] font-black text-slate-500 uppercase mb-0.5">ออกก่อน</p>
+                            <p class="text-xs font-black text-rose-600 leading-none" id="statEarly">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Log Table -->
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-1 px-8">
+                    <span class="text-[9px] font-black text-slate-900 uppercase tracking-widest">ประวัติการบันทึกเวลาเข้า-ออกงาน</span>
+                    <span class="text-[8px] font-bold text-slate-500" id="reportRange">วันที่: - ถึง -</span>
+                </div>
+                <div class="border-y border-slate-200 overflow-hidden shadow-sm">
+                    <table class="w-full">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="text-left py-1.5 px-8">ลำดับ</th>
+                                <th class="text-left py-1.5 px-4">วันที่ปฏิบัติงาน</th>
+                                <th class="text-center py-1.5 px-4">เวลาเข้า</th>
+                                <th class="text-center py-1.5 px-4">เวลาออก</th>
+                                <th class="text-right py-1.5 px-8">สถานะการปฏิบัติงาน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody" class="text-[11.5px]">
+                            <!-- Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Signature Area -->
+            <div class="pt-8 px-8">
+                <div class="grid grid-cols-2 gap-20">
+                    <div class="text-center">
+                        <div class="w-full border-b-2 border-slate-300 mb-2 h-10"></div>
+                        <p class="text-[9px] font-black text-slate-900 uppercase tracking-widest">ผู้จัดทำรายงาน / (Reporter)</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-full border-b-2 border-slate-300 mb-2 h-10"></div>
+                        <p class="text-[9px] font-black text-slate-900 uppercase tracking-widest">ผู้ตรวจสอบ / (Supervisor)</p>
+                    </div>
+                </div>
+                <div class="mt-8 text-center">
+                    <p class="text-[8px] text-slate-400 font-black uppercase tracking-[3px] italic">เอกสารนี้ถูกสร้างโดยระบบอัตโนมัติจาก NEXTGEN System Center</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tactical Command Dock (Futuristic Centered Controls) -->
+    <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 no-print">
+        <div class="bg-slate-900/90 backdrop-blur-2xl border border-white/10 p-2 rounded-[24px] flex items-center gap-2 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_20px_rgba(245,158,11,0.1)]">
+            
+            <button onclick="window.print()" class="group relative px-8 py-4 bg-gradient-to-br from-[#1e293b] to-[#0f172a] hover:from-[#334155] hover:to-[#1e293b] text-white rounded-[18px] font-black text-xs transition-all duration-300 flex items-center gap-3 overflow-hidden border border-white/5 active:scale-95">
+                <!-- Inner Glow -->
+                <div class="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <!-- Scanline Effect -->
+                <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:100%_3px] pointer-events-none"></div>
+                
+                <div class="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                    <i class="fas fa-print text-black text-sm"></i>
+                </div>
+                <span class="tracking-[2px] uppercase">พิมพ์รายงานสรุปผล</span>
+            </button>
+            
+            <div class="w-[1px] h-10 bg-white/10 mx-1"></div>
+            
+            <button onclick="window.close()" class="group px-6 py-4 bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 rounded-[18px] font-bold text-xs transition-all duration-300 flex items-center gap-2 border border-white/5 hover:border-rose-500/30 active:scale-95">
+                <i class="fas fa-power-off text-sm opacity-60 group-hover:opacity-100 transition-all"></i>
+                <span class="tracking-[1px] uppercase">ปิดหน้านี้</span>
+            </button>
+
+        </div>
+    </div>
+
+    <style>
+        body { padding-bottom: 100px !important; }
+    </style>
+
+    <script>
+        // --- Initialization and Data Fetching ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const empId = urlParams.get('emp_id');
+        const start = urlParams.get('start');
+        const end = urlParams.get('end');
+
+        window.onload = async () => {
+            if (!empId || !start || !end) {
+                alert('ข้อมูลไม่ครบถ้วน');
+                return;
+            }
+            document.getElementById('reportRange').textContent = `วันที่: ${formatDateTh(start)} ถึง ${formatDateTh(end)}`;
+            await loadData();
+        };
+
+        async function loadData() {
+            try {
+                // Fetch Staff Info
+                const { data: staff } = await supabaseClient.from('staff').select('*').eq('emp_id', empId).single();
+                if (staff) {
+                    document.getElementById('staffId').textContent = staff.emp_id;
+                    document.getElementById('staffName').textContent = staff.name.split(' (')[0];
+                    document.getElementById('staffUnit').textContent = staff.unit || '-';
+                }
+
+                // Fetch Logs
+                const { data: logs } = await supabaseClient.from('duty_logs').select('*').eq('emp_id', empId).gte('timestamp', start).lte('timestamp', end + "T23:59:59");
+                const { data: leaves } = await supabaseClient.from('leave_records').select('*').eq('emp_id', empId).eq('status', 'approved').gte('start_date', start);
+
+                processLogs(logs || [], leaves || []);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function processLogs(logs, leaves) {
+            const d1 = new Date(start);
+            const d2 = new Date(end);
+            const grouped = {};
+            
+            const getLocalYMD = (utcStr) => {
+                const d = new Date(utcStr);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
+            const getLocalTime = (utcStr) => {
+                const d = new Date(utcStr);
+                return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} น.`;
+            };
+
+            logs.forEach(l => {
+                const dStr = getLocalYMD(l.timestamp);
+                if (!grouped[dStr]) grouped[dStr] = { leave: null, in: null, out: null, inFull: null, outFull: null };
+                if (l.action_type.includes('leave')) {
+                    grouped[dStr].leave = l.action_type;
+                } else if (l.action_type === 'check_in') {
+                    if (!grouped[dStr].in || l.timestamp < grouped[dStr].inFull) {
+                        grouped[dStr].in = getLocalTime(l.timestamp);
+                        grouped[dStr].inFull = new Date(l.timestamp);
+                    }
+                } else if (l.action_type === 'check_out') {
+                    if (!grouped[dStr].out || l.timestamp > grouped[dStr].outFull) {
+                        grouped[dStr].out = getLocalTime(l.timestamp);
+                        grouped[dStr].outFull = new Date(l.timestamp);
+                    }
+                }
+            });
+
+            leaves.forEach(l => {
+                const lStart = new Date(l.start_date);
+                const lEnd = new Date(l.end_date || l.start_date);
+                let curr = new Date(lStart);
+                while (curr <= lEnd) {
+                    const dateStr = curr.toISOString().split('T')[0];
+                    if (dateStr >= start && dateStr <= end) {
+                        if (!grouped[dateStr]) grouped[dateStr] = { leave: 'approved_leave', in: null, out: null };
+                        else grouped[dateStr].leave = 'approved_leave';
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+            });
+
+            let currDay = new Date(d1);
+            let html = '';
+            let stats = { work: 0, leave: 0, absent: 0, late: 0, early: 0 };
+            let count = 1;
+            const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+            while (currDay <= d2) {
+                const dStr = currDay.toISOString().split('T')[0];
+                const dDisplay = `${currDay.getDate()} ${thMonths[currDay.getMonth()]} ${currDay.getFullYear() + 543}`;
+                
+                const dData = grouped[dStr];
+                let inTime = '--', outTime = '--', statusHtml = '<span class="text-red-500 font-bold">ขาดงาน</span>';
+                
+                if (dData && dData.leave) {
+                    inTime = '-'; outTime = '-';
+                    stats.leave++;
+                    if (dData.leave === 'sick_leave') statusHtml = '<span class="text-blue-500 font-bold">ลาป่วย</span>';
+                    else if (dData.leave === 'personal_leave') statusHtml = '<span class="text-indigo-500 font-bold">ลากิจ</span>';
+                    else statusHtml = '<span class="text-cyan-600 font-bold">ลาพักร้อน</span>';
+                } else if (dData && dData.in) {
+                    inTime = dData.in;
+                    outTime = dData.out || '--';
+                    stats.work++;
+                    
+                    let statuses = [];
+                    const h = dData.inFull.getHours(); const m = dData.inFull.getMinutes();
+                    if ((h === 7 && m > 15) || (h > 7 && h < 18) || (h === 19 && m > 15) || (h > 19 || h < 6)) {
+                        statuses.push('<span class="text-amber-600">เข้าสาย</span>');
+                        stats.late++;
+                    }
+                    
+                    if (dData.outFull) {
+                        const oh = dData.outFull.getHours();
+                        if ((oh >= 17 && oh < 19) || (oh >= 5 && oh < 7)) {
+                            statuses.push('<span class="text-rose-500">ออกก่อน</span>');
+                            stats.early++;
+                        }
+                    }
+                    
+                    if (statuses.length === 0) statusHtml = '<span class="text-emerald-600 font-bold">มาทำงานปกติ</span>';
+                    else statusHtml = statuses.join(' + ');
+                } else {
+                    stats.absent++;
+                }
+
+                html += `
+                    <tr>
+                        <td>${count++}</td>
+                        <td class="font-bold">${dDisplay}</td>
+                        <td class="text-center font-mono">${inTime}</td>
+                        <td class="text-center font-mono">${outTime}</td>
+                        <td class="text-right text-xs">${statusHtml}</td>
+                    </tr>
+                `;
+                currDay.setDate(currDay.getDate() + 1);
+            }
+
+            document.getElementById('logTableBody').innerHTML = html;
+            document.getElementById('statWork').textContent = stats.work;
+            document.getElementById('statLeave').textContent = stats.leave;
+            document.getElementById('statAbsent').textContent = stats.absent;
+            document.getElementById('statLate').textContent = stats.late;
+            document.getElementById('statEarly').textContent = stats.early;
+        }
+
+        function formatDateTh(dStr) {
+            if (!dStr) return '-';
+            const [y, m, d] = dStr.split('-');
+            return `${d}/${m}/${parseInt(y) + 543}`;
+        }
+    </script>
+</body>
+</html>

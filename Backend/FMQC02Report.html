@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายงาน FMQC-02 | Nexgen System Center</title>
+    <title>จัดการรายงาน FMQC-02 | NEXTGEN System Center</title>
     
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -16,13 +16,13 @@
     <link rel="stylesheet" href="css/dashboard.css">
 
     <style>
-        :root { --primary: #3b82f6; }
+        :root { --primary: #f59e0b; }
         body { font-family: 'Sarabun', sans-serif; background: #020617; color: white; margin: 0; overflow: hidden; }
-        .main-content { flex: 1; overflow-y: auto; padding: 16px; background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 600px); }
+        .main-content { flex: 1; padding: 16px; background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 600px); }
         .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
         
         .clock-widget { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 8px 16px; border-radius: 16px; text-align: right; min-width: 180px; }
-        #digital-clock { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; color: #3b82f6; line-height: 1; margin-bottom: 4px; }
+        #digital-clock { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; color: #f59e0b; line-height: 1; margin-bottom: 4px; }
         #digital-date { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; }
 
         .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
@@ -41,16 +41,16 @@
         <aside id="sidebar-container" class="sidebar flex flex-col shrink-0"></aside>
 
         <!-- Main Content -->
-        <main class="main-content custom-scrollbar">
+        <main class="main-content flex flex-col h-full overflow-hidden pb-10">
             
-            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 flex-none">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
-                        <i class="fas fa-search-location text-xl text-blue-500"></i>
+                    <div class="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center border border-amber-600/30">
+                        <i class="fas fa-search-location text-xl text-amber-500"></i>
                     </div>
                     <div>
                         <h1 class="text-2xl font-black tracking-tighter uppercase leading-none mb-1">
-                            Site <span class="text-blue-500">Inspections (FMQC-02)</span>
+                            Site <span class="text-amber-500">Inspections (FMQC-02)</span>
                         </h1>
                         <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[3px]">
                             รายงานการเข้าตรวจหน่วยงาน (FMQC-02)
@@ -58,14 +58,19 @@
                     </div>
                 </div>
 
-                <div class="clock-widget">
-                    <div id="digital-clock">00:00:00</div>
-                    <div id="digital-date">...</div>
+                <div class="flex items-center gap-3">
+                    <button onclick="fetchReports()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all shadow-lg shadow-amber-500/20 flex items-center gap-1.5 h-11">
+                        <i class="fas fa-sync-alt mr-1"></i> รีเฟรช
+                    </button>
+                    <div class="clock-widget">
+                        <div id="digital-clock">00:00:00</div>
+                        <div id="digital-date">...</div>
+                    </div>
                 </div>
             </header>
 
             <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 flex-none">
                 <div class="glass-card p-4 border-l-4 border-blue-500 hover:bg-white/5 transition-all">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">ทั้งหมด</p>
                     <h3 class="text-2xl font-black text-white" id="stat-total">0</h3>
@@ -85,55 +90,92 @@
             </div>
 
             <!-- Filters -->
-            <div class="glass-card p-3 mb-4 flex flex-wrap items-center gap-4">
-                <div class="flex-1 min-w-[200px] relative">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input type="text" id="searchReport" oninput="filterReports()" placeholder="ค้นหาหน่วยงาน หรือ ผู้เข้าตรวจ..." 
-                        class="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all">
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="fetchReports()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/20">
-                        <i class="fas fa-sync-alt mr-2"></i> อัปเดตข้อมูล
-                    </button>
+            <div class="glass-card p-3 mb-3 border border-white/5 flex-none no-print">
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เริ่มวันที่</label>
+                        <input type="date" id="filterStartDate" onchange="fetchReports()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ถึงวันที่</label>
+                        <input type="date" id="filterEndDate" onchange="fetchReports()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เลขที่เอกสาร</label>
+                        <input type="text" id="filterId" onkeyup="applyFilters()" placeholder="ค้น ID..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">หน่วยงานที่ตรวจ</label>
+                        <input type="text" id="filterSite" onkeyup="applyFilters()" placeholder="ค้นหน่วยงาน..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ผู้เข้าตรวจ</label>
+                        <input type="text" id="filterInspector" onkeyup="applyFilters()" placeholder="ค้นชื่อ..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะ</label>
+                        <select id="filterStatus" onchange="applyFilters()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                            <option value="">ทั้งหมด</option>
+                            <option value="normal">ปกติ</option>
+                            <option value="followup">ต้องติดตาม</option>
+                            <option value="issue">พบปัญหา</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="glass-card overflow-hidden">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="bg-white/5 border-b border-white/5">
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">วันที่เข้าตรวจ</th>
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">เลขที่เอกสาร</th>
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">หน่วยงาน</th>
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400">ผู้เข้าตรวจ</th>
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400 text-center">สถานะ</th>
-                            <th class="px-4 py-3 text-[9px] font-black uppercase tracking-[2px] text-slate-400 text-right">แอคชั่น</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportList" class="divide-y divide-white/5 text-sm">
-                        <!-- Content -->
-                    </tbody>
-                </table>
+            <!-- Table Container -->
+            <div class="glass-card flex-1 min-h-0 flex flex-col overflow-hidden shadow-2xl p-1">
+                <!-- Static Header Table -->
+                <div class="flex-none bg-[#0f172a] rounded-t-xl overflow-hidden border-b border-white/5">
+                    <table class="w-full text-left text-sm table-fixed">
+                        <colgroup>
+                            <col class="w-[5%]">
+                            <col class="w-[12%]">
+                            <col class="w-[12%]">
+                            <col class="w-[30%]">
+                            <col class="w-[18%]">
+                            <col class="w-[11%]">
+                            <col class="w-[12%]">
+                        </colgroup>
+                        <thead class="text-slate-500 text-[9px] font-black uppercase tracking-widest">
+                            <tr>
+                                <th class="px-4 py-1.5 text-center">ลำดับที่</th>
+                                <th class="px-4 py-1.5">วันที่ตรวจ</th>
+                                <th class="px-4 py-1.5 font-mono text-amber-500">เลขที่เอกสาร</th>
+                                <th class="px-4 py-1.5">หน่วยงานที่ตรวจ</th>
+                                <th class="px-4 py-1.5">ผู้เข้าตรวจ</th>
+                                <th class="px-4 py-1.5 text-center">สถานะ</th>
+                                <th class="px-4 py-1.5 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+                <!-- Scrollable Body Table -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left text-sm table-fixed border-separate border-spacing-0">
+                        <colgroup>
+                            <col class="w-[5%]">
+                            <col class="w-[12%]">
+                            <col class="w-[12%]">
+                            <col class="w-[30%]">
+                            <col class="w-[18%]">
+                            <col class="w-[11%]">
+                            <col class="w-[12%]">
+                        </colgroup>
+                        <tbody id="reportList" class="divide-y divide-white/5">
+                            <tr><td colspan="7" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Modal -->
-    <div id="reportModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-[100] flex items-center justify-center p-4">
-        <div class="glass-card w-full max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="sticky top-0 bg-[#020617] p-6 border-b border-white/10 flex items-center justify-between z-10">
-                <h3 class="text-xl font-black uppercase">Inspection <span class="text-blue-500">Details</span></h3>
-                <button onclick="closeModal()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-rose-500/20 hover:text-rose-500 transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-8" id="modalContent"></div>
-        </div>
-    </div>
-
     <script>
         let allReports = [];
+        let filteredReports = [];
 
         window.onload = () => {
             startClock();
@@ -156,7 +198,18 @@
 
         async function fetchReports() {
             try {
-                const { data, error } = await supabaseClient.from('fmqc02').select('*').order('created_at', { ascending: false });
+                const list = document.getElementById('reportList');
+                list.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>';
+
+                const startDate = document.getElementById('filterStartDate').value;
+                const endDate = document.getElementById('filterEndDate').value;
+
+                let query = supabaseClient.from('fmqc02_reports').select('*');
+
+                if (startDate) query = query.gte('visit_date', startDate);
+                if (endDate) query = query.lte('visit_date', endDate);
+
+                const { data, error } = await query.order('created_at', { ascending: false }).limit(2000);
                 if (error) throw error;
 
                 allReports = data.map(report => {
@@ -167,28 +220,19 @@
 
                     const cleanName = (str) => (str || '').split(' (')[0];
                     
-                    // Format Date to Buddhist Era (พ.ศ.)
-                    let formattedDate = report.visit_date || '-';
-                    if (report.visit_date && report.visit_date !== '-') {
-                        const [y, m, d] = report.visit_date.split('-');
-                        if (y && m && d) {
-                            formattedDate = `${d}/${m}/${parseInt(y) + 543}`;
-                        }
-                    }
-
                     return {
                         id: report.id,
                         docId: report.doc_id || '-',
-                        date: formattedDate,
-                        time: report.time_in || '--:--',
+                        rawDate: report.visit_date,
+                        date: formatBE(report.visit_date),
                         unit: report.site_name || '-',
                         inspector: cleanName(report.inspector || '-'),
-                        status: status,
-                        raw: report
+                        status: status
                     };
                 });
 
-                renderReports(allReports);
+                filteredReports = [...allReports];
+                renderReports(filteredReports);
                 updateStats(allReports);
             } catch (e) {
                 console.error("Fetch error:", e);
@@ -196,36 +240,59 @@
             }
         }
 
-        function filterReports() {
-            const txt = document.getElementById('searchReport').value.toLowerCase();
-            const filtered = allReports.filter(r => 
-                r.unit.toLowerCase().includes(txt) || 
-                r.inspector.toLowerCase().includes(txt) ||
-                r.docId.toLowerCase().includes(txt)
-            );
-            renderReports(filtered);
+        function formatBE(dateStr) {
+            if (!dateStr || dateStr === '-') return '-';
+            try {
+                const [y, m, d] = dateStr.split('-');
+                return `${d}/${m}/${parseInt(y) + 543}`;
+            } catch(e) { return dateStr; }
+        }
+
+        function applyFilters() {
+            const filters = {
+                id: document.getElementById('filterId').value.toLowerCase(),
+                site: document.getElementById('filterSite').value.toLowerCase(),
+                inspector: document.getElementById('filterInspector').value.toLowerCase(),
+                status: document.getElementById('filterStatus').value
+            };
+
+            filteredReports = allReports.filter(r => {
+                const matchId = !filters.id || r.docId.toLowerCase().includes(filters.id);
+                const matchSite = !filters.site || r.unit.toLowerCase().includes(filters.site);
+                const matchInspector = !filters.inspector || r.inspector.toLowerCase().includes(filters.inspector);
+                const matchStatus = !filters.status || r.status === filters.status;
+                return matchId && matchSite && matchInspector && matchStatus;
+            });
+
+            renderReports(filteredReports);
         }
 
         function renderReports(reports) {
             const list = document.getElementById('reportList');
-            list.innerHTML = reports.map(r => `
+            if (reports.length === 0) {
+                list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-slate-600 italic">ไม่พบข้อมูลรายงาน</td></tr>';
+                return;
+            }
+
+            list.innerHTML = reports.map((r, index) => `
                 <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
-                    <td class="px-4 py-3 font-bold text-white text-xs">${r.date}</td>
-                    <td class="px-4 py-3 font-bold text-amber-500 font-mono text-xs">${r.docId}</td>
-                    <td class="px-4 py-3 font-bold text-white text-xs uppercase">${r.unit}</td>
-                    <td class="px-4 py-3 text-slate-300 text-xs font-medium">${r.inspector}</td>
-                    <td class="px-4 py-3 text-center">
+                    <td class="px-4 py-1.5 text-center text-slate-500 font-mono text-[10px]">${index + 1}</td>
+                    <td class="px-4 py-1.5 font-bold text-white text-xs">${r.date}</td>
+                    <td class="px-4 py-1.5 font-bold text-amber-500 font-mono text-xs">${r.docId}</td>
+                    <td class="px-4 py-1.5 font-bold text-white text-xs uppercase truncate leading-tight" title="${r.unit}">${r.unit}</td>
+                    <td class="px-4 py-1.5 text-slate-300 text-xs font-medium">${r.inspector}</td>
+                    <td class="px-4 py-1.5 text-center">
                         <span class="status-badge status-${r.status}">
                             ${r.status === 'normal' ? 'ปกติ' : (r.status === 'issue' ? 'พบปัญหา' : 'ต้องติดตาม')}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        <button onclick="viewDetail('${r.id}')" class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-400 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase">
-                            ดูรายละเอียด
+                    <td class="px-4 py-1.5 text-center">
+                        <button onclick="viewDetail('${r.id}')" class="px-3 py-1 rounded-lg bg-white/5 text-slate-400 hover:bg-amber-500 hover:text-black transition-all text-[10px] font-bold uppercase">
+                            <i class="fas fa-file-invoice mr-1"></i> ดูใบรายงาน / พิมพ์
                         </button>
                     </td>
                 </tr>
-            `).join('') || '<tr><td colspan="6" class="p-20 text-center text-slate-600 italic">ไม่พบข้อมูลรายงาน</td></tr>';
+            `).join('');
         }
 
         function updateStats(reports) {
@@ -236,121 +303,10 @@
         }
 
         function viewDetail(id) {
-            const item = allReports.find(r => r.id == id);
-            if (!item) return;
-            const report = item.raw;
-            const results = report.results || {};
-            
-            // Checklist HTML
-            const checklistItems = ['กำลังพลตามสัญญา', 'การแต่งกาย', 'การเดินตรวจพื้นที่', 'การอำนวยความสะดวกจราจร'];
-            let checklistHtml = checklistItems.map(key => {
-                const status = results[key] || 'pass';
-                const statusText = status === 'pass' ? 'ผ่าน' : (status === 'issue' || status === 'fail' ? 'พบปัญหา' : 'กำชับ');
-                const statusColor = status === 'pass' ? 'text-emerald-400' : (status === 'issue' || status === 'fail' ? 'text-rose-500' : 'text-amber-500');
-                const icon = status === 'pass' ? 'fa-check-circle' : (status === 'issue' || status === 'fail' ? 'fa-times-circle' : 'fa-exclamation-circle');
-                return `
-                    <div class="p-4 bg-white/5 rounded-xl border border-white/5 mb-3 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <i class="fas ${icon} ${statusColor}"></i>
-                            <span class="text-sm font-bold text-slate-300">${key}</span>
-                        </div>
-                        <span class="text-[10px] font-black uppercase px-3 py-1 rounded bg-white/5 ${statusColor}">${statusText}</span>
-                    </div>
-                `;
-            }).join('');
-
-            // Images HTML
-            const imgs = [report.image1, report.image2, report.image3].filter(Boolean);
-            let imgHtml = '';
-            if (imgs.length > 0) {
-                imgHtml = `<div class="grid grid-cols-3 gap-2 mt-2">` + imgs.map(url => `
-                    <div class="aspect-square rounded-xl overflow-hidden border border-white/10 bg-black/50">
-                        <img src="${url}" class="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform" onclick="window.open(this.src)">
-                    </div>
-                `).join('') + `</div>`;
-            } else {
-                imgHtml = `<div class="p-6 text-center text-slate-500 border border-dashed border-white/10 rounded-xl bg-white/5 text-xs">ไม่ได้แนบรูปภาพ</div>`;
-            }
-
-            // Staff Table HTML
-            const staffList = results.staffList || [];
-            let staffHtml = '';
-            if (staffList.length > 0) {
-                staffHtml = `<table class="w-full text-xs text-left mt-2">
-                    <thead><tr class="text-slate-500 border-b border-white/10"><th class="pb-2">ชื่อ-สกุล</th><th class="pb-2">ตำแหน่ง</th><th class="pb-2">ผลัด</th></tr></thead>
-                    <tbody class="divide-y divide-white/5">` + 
-                    staffList.map(s => {
-                        const cleanName = (s.name || '').split(' (')[0];
-                        return `<tr><td class="py-2 text-slate-300">${cleanName}</td><td class="py-2 text-slate-400">${s.role}</td><td class="py-2 text-slate-400">${s.shift}</td></tr>`;
-                    }).join('') + 
-                `</tbody></table>`;
-            } else {
-                staffHtml = `<div class="p-4 text-center text-slate-500 border border-dashed border-white/10 rounded-xl bg-white/5 text-xs">ไม่มีข้อมูลรายชื่อกำลังพล</div>`;
-            }
-
-            const reqStaff = parseInt(results.reqStaff) || 0;
-            const actStaff = parseInt(results.actStaff) || 0;
-            const staffBadge = actStaff >= reqStaff 
-                ? `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px] ml-2">ครบ</span>`
-                : `<span class="bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded text-[10px] ml-2">ขาด</span>`;
-
-            document.getElementById('modalContent').innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left Column -->
-                    <div class="space-y-6">
-                        <div>
-                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest">เลขที่เอกสาร</label>
-                            <p class="text-blue-400 font-black text-lg">${report.doc_id || '-'}</p>
-                            <h4 class="text-2xl font-black text-white uppercase mt-1">${report.site_name}</h4>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <div><label class="text-[10px] text-slate-500 font-black uppercase tracking-widest block mb-1">วันที่ตรวจ</label><p class="font-bold text-white text-sm">${report.visit_date}</p></div>
-                            <div><label class="text-[10px] text-slate-500 font-black uppercase tracking-widest block mb-1">เวลา</label><p class="font-bold text-white text-sm">${report.time_in} น.</p></div>
-                            <div class="col-span-2"><label class="text-[10px] text-slate-500 font-black uppercase tracking-widest block mb-1">ผู้เข้าตรวจ</label><p class="font-bold text-amber-500 text-sm">${report.inspector}</p></div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-                                <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest block mb-1">คนตามสัญญา</label>
-                                <p class="font-black text-xl text-white">${reqStaff}</p>
-                            </div>
-                            <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-                                <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest block mb-1">คนทำงานจริง</label>
-                                <p class="font-black text-xl text-white flex items-center justify-center">${actStaff} ${staffBadge}</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 block">รายชื่อกำลังพลปฏิบัติงาน</label>
-                            ${staffHtml}
-                        </div>
-                    </div>
-
-                    <!-- Right Column -->
-                    <div class="space-y-6">
-                        <div>
-                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 block">รายการตรวจสอบ</label>
-                            ${checklistHtml}
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 block">รูปถ่ายหน้างาน</label>
-                            ${imgHtml}
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">หมายเหตุ</label>
-                            <p class="text-sm text-slate-400 p-4 bg-white/5 rounded-xl border border-white/5 leading-relaxed">${report.remarks || '-'}</p>
-                        </div>
-                        
-                        <button onclick="window.open('../Frontend/FMQC02-View.html?id=${report.id}', '_blank')" class="w-full py-4 bg-blue-600 hover:bg-blue-500 transition-colors text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-600/20">
-                            <i class="fas fa-print mr-2"></i> พิมพ์เอกสาร A4
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('reportModal').classList.remove('hidden');
+            // ข้ามหน้า Modal และไปที่หน้ารายงาน (Frontend View) โดยตรงเหมือน OP06
+            window.open('../Frontend/FMQC02-View.html?id=' + id, '_blank');
         }
-
-        function closeModal() { document.getElementById('reportModal').classList.add('hidden'); }
     </script>
 </body>
 </html>
+

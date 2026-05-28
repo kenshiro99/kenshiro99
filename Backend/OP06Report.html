@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการรายงาน OP05 | NEXTGEN System Center</title>
+    <title>รายงานการรวมแถว (OP06) | NEXTGEN System Center</title>
     
     <!-- Dependencies -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -28,7 +28,7 @@
         .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
         .status-normal { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
         .status-issue { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2); }
-        .status-followup { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-warn { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
 
         .submenu.open { display: block; }
     </style>
@@ -46,14 +46,14 @@
             <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 flex-none">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center border border-amber-600/30">
-                        <i class="fas fa-handshake text-xl text-amber-500"></i>
+                        <i class="fas fa-users-line text-xl text-amber-500"></i>
                     </div>
                     <div>
                         <h1 class="text-2xl font-black tracking-tighter uppercase leading-none mb-1">
-                            Client <span class="text-amber-500">Meetings (OP05)</span>
+                            Formation <span class="text-amber-500">Reports (OP06)</span>
                         </h1>
                         <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[3px]">
-                            รายงานการเข้าพบผู้ว่าจ้าง (OP05)
+                            รายงานการรวมแถว (OP06)
                         </p>
                     </div>
                 </div>
@@ -80,8 +80,8 @@
                     <h3 class="text-2xl font-black text-emerald-500" id="stat-normal">0</h3>
                 </div>
                 <div class="glass-card p-4 border-l-4 border-amber-500 hover:bg-white/5 transition-all">
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">หารือ</p>
-                    <h3 class="text-2xl font-black text-amber-500" id="stat-followup">0</h3>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">มีกำชับ</p>
+                    <h3 class="text-2xl font-black text-amber-500" id="stat-warn">0</h3>
                 </div>
                 <div class="glass-card p-4 border-l-4 border-rose-500 hover:bg-white/5 transition-all">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">พบปัญหา</p>
@@ -91,7 +91,7 @@
 
             <!-- Filters -->
             <div class="glass-card p-3 mb-3 border border-white/5 flex-none no-print">
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+                <div class="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เริ่มวันที่</label>
                         <input type="date" id="filterStartDate" onchange="fetchReports()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
@@ -105,19 +105,27 @@
                         <input type="text" id="filterId" onkeyup="applyFilters()" placeholder="ค้น ID..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">หน่วยงาน (Site)</label>
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">หน่วยงาน</label>
                         <input type="text" id="filterSite" onkeyup="applyFilters()" placeholder="ค้นหน่วยงาน..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">เจ้าหน้าที่ผู้เข้าพบ</label>
-                        <input type="text" id="filterStaff" onkeyup="applyFilters()" placeholder="ค้นชื่อ..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ผู้นำแถว</label>
+                        <input type="text" id="filterCmd" onkeyup="applyFilters()" placeholder="ค้นชื่อ..." class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">ผลัด</label>
+                        <select id="filterShift" onchange="applyFilters()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                            <option value="">ทั้งหมด</option>
+                            <option value="ผลัดเช้า">เช้า</option>
+                            <option value="ผลัดเย็น">เย็น</option>
+                        </select>
                     </div>
                     <div class="space-y-1">
                         <label class="text-[9px] font-bold text-amber-500/80 uppercase ml-1">สถานะ</label>
-                        <select id="filterStatus" onchange="applyFilters()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
+                        <select id="filterResult" onchange="applyFilters()" class="w-full bg-[#020617] border border-slate-700/50 rounded-lg py-1.5 px-3 text-white text-xs focus:border-amber-500 outline-none transition-all">
                             <option value="">ทั้งหมด</option>
-                            <option value="normal">ปกติ</option>
-                            <option value="followup">หารือ</option>
+                            <option value="pass">ปกติ</option>
+                            <option value="warn">มีกำชับ</option>
                             <option value="issue">พบปัญหา</option>
                         </select>
                     </div>
@@ -133,18 +141,22 @@
                             <col class="w-[5%]">
                             <col class="w-[12%]">
                             <col class="w-[12%]">
-                            <col class="w-[30%]">
-                            <col class="w-[18%]">
-                            <col class="w-[11%]">
+                            <col class="w-[24%]">
+                            <col class="w-[15%]">
+                            <col class="w-[8%]">
+                            <col class="w-[12%]">
+                            <col class="w-[10%]">
                             <col class="w-[12%]">
                         </colgroup>
                         <thead class="text-slate-500 text-[9px] font-black uppercase tracking-widest">
                             <tr>
                                 <th class="px-4 py-1.5 text-center">ลำดับที่</th>
-                                <th class="px-4 py-1.5">วันที่เข้าพบ</th>
+                                <th class="px-4 py-1.5">วันที่</th>
                                 <th class="px-4 py-1.5 font-mono text-amber-500">เลขที่เอกสาร</th>
-                                <th class="px-4 py-1.5">หน่วยงาน (Site)</th>
-                                <th class="px-4 py-1.5">เจ้าหน้าที่ผู้เข้าพบ</th>
+                                <th class="px-4 py-1.5">หน่วยงาน</th>
+                                <th class="px-4 py-1.5">ผู้นำแถว</th>
+                                <th class="px-4 py-1.5">ผลัด</th>
+                                <th class="px-4 py-1.5">กำลังพล</th>
                                 <th class="px-4 py-1.5 text-center">สถานะ</th>
                                 <th class="px-4 py-1.5 text-center">จัดการ</th>
                             </tr>
@@ -159,13 +171,15 @@
                             <col class="w-[5%]">
                             <col class="w-[12%]">
                             <col class="w-[12%]">
-                            <col class="w-[30%]">
-                            <col class="w-[18%]">
-                            <col class="w-[11%]">
+                            <col class="w-[24%]">
+                            <col class="w-[15%]">
+                            <col class="w-[8%]">
+                            <col class="w-[12%]">
+                            <col class="w-[10%]">
                             <col class="w-[12%]">
                         </colgroup>
                         <tbody id="reportList" class="divide-y divide-white/5">
-                            <tr><td colspan="7" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>
+                            <tr><td colspan="9" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -199,69 +213,45 @@
         async function fetchReports() {
             try {
                 const list = document.getElementById('reportList');
-                list.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>';
+                list.innerHTML = '<tr><td colspan="9" class="text-center py-10 text-slate-500 italic">กำลังโหลดข้อมูล...</td></tr>';
 
                 const startDate = document.getElementById('filterStartDate').value;
                 const endDate = document.getElementById('filterEndDate').value;
 
-                let query = supabaseClient.from('op05_reports').select('*');
+                let query = supabaseClient.from('op06_reports').select('*');
 
-                if (startDate) query = query.gte('visit_date', startDate);
-                if (endDate) query = query.lte('visit_date', endDate);
+                if (startDate) query = query.gte('form_date', startDate);
+                if (endDate) query = query.lte('form_date', endDate);
 
                 const { data, error } = await query.order('created_at', { ascending: false }).limit(2000);
                 if (error) throw error;
-
-                allReports = data.map(report => {
-                    let status = 'normal';
-                    const chkString = JSON.stringify(report.checklist || {});
-                    if (chkString.includes('"issue"')) status = 'issue';
-                    else if (chkString.includes('"discuss"')) status = 'followup';
-
-                    const cleanName = (str) => (str || '').split(' (')[0];
-                    
-                    return {
-                        id: report.id,
-                        docId: report.doc_id || '-',
-                        rawDate: report.visit_date,
-                        date: formatBE(report.visit_date),
-                        unit: report.site_name || '-',
-                        staff: cleanName(report.op_name || '-'),
-                        status: status
-                    };
-                });
-
+                allReports = data || [];
                 filteredReports = [...allReports];
                 renderReports(filteredReports);
                 updateStats(allReports);
             } catch (e) {
                 console.error("Fetch error:", e);
-                renderReports([]);
+                const list = document.getElementById('reportList');
+                list.innerHTML = '<tr><td colspan="9" class="p-20 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
             }
-        }
-
-        function formatBE(dateStr) {
-            if (!dateStr || dateStr === '-') return '-';
-            try {
-                const [y, m, d] = dateStr.split('-');
-                return `${d}/${m}/${parseInt(y) + 543}`;
-            } catch(e) { return dateStr; }
         }
 
         function applyFilters() {
             const filters = {
                 id: document.getElementById('filterId').value.toLowerCase(),
                 site: document.getElementById('filterSite').value.toLowerCase(),
-                staff: document.getElementById('filterStaff').value.toLowerCase(),
-                status: document.getElementById('filterStatus').value
+                cmd: document.getElementById('filterCmd').value.toLowerCase(),
+                shift: document.getElementById('filterShift').value,
+                result: document.getElementById('filterResult').value
             };
 
             filteredReports = allReports.filter(r => {
-                const matchId = !filters.id || r.docId.toLowerCase().includes(filters.id);
-                const matchSite = !filters.site || r.unit.toLowerCase().includes(filters.site);
-                const matchStaff = !filters.staff || r.staff.toLowerCase().includes(filters.staff);
-                const matchStatus = !filters.status || r.status === filters.status;
-                return matchId && matchSite && matchStaff && matchStatus;
+                const matchId = !filters.id || (r.doc_id && r.doc_id.toLowerCase().includes(filters.id));
+                const matchSite = !filters.site || (r.site_name && r.site_name.toLowerCase().includes(filters.site));
+                const matchCmd = !filters.cmd || (r.commander && r.commander.toLowerCase().includes(filters.cmd));
+                const matchShift = !filters.shift || (r.shift && r.shift === filters.shift);
+                const matchResult = !filters.result || (r.overall_result && r.overall_result === filters.result);
+                return matchId && matchSite && matchCmd && matchShift && matchResult;
             });
 
             renderReports(filteredReports);
@@ -270,42 +260,65 @@
         function renderReports(reports) {
             const list = document.getElementById('reportList');
             if (reports.length === 0) {
-                list.innerHTML = '<tr><td colspan="7" class="p-20 text-center text-slate-600 italic">ไม่พบข้อมูลรายงาน</td></tr>';
+                list.innerHTML = '<tr><td colspan="9" class="p-20 text-center text-slate-600 italic">ไม่พบข้อมูลรายงาน</td></tr>';
                 return;
             }
 
-            list.innerHTML = reports.map((r, index) => `
-                <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
-                    <td class="px-4 py-1.5 text-center text-slate-500 font-mono text-[10px]">${index + 1}</td>
-                    <td class="px-4 py-1.5 font-bold text-white text-xs">${r.date}</td>
-                    <td class="px-4 py-1.5 font-bold text-amber-500 font-mono text-xs">${r.docId}</td>
-                    <td class="px-4 py-1.5 font-bold text-white text-xs uppercase truncate leading-tight" title="${r.unit}">${r.unit}</td>
-                    <td class="px-4 py-1.5 text-slate-300 text-xs font-medium">${r.staff}</td>
-                    <td class="px-4 py-1.5 text-center">
-                        <span class="status-badge status-${r.status}">
-                            ${r.status === 'normal' ? 'ปกติ' : (r.status === 'issue' ? 'พบปัญหา' : 'หารือ')}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1.5 text-center">
-                        <button onclick="viewDetail('${r.id}')" class="px-3 py-1 rounded-lg bg-white/5 text-slate-400 hover:bg-amber-500 hover:text-black transition-all text-[10px] font-bold uppercase">
-                            <i class="fas fa-file-invoice mr-1"></i> ดูใบรายงาน / พิมพ์
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            list.innerHTML = reports.map((r, index) => {
+                let badgeClass = 'status-normal';
+                let statusText = 'ปกติ';
+                if (r.overall_result === 'issue') {
+                    badgeClass = 'status-issue';
+                    statusText = 'พบปัญหา';
+                } else if (r.overall_result === 'warn') {
+                    badgeClass = 'status-warn';
+                    statusText = 'มีกำชับ';
+                }
+
+                const att = r.attendance || [];
+                const total = att.length;
+                const present = att.filter(a => a.status === 'present' || a.status === 'late').length;
+
+                // Format Date to Thai
+                let dateStr = r.form_date || '-';
+                if (r.form_date) {
+                    const [y, m, d] = r.form_date.split('-');
+                    dateStr = `${d}/${m}/${parseInt(y) + 543}`;
+                }
+
+                return `
+                    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
+                        <td class="px-4 py-1.5 text-center text-slate-500 font-mono text-[10px]">${index + 1}</td>
+                        <td class="px-4 py-1.5 font-bold text-white text-xs">${dateStr}</td>
+                        <td class="px-4 py-1.5 font-bold text-amber-500 font-mono text-xs">${r.doc_id || '-'}</td>
+                        <td class="px-4 py-1.5 font-bold text-white text-xs uppercase truncate leading-tight" title="${r.site_name}">${r.site_name || '-'}</td>
+                        <td class="px-4 py-1.5 text-slate-300 text-xs font-medium">${r.commander || '-'}</td>
+                        <td class="px-4 py-1.5 text-slate-400 text-xs">${r.shift || '-'}</td>
+                        <td class="px-4 py-1.5 text-slate-300 font-bold text-xs">${present} / ${total} นาย</td>
+                        <td class="px-4 py-1.5 text-center">
+                            <span class="status-badge ${badgeClass}">${statusText}</span>
+                        </td>
+                        <td class="px-4 py-1.5 text-center">
+                            <button onclick="viewDetail('${r.id}')" class="px-3 py-1 rounded-lg bg-white/5 text-slate-400 hover:bg-amber-500 hover:text-black transition-all text-[10px] font-bold uppercase">
+                                <i class="fas fa-file-alt mr-1"></i> รายละเอียด
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function updateStats(reports) {
             document.getElementById('stat-total').textContent = reports.length;
-            document.getElementById('stat-normal').textContent = reports.filter(r => r.status === 'normal').length;
-            document.getElementById('stat-followup').textContent = reports.filter(r => r.status === 'followup').length;
-            document.getElementById('stat-issue').textContent = reports.filter(r => r.status === 'issue').length;
+            document.getElementById('stat-normal').textContent = reports.filter(r => r.overall_result === 'pass' || !r.overall_result).length;
+            document.getElementById('stat-warn').textContent = reports.filter(r => r.overall_result === 'warn').length;
+            document.getElementById('stat-issue').textContent = reports.filter(r => r.overall_result === 'issue').length;
         }
 
         function viewDetail(id) {
-            // ข้ามหน้า Modal และไปที่หน้ารายงาน (Frontend View) โดยตรงเหมือน OP06
-            window.open('../Frontend/OP05-View.html?id=' + id, '_blank');
+            window.open('../Frontend/OP06-View.html?id=' + id + '&print=true', '_blank');
         }
     </script>
 </body>
 </html>
+

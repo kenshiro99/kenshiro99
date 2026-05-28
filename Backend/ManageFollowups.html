@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ศูนย์บัญชาการติดตามพนักงาน | NEXTGEN System Center</title>
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <script src="js/sidebar.js"></script>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.5); }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-badge-glow {
+            box-shadow: 0 0 12px currentColor;
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+    <!-- Session Guard (Supervisor and above can enter this command room) -->
+    <script>
+        const userData = JSON.parse(localStorage.getItem('nextgen_user'));
+        if (!userData || (
+            (userData.level || "").trim().toLowerCase() !== 'admin' && 
+            (userData.level || "").trim().toLowerCase() !== 'manager' && 
+            (userData.level || "").trim().toLowerCase() !== 'owner' && 
+            (userData.level || "").trim().toLowerCase() !== 'supervisor'
+        )) {
+            window.location.href = '../index.html';
+        }
+    </script>
+
+    <!-- Mobile Sticky Header -->
+    <div class="md:hidden fixed top-0 left-0 w-full bg-[#020617]/90 backdrop-blur-xl border-b border-white/5 z-40 flex justify-between items-center p-2 px-4 shadow-2xl">
+        <div class="flex items-center gap-3">
+            <div class="flex flex-col">
+                <span class="text-white text-lg font-black uppercase tracking-tighter">NEXTGEN</span>
+                <span class="text-[8px] text-amber-500 font-bold tracking-[2px] uppercase">System Center</span>
+            </div>
+        </div>
+        <button onclick="toggleSidebar()" class="text-white text-xl w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] border border-slate-800">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+    <div class="flex h-screen w-screen overflow-hidden pt-[64px] md:pt-0">
+        <!-- Sidebar -->
+        <aside id="sidebar-container" class="sidebar flex flex-col shrink-0"></aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content pt-2 md:pt-4 pr-1 md:pr-2 pb-1.5 pl-4 md:pl-6 flex-1 flex flex-col h-full overflow-hidden bg-[#020617]">
+            <div class="w-full flex flex-col flex-1 h-full min-h-0">
+                
+                <!-- Tactical Header -->
+                <header class="mb-4 flex-none flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <button onclick="window.location.href='dashboard.html'" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-black flex items-center justify-center transition-all border border-slate-700 hover:border-amber-500 shadow-lg">
+                            <i class="fas fa-arrow-left text-lg"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter mb-1">
+                                ศูนย์บัญชาการ<span class="text-amber-500">ติดตามพนักงาน</span>
+                            </h1>
+                            <p class="text-amber-500 font-bold text-[10px] tracking-widest uppercase">Follow-Up Tactical Command Room</p>
+                        </div>
+                    </div>
+
+                    <!-- Clock & User Details -->
+                    <div class="flex items-center gap-4">
+                        <button onclick="fetchFollowupRoom()" class="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-black text-xs font-black transition-all border border-amber-500/20 flex items-center gap-2 shadow-lg shadow-amber-500/5">
+                            <i class="fas fa-sync-alt"></i> รีเฟรชข้อมูลด่วน
+                        </button>
+                        <div class="hidden lg:flex items-center gap-6 bg-black/20 px-6 py-2.5 rounded-2xl border border-white/5 backdrop-blur-xl shadow-2xl">
+                            <div class="flex flex-col items-end pr-6 border-r border-white/10">
+                                <span id="digitalClock" class="text-2xl font-black text-amber-500 font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">00:00:00</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <p id="userName" class="text-white text-sm font-black leading-tight">---</p>
+                                <p id="userLevel" class="text-amber-500/80 text-[9px] font-black uppercase tracking-[2px]">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Tactical Summary Statistics Widgets -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-none">
+                    <!-- Total Inactive -->
+                    <div class="glass-card rounded-2xl p-3 border-l-4 border-amber-500 relative overflow-hidden shadow-md">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">ขาดการติดต่อรวม</span>
+                            <i class="fas fa-user-clock text-amber-500/40 text-xs"></i>
+                        </div>
+                        <p id="statTotalInactive" class="text-2xl font-black text-white font-mono leading-none">0 <span class="text-[10px] text-slate-500 font-bold">นาย</span></p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">ทั้งหมดในฐานข้อมูล</p>
+                    </div>
+
+                    <!-- Under Investigation -->
+                    <div class="glass-card rounded-2xl p-3 border-l-4 border-yellow-500 relative overflow-hidden shadow-md">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">กำลังตรวจสอบ</span>
+                            <i class="fas fa-search text-yellow-500/40 text-xs"></i>
+                        </div>
+                        <p id="statInvestigating" class="text-2xl font-black text-yellow-500 font-mono leading-none">0 <span class="text-[10px] text-slate-500 font-bold">นาย</span></p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">อยู่ระหว่างตรวจสอบพื้นที่</p>
+                    </div>
+
+                    <!-- Contacted / Device Problem -->
+                    <div class="glass-card rounded-2xl p-3 border-l-4 border-cyan-500 relative overflow-hidden shadow-md">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">มีปัญหาอุปกรณ์</span>
+                            <i class="fas fa-mobile-alt text-cyan-400/40 text-xs"></i>
+                        </div>
+                        <p id="statDeviceIssues" class="text-2xl font-black text-cyan-400 font-mono leading-none">0 <span class="text-[10px] text-slate-500 font-bold">นาย</span></p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">มือถือพัง / ข้อมูลเครื่องมีปัญหา</p>
+                    </div>
+
+                    <!-- Confirmed Resigned -->
+                    <div class="glass-card rounded-2xl p-3 border-l-4 border-red-500 relative overflow-hidden shadow-md">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">ยืนยันลาออก</span>
+                            <i class="fas fa-user-minus text-red-500/40 text-xs"></i>
+                        </div>
+                        <p id="statResigned" class="text-2xl font-black text-red-400 font-mono leading-none">0 <span class="text-[10px] text-slate-500 font-bold">นาย</span></p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">ออกแล้ว/ติดต่อไม่ได้เลย</p>
+                    </div>
+
+                    <!-- Resolved / Safe -->
+                    <div class="glass-card rounded-2xl p-3 border-l-4 border-emerald-500 relative overflow-hidden shadow-md col-span-2 lg:col-span-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">ติดต่อกลับได้แล้ว</span>
+                            <i class="fas fa-check-circle text-emerald-500/40 text-xs"></i>
+                        </div>
+                        <p id="statCleared" class="text-2xl font-black text-emerald-400 font-mono leading-none">0 <span class="text-[10px] text-slate-500 font-bold">นาย</span></p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">เคลียร์สถานะเป็นปกติ</p>
+                    </div>
+                </div>
+
+                <!-- Tactical Dispatch Panel -->
+                <div id="tacticalDispatchCard" class="mb-3 p-[1px] rounded-[16px] bg-gradient-to-br from-amber-500/30 to-emerald-500/20 w-full shadow-sm flex-none relative z-30 hidden">
+                    <div class="glass-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[15px] p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/30 text-amber-500 animate-pulse">
+                                <i class="fas fa-satellite-dish text-base"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    ศูนย์ส่งงานติดตามพนักงานขาดการติดต่อ (TACTICAL DISPATCH PANEL)
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">ADMIN COMMAND</span>
+                                </h4>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                    ยอดขาดงานสะสมรายเขต: <span id="inactiveZonesSummary" class="text-amber-500 font-black">---</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="dispatchFollowUpTasks()" class="w-full md:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 duration-150">
+                            <i class="fas fa-paper-plane text-[9px]"></i> ⚡ ส่งใบสั่งงานสายตรวจด่วนทุกเขต
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Supervisor Mission Alert Card -->
+                <div id="supervisorAlertCard" class="mb-3 p-[1px] rounded-[16px] bg-gradient-to-br from-cyan-500/30 to-slate-900/10 w-full shadow-sm flex-none relative z-30 hidden">
+                    <div class="glass-card border-none bg-gradient-to-br from-[#0f172a] to-[#020617] rounded-[15px] p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/30 text-cyan-400 animate-pulse">
+                                <i class="fas fa-clipboard-list text-base"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    ใบสั่งงานตรวจสอบด่วนประจำเขตดูแล: <span id="supervisorZoneName" class="text-cyan-400 font-black">---</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 animate-pulse">MISSION ACTIVE</span>
+                                </h4>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                    รปภ. ขาดงานในเขตของท่าน: <span id="supervisorInactiveCount" class="text-cyan-400 font-black">0 นาย</span> (กรุณาเร่งลงพื้นที่ตรวจสอบและลงรายงานผลกลับมา)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtering and Search Command Controls -->
+                <div class="mb-3 flex flex-col sm:flex-row justify-between items-center gap-3 flex-none z-20">
+                    <!-- Filters -->
+                    <div class="flex items-center gap-2 self-start sm:self-center">
+                        <button onclick="changeInactivityFilter(3)" id="btnFilter3" class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all">
+                            🚨 ขาดงานเกิน 3 วัน
+                        </button>
+                        <button onclick="changeInactivityFilter(7)" id="btnFilter7" class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all">
+                            💀 ขาดงานเกิน 7 วัน
+                        </button>
+                        <button onclick="changeInactivityFilter(0)" id="btnFilterAll" class="px-3.5 py-2 rounded-xl bg-amber-500 text-black border border-amber-500/30 text-[10px] font-black uppercase transition-all shadow-md shadow-amber-500/10">
+                            ทั้งหมด
+                        </button>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-72">
+                        <input type="text" id="followupSearchInput" oninput="applyFollowupFilters()" placeholder="ค้นหา รปภ. / ชื่อ / หน่วยงาน..." class="w-full bg-slate-900/60 border border-white/5 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:border-amber-500 outline-none transition-all pr-10 shadow-inner">
+                        <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Follow-Up Table Area -->
+                <div class="data-card p-0 overflow-hidden border border-white/5 rounded-[20px] flex-1 flex flex-col min-h-0 relative mb-2">
+                    
+                    <!-- Table Header -->
+                    <div id="followupTableHeaderContainer" class="flex-none bg-[#0f172a] border-b border-slate-800 overflow-hidden w-full">
+                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                            <thead>
+                                <tr class="text-[9px] font-black text-amber-500/80 uppercase tracking-widest bg-slate-950/40">
+                                    <th class="w-12 px-3 py-1.5 text-center border-r border-slate-800/30">#</th>
+                                    <th class="w-24 px-3 py-1.5 border-r border-slate-800/30">รหัสพนักงาน</th>
+                                    <th class="w-48 px-3 py-1.5 border-r border-slate-800/30">ชื่อ-นามสกุล</th>
+                                    <th class="w-40 px-3 py-1.5 border-r border-slate-800/30">หน่วยงานประจำ</th>
+                                    <th class="w-24 px-3 py-1.5 border-r border-slate-800/30">เขตพื้นที่</th>
+                                    <th class="w-40 px-3 py-1.5 border-r border-slate-800/30">ความถี่ล่าสุดที่เข้าระบบ</th>
+                                    <th class="w-36 px-3 py-1.5 border-r border-slate-800/30 text-center">สถานะติดตามตัว</th>
+                                    <th class="w-56 px-3 py-1.5 border-r border-slate-800/30">หมายเหตุความคืบหน้า</th>
+                                    <th class="w-32 px-3 py-1.5 text-center">จัดการด่วน</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+
+                    <!-- Table Body (Scrollable) -->
+                    <div id="followupTableContainer" class="flex-1 overflow-y-auto custom-scrollbar w-full min-h-0">
+                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                            <tbody id="followupTable" class="text-xs divide-y divide-slate-800/30">
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center text-slate-500 font-bold uppercase tracking-wider">
+                                        <i class="fas fa-spinner fa-spin text-amber-500 mb-2 text-xl block"></i> กำลังโหลดห้องปฏิบัติการติดตามพนักงาน...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer & Pagination info -->
+                    <div class="flex-none bg-[#0a0f1d] border-t border-slate-800 px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">
+                            แสดงข้อมูลรายการที่ <span id="pageStartItem" class="text-white">0</span> ถึง <span id="pageEndItem" class="text-white">0</span> จากทั้งหมด <span id="totalItems" class="text-amber-500 font-black">0</span> รายการ
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <!-- Jump to Page selector -->
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] text-slate-500 font-bold uppercase">ข้ามไปหน้า:</span>
+                                <select id="jumpSelect" onchange="goToPage(this.value)" class="bg-[#0f172a] border border-slate-800 text-[10px] text-slate-300 font-bold rounded px-1.5 py-0.5 cursor-pointer outline-none"></select>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="prevPage()" class="px-2 py-1 rounded bg-[#0f172a] hover:bg-amber-500 hover:text-black border border-slate-800 text-slate-400 text-[9px] font-black uppercase transition-all duration-150">&laquo; ก่อนหน้า</button>
+                                <div id="pageNumbers" class="flex items-center gap-1"></div>
+                                <button onclick="nextPage()" class="px-2 py-1 rounded bg-[#0f172a] hover:bg-amber-500 hover:text-black border border-slate-800 text-slate-400 text-[9px] font-black uppercase transition-all duration-150">ถัดไป &raquo;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal รายงานความคืบหน้าของสายตรวจ (Supervisor Report Modal) -->
+    <div id="supervisorReportModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border-2 border-cyan-500/40 rounded-3xl p-6 w-[95%] max-w-md shadow-2xl shadow-cyan-500/10 animate-fade-in text-white relative">
+            <button onclick="closeSupervisorModal()" class="absolute right-4 top-4 text-slate-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4 border-b border-cyan-500/10 pb-3">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/30 text-cyan-400 animate-pulse">
+                    <i class="fas fa-flag text-xs"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black uppercase tracking-wider text-white">รายงานความคืบหน้าคนขาดงาน</h3>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">พนักงาน: <span id="repEmpInfo" class="text-cyan-400 font-black">รหัส รปภ.</span></p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-1">สถานะการตรวจสอบพนักงานด่วน</label>
+                    <select id="repStatus" class="w-full bg-[#020617] border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-cyan-500 outline-none transition-all cursor-pointer h-10">
+                        <option value="กำลังตรวจสอบ">🟡 กำลังตรวจสอบ (อยู่ระหว่างสืบค้น/ติดตาม)</option>
+                        <option value="ยืนยันลาออก">🔴 ยืนยันลาออก (ขาดงานยาว/ไม่ทำงานต่อ)</option>
+                        <option value="มือถือมีปัญหา">📱 มือถือพัง / เบอร์เปลี่ยน / ติดต่อยาก</option>
+                        <option value="ติดต่อได้แล้ว">🟢 ติดต่อได้แล้ว (ปรับปรุงสถานะเรียบร้อย)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase ml-1">บันทึกช่วยจำการสืบหาตัว (สายตรวจระบุ)</label>
+                    <textarea id="repNotes" rows="3" placeholder="ระบุเหตุผล เช่น ได้ขี่มอเตอร์ไซค์ไปหาที่บ้านแล้วพบว่าย้ายต่างจังหวัด หรือเปลี่ยนมือถือใหม่ กำลังให้เข้าสแกน..." class="w-full bg-[#020617] border border-slate-700/50 rounded-xl p-3 text-xs font-medium text-slate-300 focus:border-cyan-500 outline-none transition-all resize-none"></textarea>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex items-center gap-3">
+                <button onclick="closeSupervisorModal()" class="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 duration-150">
+                    ยกเลิกภารกิจ
+                </button>
+                <button onclick="saveSupervisorReport()" class="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-95 duration-150">
+                    <i class="fas fa-save text-[9px]"></i> บันทึกผลติดตาม
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI DRAGGABLE ASSISTANT MASCOT -->
+    <div class="ai-assistant-container">
+        <div class="ai-bubble" id="aiBubbleText">
+            สวัสดีค่ะบอส! <b>NEXTGEN-AI</b> ยินดีต้อนรับเข้าสู่ศูนย์ปฏิบัติการติดตามสายตรวจค่ะ
+        </div>
+        <div class="ai-mascot-wrapper">
+            <img src="../img/avata-dashboard.png?v=1" class="ai-video-avatar" id="aiImage" alt="AI Assistant">
+        </div>
+    </div>
+
+    <!-- Control Script -->
+    <script src="js/manageFollowups.js"></script>
+
+    <!-- Draggable Mascot Script -->
+    <script>
+        const aiContainer = document.querySelector('.ai-assistant-container');
+        const aiMascot = document.querySelector('.ai-mascot-wrapper');
+        let isDraggingAI = false;
+        let startX, startY, initialRight, initialBottom;
+
+                function loadAIPosition() {
+            const savedPos = localStorage.getItem('NEXTGEN_ai_pos');
+            let currentRight = 20, currentBottom = 20;
+            if (savedPos) {
+                try {
+                    const pos = JSON.parse(savedPos);
+                    currentRight = pos.right || 20;
+                    currentBottom = pos.bottom || 20;
+                } catch(e){}
+            }
+            const maxRight = Math.max(10, window.innerWidth - 110);
+            const maxBottom = Math.max(10, window.innerHeight - 150);
+            if (currentRight > maxRight) currentRight = maxRight;
+            if (currentBottom > maxBottom) currentBottom = maxBottom;
+            
+            if (aiContainer) {
+                aiContainer.style.right = currentRight + 'px';
+                aiContainer.style.bottom = currentBottom + 'px';
+                updateAIBubbleDirection(currentRight);
+            }
+        }
+        window.addEventListener('resize', loadAIPosition);
+
+        function updateAIBubbleDirection(right) {
+            const screenWidth = window.innerWidth;
+            const currentLeft = screenWidth - right - 100;
+            
+            if (currentLeft < screenWidth / 2) {
+                aiContainer.classList.add('left-side');
+            } else {
+                aiContainer.classList.remove('left-side');
+            }
+        }
+
+        if (aiMascot && aiContainer) {
+            loadAIPosition();
+            
+            aiMascot.addEventListener('mousedown', dragStart);
+            aiMascot.addEventListener('touchstart', dragStart, { passive: true });
+
+            function dragStart(e) {
+                isDraggingAI = true;
+                aiContainer.style.transition = 'none';
+                
+                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                
+                startX = clientX;
+                startY = clientY;
+                
+                const computed = window.getComputedStyle(aiContainer);
+                initialRight = parseInt(computed.right);
+                initialBottom = parseInt(computed.bottom);
+                
+                document.addEventListener('mousemove', dragMove);
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchmove', dragMove, { passive: false });
+                document.addEventListener('touchend', dragEnd);
+            }
+
+            function dragMove(e) {
+                if (!isDraggingAI) return;
+                
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                
+                const newRight = initialRight - dx;
+                const newBottom = initialBottom - dy;
+                
+                aiContainer.style.right = newRight + 'px';
+                aiContainer.style.bottom = newBottom + 'px';
+                updateAIBubbleDirection(newRight);
+            }
+
+            function dragEnd() {
+                isDraggingAI = false;
+                aiContainer.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                const finalPos = {
+                    right: parseInt(aiContainer.style.right),
+                    bottom: parseInt(aiContainer.style.bottom)
+                };
+                localStorage.setItem('NEXTGEN_ai_pos', JSON.stringify(finalPos));
+                
+                document.removeEventListener('mousemove', dragMove);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('touchend', dragEnd);
+            }
+        }
+
+        // Sync horizontal scrolling between table header and table body
+        const followupTableContainer = document.getElementById('followupTableContainer');
+        const followupTableHeaderContainer = document.getElementById('followupTableHeaderContainer');
+        if (followupTableContainer && followupTableHeaderContainer) {
+            followupTableContainer.addEventListener('scroll', function() {
+                followupTableHeaderContainer.scrollLeft = this.scrollLeft;
+            });
+        }
+    </script>
+</body>
+</html>
+
+
+
