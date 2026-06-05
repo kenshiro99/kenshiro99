@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ลงทะเบียน LINE OA | NEXTGEN</title>
+    
+    <!-- Dependencies -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #f59e0b; /* ส้มเรืองแสง */
+            --bg: #020617;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --border: rgba(245, 158, 11, 0.15);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top, rgba(245, 158, 11, 0.08), transparent 60%);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.03);
+            width: 100%;
+            max-width: 420px;
+            padding: 30px 24px;
+        }
+
+        .form-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 14px 18px;
+            color: white;
+            width: 100%;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+            outline: none;
+        }
+
+        .glow-button {
+            background: var(--primary);
+            color: #000;
+            font-weight: 800;
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2);
+        }
+
+        .glow-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.1);
+        }
+        
+        .glow-button:disabled {
+            background: #4b5563;
+            color: #9ca3af;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Registration Box -->
+    <div class="glass-card" id="mainBox">
+        
+        <!-- HEADER -->
+        <header class="text-center mb-6">
+            <div class="inline-flex w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 items-center justify-center text-amber-500 mb-3 shadow-lg shadow-amber-500/5">
+                <i class="fas fa-fingerprint text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">NEXTGEN SYSTEM</h1>
+            <p class="text-[9px] text-amber-500 font-black tracking-[3px] uppercase mt-1">LINE Registration Terminal</p>
+        </header>
+
+        <!-- LOADER STATE -->
+        <div id="loaderState" class="py-12 text-center space-y-4">
+            <div class="inline-block animate-spin w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full"></div>
+            <p id="loaderMessage" class="text-slate-400 text-xs font-bold tracking-wide">กำลังเชื่อมต่อ LINE LIFF SDK...</p>
+        </div>
+
+        <!-- FORM STATE (HIDDEN INITIALLY) -->
+        <div id="formState" class="hidden space-y-6">
+            
+            <!-- User Avatar & Profile info from LINE -->
+            <div class="flex items-center gap-4 bg-white/5 border border-white/5 rounded-2xl p-4">
+                <img id="userAvatar" src="" alt="Avatar" class="w-12 h-12 rounded-xl border border-white/10 object-cover bg-slate-900">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">ผูกบัญชี LINE</p>
+                    <p id="userDisplayName" class="text-sm font-bold text-white truncate">กำลังโหลดโปรไฟล์...</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Employee ID input -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">รหัสพนักงาน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><i class="fas fa-id-card"></i></span>
+                        <input type="text" id="empId" class="form-input pl-10 font-mono" placeholder="EMP-XXXX" required>
+                    </div>
+                </div>
+
+                <!-- Password input -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">รหัสผ่าน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="password" class="form-input pl-10" placeholder="กรอกรหัสผ่านเพื่อยืนยันตัวตน" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="errorBanner" class="hidden p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-start gap-2">
+                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                <span id="errorMessage">เกิดข้อผิดพลาดในการลงทะเบียน</span>
+            </div>
+
+            <!-- Submit -->
+            <button id="btnSubmit" onclick="submitRegistration()" class="glow-button flex items-center justify-center gap-2">
+                <i class="fas fa-key"></i> ยืนยันและเข้าใช้งานระบบ
+            </button>
+        </div>
+
+        <!-- SUCCESS STATE (HIDDEN INITIALLY) -->
+        <div id="successState" class="hidden text-center py-10 space-y-4">
+            <div class="inline-flex w-20 h-20 bg-emerald-500/15 border border-emerald-500/20 rounded-full items-center justify-center text-emerald-400 text-4xl shadow-xl shadow-emerald-500/5">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white">ลงทะเบียนสำเร็จ!</h2>
+            <p class="text-slate-400 text-xs px-4">ผูกบัญชีพนักงานกับไลน์เรียบร้อยแล้วค่ะ แผงควบคุมจะสลับให้โดยอัตโนมัติ ระบบกำลังพาคุณกลับไปยังห้องแชท...</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Supabase Settings (ดึงตาม config.js)
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let lineUserId = '';
+
+        // กรุณากรอก LIFF ID ของคุณพรชัยที่ได้จาก LINE Developer Console ลงในฟิลด์นี้ค่ะ
+        const LIFF_ID = 'YOUR_LIFF_ID';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initLiff();
+        });
+
+        async function initLiff() {
+            try {
+                if (LIFF_ID === 'YOUR_LIFF_ID') {
+                    showError('กรุณาตั้งค่า LIFF ID ในไฟล์ RegisterLine.html ก่อนใช้งานค่ะ');
+                    return;
+                }
+                
+                await liff.init({ liffId: LIFF_ID });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                
+                const profile = await liff.getProfile();
+                lineUserId = profile.userId;
+                
+                // แสดงผลโปรไฟล์ที่ดึงมาจาก LINE
+                document.getElementById('userAvatar').src = profile.pictureUrl || '';
+                document.getElementById('userDisplayName').innerText = profile.displayName || 'LINE User';
+                
+                // สลับสถานะ UI
+                document.getElementById('loaderState').classList.add('hidden');
+                document.getElementById('formState').classList.remove('hidden');
+                
+            } catch (err) {
+                console.error("LIFF Init Error:", err);
+                showError('ไม่สามารถโหลด LINE SDK ได้ หรือเปิดใช้งานนอกแอป LINE: ' + err.message);
+            }
+        }
+
+        async function submitRegistration() {
+            const empId = document.getElementById('empId').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('btnSubmit');
+            const errorBanner = document.getElementById('errorBanner');
+            
+            if (!empId || !password) {
+                showFormError('กรุณากรอกรหัสพนักงานและรหัสผ่านค่ะ');
+                return;
+            }
+
+            // Lock UI & Show loading
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังตรวจสอบข้อมูล...';
+            errorBanner.classList.add('hidden');
+
+            try {
+                // เรียกใช้ RPC ใน Supabase เพื่อลงทะเบียน
+                const { data, error } = await supabaseClient.rpc('register_staff_line', {
+                    p_emp_id: empId,
+                    p_password: password,
+                    p_line_user_id: lineUserId
+                });
+
+                if (error) throw error;
+
+                if (data && data.success) {
+                    // แสดงสถานะสำเร็จ
+                    document.getElementById('formState').classList.add('hidden');
+                    document.getElementById('successState').classList.remove('hidden');
+
+                    // ส่งข้อความกลับเข้าห้องแชทของ LINE เพื่อให้ n8n ดักรับรู้อัตโนมัติ
+                    try {
+                        await liff.sendMessages([
+                            {
+                                type: 'text',
+                                text: '✅ ลงทะเบียนพนักงานสำเร็จ'
+                            }
+                        ]);
+                    } catch (msgErr) {
+                        console.error("Failed to send message via LIFF:", msgErr);
+                        // ถ้าส่งไม่ผ่านไม่เป็นไร ให้ดำเนินการขั้นตอนถัดไป
+                    }
+
+                    // ปิดหน้าต่าง LIFF ย้อนกลับห้องแชทใน 2 วินาที
+                    setTimeout(() => {
+                        liff.closeWindow();
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(data.message || 'รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง');
+                }
+
+            } catch (err) {
+                console.error("Registration failed:", err);
+                showFormError(err.message || 'เกิดข้อผิดพลาดในการติดต่อฐานข้อมูล');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-key"></i> ยืนยันและเข้าใช้งานระบบ';
+            }
+        }
+
+        function showFormError(msg) {
+            const errorBanner = document.getElementById('errorBanner');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.innerText = msg;
+            errorBanner.classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            document.getElementById('loaderState').classList.add('hidden');
+            const formState = document.getElementById('formState');
+            formState.classList.remove('hidden');
+            showFormError(msg);
+            document.getElementById('btnSubmit').disabled = true;
+        }
+    </script>
+</body>
+</html>
