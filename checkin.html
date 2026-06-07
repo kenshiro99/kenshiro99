@@ -7,6 +7,7 @@
     <title>Nextgen | ระบบระบุพิกัดหน่วยงาน</title>
 
     <!-- Dependencies -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -273,25 +274,96 @@
         let supabaseClient;
         let currentMatch = null;
         let userData = null;
+        let matchedUnitsList = [];
 
-        // --- 2. AUTHENTICATION ---
-        function checkAuth() {
+        // --- 2. AUTHENTICATION & LIFF AUTO-LOGIN ---
+        const LIFF_ID = '2010305006-snZGIJEw';
+
+        async function checkAuthAndInit() {
+            if (typeof supabase === 'undefined') {
+                alert("Network Error: Supabase failed to load.");
+                return;
+            }
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
             try {
+                // 1. ตรวจสอบ Session เดิมในเครื่องก่อน
                 let sessionString = localStorage.getItem('nextgen_user');
                 if (!sessionString && sessionStorage.getItem('nextgen_user')) {
                     localStorage.setItem('nextgen_user', sessionStorage.getItem('nextgen_user'));
                     sessionString = sessionStorage.getItem('nextgen_user');
                 }
-                if (!sessionString) throw new Error('No session');
-                
-                userData = JSON.parse(sessionString);
-                const userLevel = (userData.level || '').toLowerCase();
-                const allowedRoles = ['supervisor', 'guard', 'admin', 'manager'];
-                
-                if (!allowedRoles.includes(userLevel)) throw new Error('Unauthorized');
-                
+
+                if (sessionString) {
+                    userData = JSON.parse(sessionString);
+                    const userLevel = (userData.level || '').toLowerCase();
+                    const allowedRoles = ['supervisor', 'guard', 'admin', 'manager'];
+                    if (allowedRoles.includes(userLevel)) {
+                        console.log("Session active:", userData.name);
+                        detectLocation();
+                        return;
+                    }
+                }
+
+                // 2. ถ้าไม่มี Session เดิม ให้ตรวจสอบว่าเปิดในแอป LINE หรือไม่ (LIFF Client)
+                if (typeof liff !== 'undefined') {
+                    try {
+                        updateAIText("กำลังเชื่อมต่อระบบ LINE...");
+                        await liff.init({ liffId: LIFF_ID });
+
+                        if (liff.isInClient()) {
+                            if (!liff.isLoggedIn()) {
+                                liff.login();
+                                return;
+                            }
+
+                            updateAIText("กำลังตรวจสอบข้อมูลพนักงาน...");
+                            const profile = await liff.getProfile();
+                            const lineUserId = profile.userId;
+
+                            // ค้นหารายชื่อจากฐานข้อมูลผ่าน line_user_id
+                            const { data, error } = await supabaseClient
+                                .from('staff')
+                                .select('*')
+                                .eq('line_user_id', lineUserId)
+                                .single();
+
+                            if (error || !data) {
+                                // ถ้ายังไม่ได้ลงทะเบียน LINE
+                                updateAIText("❌ คุณยังไม่ได้ลงทะเบียนใช้งาน LINE OA นี้ค่ะ<br>กำลังพาท่านไปหน้าลงทะเบียน...");
+                                setTimeout(() => {
+                                    window.location.replace('Frontend/RegisterLine.html');
+                                }, 2500);
+                                return;
+                            }
+
+                            if (data.status === 'ปิด') {
+                                alert("บัญชีของคุณถูกระงับการใช้งาน");
+                                window.location.replace('index.html');
+                                return;
+                            }
+
+                            // บันทึก Session
+                            localStorage.setItem('nextgen_user', JSON.stringify(data));
+                            sessionStorage.setItem('nextgen_user', JSON.stringify(data));
+                            userData = data;
+
+                            console.log("LIFF Auto-login successful:", userData.name);
+                            detectLocation();
+                            return;
+                        }
+                    } catch (liffErr) {
+                        console.warn("LIFF initialization skipped or failed:", liffErr);
+                    }
+                }
+
+                // 3. ถ้าไม่มี Session และไม่ใช่การเปิดใน LINE ให้ส่งไปหน้า Login
+                console.log("No session and not in LINE Client. Redirecting to login page...");
+                localStorage.removeItem('nextgen_user');
+                window.location.replace('index.html');
+
             } catch (e) {
-                console.error("Access Denied:", e.message);
+                console.error("Access Denied / Auth Error:", e.message);
                 localStorage.removeItem('nextgen_user');
                 window.location.replace('index.html');
             }
@@ -318,7 +390,8 @@
 
                     let matchedUnits = [];
                     units.forEach(u => {
-                        if (u.latitude && u.longitude) {
+                        // คัดกรองเฉพาะหน่วยงานที่เปิดทำการเท่านั้น (status !== 'ปิด')
+                        if (u.status !== 'ปิด' && u.latitude && u.longitude) {
                             const uLat = parseFloat(u.latitude);
                             const uLng = parseFloat(u.longitude);
                             const distance = calculateDistance(myLat, myLng, uLat, uLng);
@@ -462,6 +535,8 @@
 
         // --- 5. UI UPDATES ---
         function showSelection(units, lat, lng) {
+            matchedUnitsList = units; // บันทึกรายชื่อหน่วยงานลงอาเรย์โกลบอลเพื่อความแม่นยำสูง 100%
+
             document.getElementById('radar').style.animation = 'none';
             document.getElementById('statusIcon').className = 'fas fa-layer-group text-amber-500';
             document.getElementById('statusLabel').innerText = 'พบหลายหน่วยงาน';
@@ -481,9 +556,9 @@
 
             const unitInfoDiv = document.getElementById('unitInfo');
             let html = '<div class="mt-4 space-y-3">';
-            units.forEach(u => {
+            units.forEach((u, index) => {
                 html += `
-                    <button onclick="showMatch(${JSON.stringify(u).replace(/"/g, '&quot;')}, ${lat}, ${lng})" 
+                    <button onclick="selectUnitFromList(${index}, ${lat}, ${lng})" 
                         class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-sky-500/20 hover:border-sky-500/50 transition-all active:scale-95">
                         <div class="flex justify-between items-center">
                             <div>
@@ -497,6 +572,12 @@
             html += '</div>';
             unitInfoDiv.innerHTML = html;
             unitInfoDiv.classList.remove('hidden');
+        }
+
+        function selectUnitFromList(index, lat, lng) {
+            if (matchedUnitsList && matchedUnitsList[index]) {
+                showMatch(matchedUnitsList[index], lat, lng);
+            }
         }
 
         function updateUIForMatch(unit, nextAction, actionText) {
@@ -587,10 +668,7 @@
         }
 
         window.onload = () => {
-            checkAuth();
-            if (typeof supabase === 'undefined') { alert("Network Error: Supabase failed to load."); return; }
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            detectLocation();
+            checkAuthAndInit();
         };
     </script>
 </body>
