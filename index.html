@@ -7,6 +7,7 @@
     <title>Nextgen ระบบพอร์ทัล | เข้าสู่ระบบ</title>
 
     <!-- Dependencies -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -706,14 +707,89 @@
             mainBtn.style.opacity = '1';
         }
 
-        window.onload = () => {
-            // เคลียร์ session เก่าเพื่อบังคับให้ล็อกอินใหม่ทุกครั้งตามความต้องการ
+        const LIFF_ID = '2010305006-snZGIJEw';
+
+        async function checkLiffAutoLogin() {
+            if (typeof liff !== 'undefined') {
+                try {
+                    await liff.init({ liffId: LIFF_ID });
+                    if (liff.isInClient()) {
+                        if (!liff.isLoggedIn()) {
+                            liff.login();
+                            return;
+                        }
+                        
+                        const aiText = document.getElementById('aiText');
+                        typeText(aiText, "กำลังเชื่อมต่อระบบ LINE และตรวจสอบสิทธิ์...");
+                        
+                        const profile = await liff.getProfile();
+                        const lineUserId = profile.userId;
+                        
+                        const { data, error } = await supabaseClient
+                            .from('staff')
+                            .select('*')
+                            .eq('line_user_id', lineUserId)
+                            .single();
+                            
+                        if (data && !error) {
+                            if (data.status === 'ปิด') {
+                                alert('บัญชีนี้ถูกระงับการใช้งาน');
+                                initNormalLogin();
+                                return;
+                            }
+                            
+                            // บันทึก Session
+                            localStorage.setItem('nextgen_user', JSON.stringify(data));
+                            sessionStorage.setItem('nextgen_user', JSON.stringify(data));
+                            
+                            // แสดงผลสำเร็จและเมนูทางเลือกตามระดับ
+                            let cleanName = (data.name || '').trim();
+                            const prefixes = ['นาย', 'นางสาว', 'นาง', 'น.ส.', 'นส.'];
+                            prefixes.forEach(p => {
+                                if (cleanName.startsWith(p)) {
+                                    cleanName = cleanName.replace(p, '').trim();
+                                }
+                            });
+                            const fullName = `${cleanName} ${data.lastname || ''}`.trim();
+                            const level = (data.level || '').toLowerCase();
+                            
+                            document.getElementById('loginCard').style.display = 'none';
+                            typeText(aiText, `<span class="text-sky-400 font-bold text-lg">เข้าสู่ระบบสำเร็จ!</span><br>สวัสดีครับคุณ <b>${fullName}</b><br>วันนี้ต้องการเข้าใช้งานในส่วนใดดีครับ?`);
+                            
+                            const aiChoices = document.getElementById('aiChoices');
+                            aiChoices.innerHTML = `
+                                <button class="ai-choice-btn" onclick="postLoginRedirect('checkin', '${level}')">
+                                    <i class="fas fa-location-dot mr-2 text-cyber-gold"></i> ลงเวลาเข้า-ออกงาน
+                                </button>
+                                <button class="ai-choice-btn" onclick="postLoginRedirect('report', '${level}')">
+                                    <i class="fas fa-chart-line mr-2 text-cyber-gold"></i> ${level === 'supervisor' ? 'ระบบรายงานสรุปงาน (OP)' : 'ดูประวัติสแกน/รายงาน'}
+                                </button>
+                            `;
+                            aiChoices.style.setProperty('display', 'grid', 'important');
+                            aiChoices.classList.add('animate-bounce-short');
+                            return;
+                        } else {
+                            typeText(aiText, "❌ บัญชี LINE ของคุณยังไม่ได้ลงทะเบียนผูกกับรหัสพนักงานค่ะ กรุณากรอกข้อมูลเพื่อลงชื่อเข้าใช้งานก่อนนะคะ");
+                        }
+                    }
+                } catch (err) {
+                    console.warn("LIFF auto-login failed or skipped:", err);
+                }
+            }
+
+            // Fallback: ทำการล็อกอินปกติ
+            initNormalLogin();
+        }
+
+        function initNormalLogin() {
             localStorage.removeItem('nextgen_user');
             sessionStorage.removeItem('nextgen_user');
             console.log("System Ready. Please login.");
-
-            // AI Greeting Logic
             setTimeout(initAIGreeting, 1000);
+        }
+
+        window.onload = () => {
+            checkLiffAutoLogin();
         }
 
         // --- SMART TYPEWRITER EFFECT ---
