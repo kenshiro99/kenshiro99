@@ -254,6 +254,9 @@
             <span class="uppercase">&copy; 2026 &bull; NEXTGEN SYSTEM CENTER</span> <span class="ml-1">Ver.1.0</span>
         </p>
         <span class="text-[7px] text-slate-700 block">Developer: Ponchai Onkum</span>
+        <div id="debugConsole" class="mt-4 p-3 bg-slate-950/90 border border-slate-800 text-[8px] text-emerald-400 text-left rounded-xl font-mono hidden max-h-[150px] overflow-y-auto w-[90%] max-w-[340px] mx-auto">
+            <div class="border-b border-white/10 pb-1 mb-1 font-bold text-white text-center">SYSTEM CONSOLE LOG</div>
+        </div>
     </div>
 
     <!-- AI ASSISTANT -->
@@ -279,7 +282,21 @@
         // --- 2. AUTHENTICATION & LIFF AUTO-LOGIN ---
         const LIFF_ID = '2010305006-snZGIJEw';
 
+        function logDebug(msg) {
+            console.log("[DEBUG]", msg);
+            const consoleDiv = document.getElementById('debugConsole');
+            if (consoleDiv) {
+                consoleDiv.classList.remove('hidden');
+                consoleDiv.innerHTML += `<div class="py-0.5 border-b border-white/5">&gt; ${msg}</div>`;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+        }
+
         async function checkAuthAndInit() {
+            logDebug("Starting Auth and LIFF Init...");
+            logDebug("UA: " + navigator.userAgent);
+            logDebug("URL: " + window.location.href);
+
             if (typeof supabase === 'undefined') {
                 alert("Network Error: Supabase failed to load.");
                 return;
@@ -296,31 +313,44 @@
 
                 if (sessionString) {
                     userData = JSON.parse(sessionString);
+                    logDebug("Active session found: " + userData.name);
                     const userLevel = (userData.level || '').toLowerCase();
                     const allowedRoles = ['supervisor', 'guard', 'admin', 'manager'];
                     if (allowedRoles.includes(userLevel)) {
-                        console.log("Session active:", userData.name);
                         detectLocation();
                         return;
                     }
                 }
 
+                logDebug("No active session found. Running LIFF check...");
+
                 // 2. ถ้าไม่มี Session เดิม ให้ตรวจสอบว่าเปิดในแอป LINE หรือไม่ (LIFF Client)
                 if (typeof liff !== 'undefined') {
+                    logDebug("LIFF SDK: FOUND");
                     try {
                         updateAIText("กำลังเชื่อมต่อระบบ LINE...");
+                        logDebug("Initializing LIFF with ID: " + LIFF_ID);
                         await liff.init({ liffId: LIFF_ID });
+                        logDebug("LIFF Init: SUCCESS");
 
-                        if (liff.isInClient()) {
-                            if (!liff.isLoggedIn()) {
+                        const inClient = liff.isInClient();
+                        const loggedIn = liff.isLoggedIn();
+                        logDebug(`InClient: ${inClient}, LoggedIn: ${loggedIn}`);
+
+                        if (inClient) {
+                            if (!loggedIn) {
+                                logDebug("Not logged in to LIFF. Triggering login...");
                                 liff.login();
                                 return;
                             }
 
                             updateAIText("กำลังตรวจสอบข้อมูลพนักงาน...");
+                            logDebug("Fetching LINE profile...");
                             const profile = await liff.getProfile();
                             const lineUserId = profile.userId;
+                            logDebug("LINE User ID: " + lineUserId);
 
+                            logDebug("Querying Supabase staff table...");
                             // ค้นหารายชื่อจากฐานข้อมูลผ่าน line_user_id
                             const { data, error } = await supabaseClient
                                 .from('staff')
@@ -328,7 +358,12 @@
                                 .eq('line_user_id', lineUserId)
                                 .single();
 
+                            if (error) {
+                                logDebug("Supabase error: " + JSON.stringify(error));
+                            }
+
                             if (error || !data) {
+                                logDebug("No matching staff member found.");
                                 // ถ้ายังไม่ได้ลงทะเบียน LINE
                                 updateAIText("❌ คุณยังไม่ได้ลงทะเบียนใช้งาน LINE OA นี้ค่ะ<br>กำลังพาท่านไปหน้าลงทะเบียน...");
                                 setTimeout(() => {
@@ -338,31 +373,38 @@
                             }
 
                             if (data.status === 'ปิด') {
+                                logDebug("Staff status is disabled.");
                                 alert("บัญชีของคุณถูกระงับการใช้งาน");
                                 window.location.replace('index.html');
                                 return;
                             }
 
+                            logDebug("Staff matched: " + data.name);
                             // บันทึก Session
                             localStorage.setItem('nextgen_user', JSON.stringify(data));
                             sessionStorage.setItem('nextgen_user', JSON.stringify(data));
                             userData = data;
 
-                            console.log("LIFF Auto-login successful:", userData.name);
                             detectLocation();
                             return;
+                        } else {
+                            logDebug("Outside LINE client. Standard login fallback.");
                         }
                     } catch (liffErr) {
+                        logDebug("LIFF Error: " + liffErr.message);
                         console.warn("LIFF initialization skipped or failed:", liffErr);
                     }
+                } else {
+                    logDebug("LIFF SDK: NOT FOUND");
                 }
 
                 // 3. ถ้าไม่มี Session และไม่ใช่การเปิดใน LINE ให้ส่งไปหน้า Login
-                console.log("No session and not in LINE Client. Redirecting to login page...");
+                logDebug("Redirecting to index.html...");
                 localStorage.removeItem('nextgen_user');
                 window.location.replace('index.html');
 
             } catch (e) {
+                logDebug("Auth exception: " + e.message);
                 console.error("Access Denied / Auth Error:", e.message);
                 localStorage.removeItem('nextgen_user');
                 window.location.replace('index.html');

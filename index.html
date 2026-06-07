@@ -525,6 +525,9 @@
                 <p class="text-[9px] text-slate-500 font-bold tracking-widest uppercase">
                     &copy; 2026 NEXTGEN SYSTEM CENTER &bull; Ver.1.0
                 </p>
+                <div id="debugConsole" class="mt-4 p-3 bg-slate-950/90 border border-slate-800 text-[8px] text-emerald-400 text-left rounded-xl font-mono hidden max-h-[150px] overflow-y-auto">
+                    <div class="border-b border-white/10 pb-1 mb-1 font-bold text-white text-center">SYSTEM CONSOLE LOG</div>
+                </div>
             </div>
         </div>
     </div>
@@ -709,12 +712,35 @@
 
         const LIFF_ID = '2010305006-snZGIJEw';
 
+        function logDebug(msg) {
+            console.log("[DEBUG]", msg);
+            const consoleDiv = document.getElementById('debugConsole');
+            if (consoleDiv) {
+                consoleDiv.classList.remove('hidden');
+                consoleDiv.innerHTML += `<div class="py-0.5 border-b border-white/5">&gt; ${msg}</div>`;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+        }
+
         async function checkLiffAutoLogin() {
+            logDebug("Starting LIFF check...");
+            logDebug("UA: " + navigator.userAgent);
+            logDebug("URL: " + window.location.href);
+            
             if (typeof liff !== 'undefined') {
+                logDebug("LIFF SDK: FOUND");
                 try {
+                    logDebug("Initializing LIFF with ID: " + LIFF_ID);
                     await liff.init({ liffId: LIFF_ID });
-                    if (liff.isInClient()) {
-                        if (!liff.isLoggedIn()) {
+                    logDebug("LIFF Init: SUCCESS");
+                    
+                    const inClient = liff.isInClient();
+                    const loggedIn = liff.isLoggedIn();
+                    logDebug(`InClient: ${inClient}, LoggedIn: ${loggedIn}`);
+                    
+                    if (inClient) {
+                        if (!loggedIn) {
+                            logDebug("Not logged in to LIFF. Triggering login...");
                             liff.login();
                             return;
                         }
@@ -722,22 +748,24 @@
                         const aiText = document.getElementById('aiText');
                         typeText(aiText, "กำลังเชื่อมต่อระบบ LINE และตรวจสอบสิทธิ์...");
                         
+                        logDebug("Fetching LINE profile...");
                         const profile = await liff.getProfile();
                         const lineUserId = profile.userId;
+                        logDebug("LINE User ID: " + lineUserId);
                         
+                        logDebug("Querying Supabase staff table...");
                         const { data, error } = await supabaseClient
                             .from('staff')
                             .select('*')
                             .eq('line_user_id', lineUserId)
                             .single();
                             
+                        if (error) {
+                            logDebug("Supabase error: " + JSON.stringify(error));
+                        }
+                        
                         if (data && !error) {
-                            if (data.status === 'ปิด') {
-                                alert('บัญชีนี้ถูกระงับการใช้งาน');
-                                initNormalLogin();
-                                return;
-                            }
-                            
+                            logDebug("User matched: " + data.name + " (" + data.level + ")");
                             // บันทึก Session
                             localStorage.setItem('nextgen_user', JSON.stringify(data));
                             sessionStorage.setItem('nextgen_user', JSON.stringify(data));
@@ -769,12 +797,18 @@
                             aiChoices.classList.add('animate-bounce-short');
                             return;
                         } else {
+                            logDebug("No matching staff member found in Supabase.");
                             typeText(aiText, "❌ บัญชี LINE ของคุณยังไม่ได้ลงทะเบียนผูกกับรหัสพนักงานค่ะ กรุณากรอกข้อมูลเพื่อลงชื่อเข้าใช้งานก่อนนะคะ");
                         }
+                    } else {
+                        logDebug("Outside LINE app. Using standard fallback login.");
                     }
                 } catch (err) {
+                    logDebug("LIFF Error: " + err.message);
                     console.warn("LIFF auto-login failed or skipped:", err);
                 }
+            } else {
+                logDebug("LIFF SDK: NOT FOUND");
             }
 
             // Fallback: ทำการล็อกอินปกติ
