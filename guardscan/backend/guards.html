@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการ รปภ. - Nexgen Patrol Center</title>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for modern indicators -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase Core Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- System config (Supabase Keys) -->
+    <script src="../../Backend/config.js"></script>
+    <!-- Custom separated stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-section" style="padding: 0; border: none;">
+            <div class="logo-icon" style="width:36px; height:36px; font-size:16px; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title" style="font-size:16px;">NEXGEN</span>
+                <span class="logo-subtitle" style="font-size:8px;">Patrol Center</span>
+            </div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleMobileSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Premium Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo-icon" style="display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title">NEXGEN</span>
+                <span class="logo-subtitle">Patrol Center</span>
+            </div>
+        </div>
+        <ul class="menu">
+            <li id="menu-dashboard" onclick="location.href='dashboard.html'">
+                <i class="fas fa-chart-pie"></i><span>ภาพรวมระบบ</span>
+            </li>
+            <li id="menu-sites" onclick="location.href='sites.html'">
+                <i class="fas fa-building"></i><span>จัดการหน่วยงาน</span>
+            </li>
+            <li id="menu-checkpoints" onclick="location.href='checkpoints.html'">
+                <i class="fas fa-map-marker-alt"></i><span>จัดการจุดตรวจ</span>
+            </li>
+            <li id="menu-rounds" onclick="location.href='rounds.html'">
+                <i class="fas fa-clock"></i><span>จัดการรอบการตรวจ</span>
+            </li>
+            <li id="menu-guards" class="active" onclick="location.href='guards.html'">
+                <i class="fas fa-user-shield"></i><span>จัดการ รปภ.</span>
+            </li>
+            <li id="menu-reports" onclick="location.href='reports.html'">
+                <i class="fas fa-file-invoice"></i><span>รายงานสรุป</span>
+            </li>
+            <li id="menu-settings" onclick="location.href='settings.html'">
+                <i class="fas fa-cog"></i><span>ตั้งค่าระบบ</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Working Container -->
+    <div class="main-content">
+        <!-- Desktop Glassmorphic Header -->
+        <header class="header">
+            <div class="header-title-container">
+                <h2 id="page-title">จัดการเจ้าหน้าที่ รปภ.</h2>
+                <p id="page-subtitle">ตรวจสอบและกำหนดสาขาปฏิบัติงานของเจ้าหน้าที่ รปภ. แต่ละกะ</p>
+            </div>
+            <div class="header-controls">
+                <div class="header-clock">
+                    <span id="digitalClock">00:00:00</span>
+                    <span id="digitalDate">-- January 2026</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">บ</div>
+                    <div class="user-info">
+                        <span class="user-name">ผู้ดูแลระบบ: บอส</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Body -->
+        <div class="container container-fixed">
+            
+            <div id="view-guards" class="view-section active view-section-fixed">
+                <div class="panel panel-fixed">
+                    <div class="panel-header">
+                        <h3>👥 ข้อมูลเจ้าหน้าที่ รปภ.</h3>
+                        <button class="btn btn-success" onclick="openModal('add-guard-modal')">
+                            <i class="fas fa-user-plus"></i> เพิ่มพนักงานใหม่
+                        </button>
+                    </div>
+                    <div class="table-responsive table-responsive-fixed">
+                        <table class="table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>รหัสพนักงาน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ประจำสาขา</th>
+                                    <th>สถานะปัจจุบัน</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guards-table-body">
+                                <!-- Injected dynamically in JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Add Guard -->
+    <div class="modal-backdrop" id="add-guard-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>👥 ขึ้นทะเบียน รปภ. (ค้นหาจากฐานข้อมูล staff)</h3>
+                <button class="modal-close" onclick="closeModal('add-guard-modal')">&times;</button>
+            </div>
+            
+            <!-- Database Search Console -->
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-search-plus" style="color:var(--primary);"></i> ค้นหารายชื่อพนักงาน รปภ. ดึงสด
+                </label>
+                <div style="position: relative; display: flex; width: 100%;">
+                    <input type="text" class="form-control" id="search-db-guard-input" style="width: 100%; padding-left: 45px; height: 45px;" placeholder="พิมพ์ค้นหารหัสพนักงาน หรือชื่อจริง รปภ. เพื่อจัดกะเข้าเวร..." oninput="debouncedGuardSearch()">
+                    <i class="fas fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; font-size: 15px;"></i>
+                </div>
+            </div>
+            
+            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 8px; font-weight: 500;">ผลการค้นหาพนักงานในระบบ Supabase:</label>
+            <div id="db-guard-search-results" style="max-height: 280px; overflow-y: auto; padding-right: 5px;">
+                <!-- Dynamically loaded results -->
+            </div>
+            
+            <div class="modal-footer" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                <button class="btn btn-outline" onclick="closeModal('add-guard-modal')">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Injections -->
+    <div class="toast-container" id="toast-box-holder"></div>
+
+    <!-- Custom separated javascript -->
+    <script src="../js/app.js"></script>
+
+    <!-- Page-Specific Supabase Staff Search Engine -->
+    <script>
+        let searchGuardTimeout = null;
+
+        function debouncedGuardSearch() {
+            clearTimeout(searchGuardTimeout);
+            searchGuardTimeout = setTimeout(searchGuardsInDB, 200);
+        }
+
+        async function searchGuardsInDB() {
+            const query = document.getElementById('search-db-guard-input').value.trim();
+            const resultsContainer = document.getElementById('db-guard-search-results');
+            
+            if (!resultsContainer) return;
+            resultsContainer.innerHTML = '<div style="text-align:center; padding: 25px; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> กำลังค้นหาประวัติพนักงานในตาราง staff...</div>';
+            
+            try {
+                let dbQuery = window.supabaseClient
+                    .from('staff')
+                    .select('*');
+                
+                if (query) {
+                    dbQuery = dbQuery.or(`name.ilike.%${query}%,emp_id.ilike.%${query}%`);
+                }
+                
+                const { data, error } = await dbQuery.limit(30);
+                
+                if (error) {
+                    console.error('Error fetching staff:', error);
+                    resultsContainer.innerHTML = `<div style="text-align:center; padding: 25px; color: var(--danger);"><i class="fas fa-exclamation-circle"></i> เกิดข้อผิดพลาด: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    resultsContainer.innerHTML = '<div style="text-align:center; padding: 25px; color: var(--text-muted);"><i class="fas fa-search-minus"></i> ไม่พบรายชื่อ รปภ. ที่ตรงกับการค้นหานี้</div>';
+                    return;
+                }
+                
+                // Filter only guards client side for robustness (checking level column from DB)
+                const filteredData = data.filter(staff => {
+                    const level = (staff.level || '').toLowerCase();
+                    return level === 'guard';
+                });
+                
+                if (filteredData.length === 0) {
+                    resultsContainer.innerHTML = '<div style="text-align:center; padding: 25px; color: var(--text-muted);"><i class="fas fa-search-minus"></i> ไม่พบรายชื่อ รปภ. ที่ตรงกับคำค้นหานี้</div>';
+                    return;
+                }
+                
+                resultsContainer.innerHTML = '';
+                filteredData.slice(0, 10).forEach(staff => {
+                    // Check if already in guardsData
+                    const exists = guardsData.some(g => g.code.toLowerCase() === staff.emp_id.toLowerCase());
+                    
+                    const isSupervisor = (staff.level || '').toLowerCase() === 'supervisor';
+                    let roleBadgeColor = isSupervisor ? 'var(--warning)' : 'var(--primary)';
+                    let roleBadgeBg = isSupervisor ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+                    
+                    // Use staff.role for display, default to staff.level
+                    const displayRole = staff.role || staff.level || 'Guard';
+                    
+                    const isStatusActive = staff.status === 'Active' || staff.status === 'เปิด';
+                    const displayStatus = isStatusActive ? 'กำลังเข้ากะ' : 'ออกกะแล้ว';
+                    
+                    const itemHtml = `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; transition: var(--transition);">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-family: var(--font-outfit); font-weight: 700; color: var(--primary); font-size: 13px;">${staff.emp_id}</span>
+                                    <span style="background: ${roleBadgeBg}; color: ${roleBadgeColor}; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;">${displayRole}</span>
+                                    <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Zone: ${staff.zone || 'ทั่วไป'}</span>
+                                </div>
+                                <span style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${staff.name}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);"><i class="fas fa-building-circle-check"></i> ต้นสังกัดเดิม: ${staff.unit || 'ไม่มีระบุ'}</span>
+                            </div>
+                            <div>
+                                ${exists ? 
+                                    `<span class="status st-ok" style="font-size: 11px;"><i class="fas fa-check"></i> ขึ้นเวรแล้ว</span>` : 
+                                    `<button class="btn btn-success" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;" onclick="addDBGuardToState('${staff.emp_id}', '${staff.name.replace(/'/g, "\\'")}', '${(staff.unit || 'Show DC').replace(/'/g, "\\'")}', '${displayStatus}')">
+                                        <i class="fas fa-user-check"></i> เลือก
+                                     </button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                    resultsContainer.innerHTML += itemHtml;
+                });
+            } catch (err) {
+                console.error(err);
+                resultsContainer.innerHTML = `<div style="text-align:center; padding: 25px; color: var(--danger);"><i class="fas fa-times-circle"></i> ข้อผิดพลาดทางเทคนิค: ${err.message}</div>`;
+            }
+        }
+
+        function addDBGuardToState(code, name, siteName, status) {
+            if (guardsData.some(g => g.code.toLowerCase() === code.toLowerCase())) {
+                showToast('รปภ. คนนี้ได้รับการขึ้นทะเบียนไปแล้ว!', 'warning');
+                return;
+            }
+
+            // Push to state
+            guardsData.push({
+                code: code,
+                name: name,
+                siteName: siteName,
+                status: status
+            });
+
+            // Save and re-render
+            saveStateToLocalStorage();
+            renderAll();
+            showToast(`ขึ้นทะเบียน รปภ. "${name}" เข้าสู่โครงการสำเร็จแล้ว!`);
+
+            // Dispatch LINE Notify
+            sendLineNotification(`👥 ขึ้นทะเบียน รปภ. ใหม่ (ดึงจาก Supabase):\n- รหัสพนักงาน: ${code}\n- ชื่อ-นามสกุล: ${name}\n- โครงการที่เข้าเวร: ${siteName}\n- สถานะแรกเริ่ม: ${status}\n\nสายตรวจและ รปภ. พร้อมลาดตระเวน! 🛡️`);
+
+            // Close modal
+            closeModal('add-guard-modal');
+        }
+
+        // Overload openModal to trigger search automatically
+        const originalOpenModal = openModal;
+        openModal = function(id) {
+            originalOpenModal(id);
+            if (id === 'add-guard-modal') {
+                const input = document.getElementById('search-db-guard-input');
+                if (input) input.value = '';
+                setTimeout(searchGuardsInDB, 200);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการรอบการตรวจ - Nexgen Patrol Center</title>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for modern indicators -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom separated stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .search-results-box div {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--text-primary);
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .search-results-box div:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-section" style="padding: 0; border: none;">
+            <div class="logo-icon" style="width:36px; height:36px; font-size:16px; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title" style="font-size:16px;">NEXGEN</span>
+                <span class="logo-subtitle" style="font-size:8px;">Patrol Center</span>
+            </div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleMobileSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Premium Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo-icon" style="display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title">NEXGEN</span>
+                <span class="logo-subtitle">Patrol Center</span>
+            </div>
+        </div>
+        <ul class="menu">
+            <li id="menu-dashboard" onclick="location.href='dashboard.html'">
+                <i class="fas fa-chart-pie"></i><span>ภาพรวมระบบ</span>
+            </li>
+            <li id="menu-sites" onclick="location.href='sites.html'">
+                <i class="fas fa-building"></i><span>จัดการหน่วยงาน</span>
+            </li>
+            <li id="menu-checkpoints" onclick="location.href='checkpoints.html'">
+                <i class="fas fa-map-marker-alt"></i><span>จัดการจุดตรวจ</span>
+            </li>
+            <li id="menu-rounds" class="active" onclick="location.href='rounds.html'">
+                <i class="fas fa-clock"></i><span>จัดการรอบการตรวจ</span>
+            </li>
+            <li id="menu-guards" onclick="location.href='guards.html'">
+                <i class="fas fa-user-shield"></i><span>จัดการ รปภ.</span>
+            </li>
+            <li id="menu-reports" onclick="location.href='reports.html'">
+                <i class="fas fa-file-invoice"></i><span>รายงานสรุป</span>
+            </li>
+            <li id="menu-settings" onclick="location.href='settings.html'">
+                <i class="fas fa-cog"></i><span>ตั้งค่าระบบ</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Working Container -->
+    <div class="main-content">
+        <!-- Desktop Glassmorphic Header -->
+        <header class="header">
+            <div class="header-title-container">
+                <h2 id="page-title">จัดการรอบการตรวจ</h2>
+                <p id="page-subtitle">จัดทำตารางและควบคุมเวลาการออกกวาดต้อนความปลอดภัยของ รปภ.</p>
+            </div>
+            <div class="header-controls">
+                <div class="header-clock">
+                    <span id="digitalClock">00:00:00</span>
+                    <span id="digitalDate">-- January 2026</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">บ</div>
+                    <div class="user-info">
+                        <span class="user-name">ผู้ดูแลระบบ: บอส</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Body -->
+        <div class="container container-fixed">
+            
+            <div id="view-rounds" class="view-section active view-section-fixed">
+                <div class="panel panel-fixed">
+                    <div class="panel-header">
+                        <h3>🕒 กำหนดรอบและเวลาการเดินตรวจ</h3>
+                        <button class="btn btn-success" onclick="openModal('add-round-modal')">
+                            <i class="fas fa-plus"></i> เพิ่มรอบการตรวจใหม่
+                        </button>
+                    </div>
+                    <div class="filter-bar" style="margin: 0 0 15px 0;">
+                        <div class="search-control">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control" id="search-rounds-input" placeholder="ค้นหาชื่อรอบการตรวจ หรือหน่วยงาน..." onkeyup="filterRoundsTable()">
+                        </div>
+                        <select class="form-control" id="filter-rounds-site" onchange="filterRoundsTable()">
+                            <option value="">-- เลือกกรองตามหน่วยงาน --</option>
+                            <!-- Injected dynamically -->
+                        </select>
+                    </div>
+                    <div class="table-responsive table-responsive-fixed">
+                        <table class="table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อรอบการตรวจ</th>
+                                    <th>เวลาเริ่ม (Start)</th>
+                                    <th>เวลาสิ้นสุด (End)</th>
+                                    <th>หน่วยงาน (Site)</th>
+                                    <th>สถานะ</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rounds-table-body">
+                                <!-- Injected dynamically in JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Add Round -->
+    <div class="modal-backdrop" id="add-round-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🕒 เพิ่มรอบช่วงเวลาเดินสแกน</h3>
+                <button class="modal-close" onclick="closeModal('add-round-modal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>ชื่อรอบการตรวจ</label>
+                <input type="text" class="form-control" id="new-round-name" placeholder="เช่น กะกลางคืน (รอบที่ 2)">
+            </div>
+            <div class="form-group">
+                <label>เวลาเริ่ม (เวลาประเทศไทย - รูปแบบ 24 ชม.)</label>
+                <input type="text" class="form-control" id="new-round-start" placeholder="เช่น 13:10" maxlength="5" oninput="formatTimeInput(this)">
+            </div>
+            <div class="form-group">
+                <label>เวลาสิ้นสุด (เวลาประเทศไทย - รูปแบบ 24 ชม.)</label>
+                <input type="text" class="form-control" id="new-round-end" placeholder="เช่น 15:10" maxlength="5" oninput="formatTimeInput(this)">
+            </div>
+            <div class="form-group">
+                <label>หน่วยงาน (Site)</label>
+                <input type="hidden" id="new-round-site">
+                <div class="smart-search-dropdown" style="position: relative;">
+                    <input type="text" class="form-control" id="new-round-site-search" placeholder="พิมพ์ค้นหาหน่วยงานเพื่อเลือก..." oninput="filterRoundSiteOptions('new')" onfocus="showRoundSiteOptions('new')">
+                    <div id="new-round-site-results" class="search-results-box" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-height: 150px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                        <!-- Options populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>สถานะเริ่มต้น</label>
+                <select class="form-control" id="new-round-status">
+                    <option value="ใช้งานอยู่">ใช้งานอยู่</option>
+                    <option value="รอดำเนินการ">รอดำเนินการ</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('add-round-modal')">ยกเลิก</button>
+                <button class="btn" onclick="submitAddRound()">สร้างรอบเวลา</button>
+            </div>
+        </div>
+    </div>    <!-- Modal: Edit Round -->
+    <div class="modal-backdrop" id="edit-round-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 แก้ไขรอบช่วงเวลาเดินสแกน</h3>
+                <button class="modal-close" onclick="closeModal('edit-round-modal')">&times;</button>
+            </div>
+            <input type="hidden" id="edit-round-index">
+            <div class="form-group">
+                <label>ชื่อรอบการตรวจ</label>
+                <input type="text" class="form-control" id="edit-round-name" placeholder="เช่น กะกลางคืน (รอบที่ 2)">
+            </div>
+            <div class="form-group">
+                <label>เวลาเริ่ม (เวลาประเทศไทย - รูปแบบ 24 ชม.)</label>
+                <input type="text" class="form-control" id="edit-round-start" placeholder="เช่น 13:10" maxlength="5" oninput="formatTimeInput(this)">
+            </div>
+            <div class="form-group">
+                <label>เวลาสิ้นสุด (เวลาประเทศไทย - รูปแบบ 24 ชม.)</label>
+                <input type="text" class="form-control" id="edit-round-end" placeholder="เช่น 15:10" maxlength="5" oninput="formatTimeInput(this)">
+            </div>
+            <div class="form-group">
+                <label>หน่วยงาน (Site)</label>
+                <input type="hidden" id="edit-round-site">
+                <div class="smart-search-dropdown" style="position: relative;">
+                    <input type="text" class="form-control" id="edit-round-site-search" placeholder="พิมพ์ค้นหาหน่วยงานเพื่อเลือก..." oninput="filterRoundSiteOptions('edit')" onfocus="showRoundSiteOptions('edit')">
+                    <div id="edit-round-site-results" class="search-results-box" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; max-height: 150px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                        <!-- Options populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>สถานะ</label>
+                <select class="form-control" id="edit-round-status">
+                    <option value="ใช้งานอยู่">ใช้งานอยู่</option>
+                    <option value="รอดำเนินการ">รอดำเนินการ</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('edit-round-modal')">ยกเลิก</button>
+                <button class="btn" onclick="submitEditRound()">บันทึกการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Injections -->
+    <div class="toast-container" id="toast-box-holder"></div>
+
+    <!-- Custom separated javascript -->
+    <script src="../js/app.js"></script>
+</body>
+</html>

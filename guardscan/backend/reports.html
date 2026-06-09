@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานสรุป - Nexgen Patrol Center</title>
+    <!-- Google Fonts for premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for modern indicators -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase Core Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- System config (Supabase Keys) -->
+    <script src="../../Backend/config.js"></script>
+    <!-- Custom separated stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-section" style="padding: 0; border: none;">
+            <div class="logo-icon" style="width:36px; height:36px; font-size:16px; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title" style="font-size:16px;">NEXGEN</span>
+                <span class="logo-subtitle" style="font-size:8px;">Patrol Center</span>
+            </div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleMobileSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Premium Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo-icon" style="display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="../img/logo-1.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"></div>
+            <div class="logo-text">
+                <span class="logo-title">NEXGEN</span>
+                <span class="logo-subtitle">Patrol Center</span>
+            </div>
+        </div>
+        <ul class="menu">
+            <li id="menu-dashboard" onclick="location.href='dashboard.html'">
+                <i class="fas fa-chart-pie"></i><span>ภาพรวมระบบ</span>
+            </li>
+            <li id="menu-sites" onclick="location.href='sites.html'">
+                <i class="fas fa-building"></i><span>จัดการหน่วยงาน</span>
+            </li>
+            <li id="menu-checkpoints" onclick="location.href='checkpoints.html'">
+                <i class="fas fa-map-marker-alt"></i><span>จัดการจุดตรวจ</span>
+            </li>
+            <li id="menu-rounds" onclick="location.href='rounds.html'">
+                <i class="fas fa-clock"></i><span>จัดการรอบการตรวจ</span>
+            </li>
+            <li id="menu-guards" onclick="location.href='guards.html'">
+                <i class="fas fa-user-shield"></i><span>จัดการ รปภ.</span>
+            </li>
+            <li id="menu-reports" class="active" onclick="location.href='reports.html'">
+                <i class="fas fa-file-invoice"></i><span>รายงานสรุป</span>
+            </li>
+            <li id="menu-settings" onclick="location.href='settings.html'">
+                <i class="fas fa-cog"></i><span>ตั้งค่าระบบ</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Working Container -->
+    <div class="main-content">
+        <!-- Desktop Glassmorphic Header -->
+        <header class="header">
+            <div class="header-title-container">
+                <h2 id="page-title">รายงานสรุปผลการเดินตรวจ</h2>
+                <p id="page-subtitle">ตรวจสอบบันทึกผลสัมฤทธิ์การตรวจจุดย้อนหลังและทำการดาวน์โหลด</p>
+            </div>
+            <div class="header-controls">
+                <div class="header-clock">
+                    <span id="digitalClock">00:00:00</span>
+                    <span id="digitalDate">-- January 2026</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">บ</div>
+                    <div class="user-info">
+                        <span class="user-name">ผู้ดูแลระบบ: บอส</span>
+                        <span class="user-role">Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Body -->
+        <div class="container">
+            
+            <div id="view-reports" class="view-section active">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>📑 รายงานสรุปผลการเดินตรวจ</h3>
+                        <button class="btn btn-success" onclick="exportReportsToCSV()">
+                            <i class="fas fa-file-excel"></i> ดาวน์โหลดข้อมูล (CSV)
+                        </button>
+                    </div>
+                    <div class="filter-bar">
+                        <input type="date" class="form-control" id="report-filter-date" onchange="filterReportsTable()">
+                        <select class="form-control" id="report-filter-site" onchange="filterReportsTable()">
+                            <option value="">ทุกสาขา</option>
+                            <!-- Injected dynamically -->
+                        </select>
+                        <select class="form-control" id="report-filter-status" onchange="filterReportsTable()">
+                            <option value="">ทุกสถานะ</option>
+                            <option value="สมบูรณ์">สมบูรณ์</option>
+                            <option value="ล่าช้า">ล่าช้า</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="resetReportFilters()">
+                            <i class="fas fa-undo"></i> รีเซ็ตตัวกรอง
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>วันที่-เวลา</th>
+                                    <th>พนักงาน</th>
+                                    <th>หน่วยงาน</th>
+                                    <th>จุดสแกน</th>
+                                    <th>หมายเหตุ / สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-table-body">
+                                <!-- Injected dynamically in JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notifications Injections -->
+    <div class="toast-container" id="toast-box-holder"></div>
+
+    <!-- Custom separated javascript -->
+    <script src="../js/app.js"></script>
+</body>
+</html>

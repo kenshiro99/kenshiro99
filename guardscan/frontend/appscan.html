@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexgen Guard Patrol | Professional White-Grey</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-body: #f1f5f9; /* slate-100 */
+            --bg-card: #ffffff;
+            --text-primary: #0f172a; /* slate-900 */
+            --text-muted: #475569; /* slate-600 */
+            --border-grey: #cbd5e1; /* slate-300 */
+            --emerald-green: #10b981;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* simulated Mobile Phone Frame */
+        .mobile-app {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            max-height: 860px;
+            background-color: var(--bg-body);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        @media (min-width: 425px) {
+            .mobile-app {
+                height: 94vh;
+                border-radius: 36px;
+                border: 10px solid #1e293b;
+                box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* Premium Cards */
+        .app-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-grey);
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .app-card-interactive {
+            cursor: pointer;
+        }
+        .app-card-interactive:active {
+            transform: scale(0.985);
+            background-color: #f8fafc;
+        }
+
+        /* Expired Round/Checkpoint Cards */
+        .app-card-disabled {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+            opacity: 0.75;
+            cursor: not-allowed;
+        }
+
+        /* Custom scroll */
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+
+        /* Camera scan viewfinder grid */
+        .viewfinder-grid {
+            background-size: 20px 20px;
+            background-image: linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+        }
+
+        /* Camera corners */
+        .camera-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 4px solid #475569;
+            z-index: 10;
+        }
+        .corner-tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+        .corner-br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+
+        /* Scanning laser sweep line */
+        .laser-sweep {
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ef4444, #fca5a5, #ef4444, transparent);
+            z-index: 8;
+            top: 16px;
+            animation: sweep 2.2s linear infinite;
+        }
+
+        @keyframes sweep {
+            0% { top: 16px; }
+            50% { top: calc(100% - 20px); }
+            100% { top: 16px; }
+        }
+
+        /* 3-Photo slots styling */
+        .photo-slot {
+            position: relative;
+            height: 80px;
+            border-radius: 14px;
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .photo-slot.active {
+            border-color: #64748b;
+            background-color: #f1f5f9;
+            box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+        }
+        .photo-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: rgba(239, 68, 68, 0.9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            border: none;
+            cursor: pointer;
+            z-index: 20;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MOBILE CONTAINER -->
+    <div class="mobile-app">
+
+        <!-- APP HEADER -->
+        <div class="bg-white px-5 pt-6 pb-4 border-b border-slate-200 shadow-sm relative z-20">
+            <div class="flex justify-between items-center mb-3">
+                <div>
+                    <h1 class="text-slate-900 text-base font-extrabold tracking-tight">ระบบตระเวนจุดตรวจ รปภ.</h1>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">NEXGEN PATROL SYSTEM</p>
+                </div>
+                <!-- Date Badge -->
+                <div class="text-[10px] text-slate-700 font-bold bg-slate-100 px-3.5 py-1 rounded-full border border-slate-200" id="liveDate">
+                    ...
+                </div>
+            </div>
+
+            <!-- Guard and Location info -->
+            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">เจ้าหน้าที่ปฏิบัติงาน:</span>
+                    <span class="text-slate-900 font-bold" id="guardNameLabel">👨‍✈️ กำลังโหลดข้อมูล...</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">ไซต์งานปัจจุบัน:</span>
+                    <span class="text-slate-900 font-bold" id="unitNameLabel">🏢 Show DC</span>
+                </div>
+                <div class="flex justify-between items-center text-xs border-t border-slate-200/60 pt-2">
+                    <span class="text-slate-500 font-medium">เวลาจำลองระบบ:</span>
+                    <span id="system-time-display" class="text-slate-700 font-bold">18:00 น.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN SCREENS CONTAINER (Scrollable) -->
+        <div class="flex-grow p-4 overflow-y-auto custom-scroll relative">
+
+            <!-- ================= SCREEN 1: ROUNDS LIST (รอบการตรวจ) ================= -->
+            <div id="screen-rounds" class="space-y-4">
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="text-sm font-extrabold text-slate-800">
+                        <i class="fas fa-clock mr-1.5 text-slate-500"></i> เลือกกะ / รอบการตรวจ
+                    </h2>
+                    <span class="text-[10px] text-slate-400 font-bold">อัปเดตออโต้</span>
+                </div>
+
+                <div id="rounds-list-container" class="space-y-3.5">
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
+                        <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
+                        <p class="text-xs text-slate-500 font-medium">กำลังโหลดรอบการตรวจ...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= SCREEN 2: CHECKPOINTS LIST (จุดสแกนในรอบ) ================= -->
+            <div id="screen-checkpoints" class="hidden space-y-4">
+                <button onclick="showScreen('rounds')" class="text-xs font-bold text-slate-650 flex items-center gap-1.5 px-1 py-1 hover:text-slate-900 transition-colors">
+                    <i class="fas fa-chevron-left"></i> ย้อนกลับไปเลือกรอบตรวจ
+                </button>
+
+                <div class="bg-white/80 border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">รอบเดินตรวจที่เลือก</span>
+                    <h3 class="text-slate-900 font-extrabold text-sm" id="selected-round-title">รอบกะเช้า (08:00 - 10:00)</h3>
+                    <p class="text-slate-500 text-[10.5px] font-medium mt-1" id="selected-round-desc">จุดตรวจทั้งหมด: 4 จุด | ตรวจแล้ว: 0 จุด</p>
+                    
+                    <div id="round-expired-banner" class="absolute top-0 right-0 bottom-0 bg-red-500/10 border-l border-red-500/25 px-4 flex items-center justify-center hidden">
+                        <span class="text-red-600 text-[10px] font-extrabold uppercase tracking-widest"><i class="fas fa-lock mr-1"></i> เลยเวลาตรวจ</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center px-1 pt-2">
+                    <h4 class="text-xs font-extrabold text-slate-800">รายชื่อจุดสแกนในรอบนี้</h4>
+                    <span class="text-[10px] text-slate-400 font-bold">แตะเพื่อเข้าสแกน</span>
+                </div>
+
+                <div id="checkpoints-list-container" class="space-y-3">
+                    <!-- Dynamic Checkpoints -->
+                </div>
+            </div>
+
+            <!-- ================= SCREEN 3: CAMERA SCANNER & 3 PHOTO SLOTS ================= -->
+            <div id="screen-scanner" class="hidden space-y-4">
+                <button onclick="showScreen('checkpoints')" class="text-xs font-bold text-slate-650 flex items-center gap-1.5 px-1 py-1 hover:text-slate-900 transition-colors">
+                    <i class="fas fa-chevron-left"></i> ย้อนกลับไปดูจุดตรวจ
+                </button>
+
+                <div class="bg-white/80 border border-slate-200 rounded-2xl p-3.5 shadow-sm">
+                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">จุดตรวจที่สแกน</span>
+                    <h3 class="text-slate-900 font-extrabold text-xs" id="selected-checkpoint-title">ลานจอดรถ VIP ชั้น 1</h3>
+                    <p class="text-slate-500 text-[10px] font-medium mt-0.5" id="selected-checkpoint-code">ID: NFC-SDC_01</p>
+                </div>
+
+                <!-- Live Camera Viewport -->
+                <div class="large-card p-4 space-y-4 bg-white border border-slate-200 rounded-2xl">
+                    <div class="h-56 rounded-2xl bg-black border border-slate-350 relative overflow-hidden viewfinder-grid flex items-center justify-center shadow-inner">
+                        <div id="scanner-laser" class="laser-sweep"></div>
+                        <!-- Camera corners -->
+                        <div class="camera-corner corner-tl"></div>
+                        <div class="camera-corner corner-tr"></div>
+                        <div class="camera-corner corner-bl"></div>
+                        <div class="camera-corner corner-br"></div>
+
+                        <!-- Video Stream -->
+                        <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover absolute inset-0 z-0"></video>
+                        
+                        <!-- Camera Canvas for image grabbing -->
+                        <canvas id="capture-canvas" class="hidden"></canvas>
+
+                        <!-- Camera error fallback label -->
+                        <div id="camera-fallback-label" class="absolute z-10 text-center px-4 hidden">
+                            <i class="fas fa-camera text-slate-400 text-3xl mb-2"></i>
+                            <p class="text-[10px] text-slate-400 font-medium">กำลังจำลองเชื่อมต่อกล้องสำหรับสแกน...</p>
+                        </div>
+                    </div>
+
+                    <!-- 3-Photo Slots Section -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10.5px] font-bold text-slate-650">ภาพถ่ายจุดตรวจประกอบรายงาน (ต้องการ 3 รูป):</span>
+                            <span id="photo-count-label" class="text-[9.5px] text-slate-500 font-bold">ถ่ายแล้ว 0/3 รูป</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <!-- Slot 1 -->
+                            <div onclick="selectPhotoSlot(0)" id="photo-slot-0" class="photo-slot active">
+                                <i class="fas fa-plus text-slate-400 text-[11px] mb-1"></i>
+                                <span class="text-[8px] text-slate-400 font-bold">รูปที่ 1</span>
+                            </div>
+                            <!-- Slot 2 -->
+                            <div onclick="selectPhotoSlot(1)" id="photo-slot-1" class="photo-slot">
+                                <i class="fas fa-plus text-slate-400 text-[11px] mb-1"></i>
+                                <span class="text-[8px] text-slate-400 font-bold">รูปที่ 2</span>
+                            </div>
+                            <!-- Slot 3 -->
+                            <div onclick="selectPhotoSlot(2)" id="photo-slot-2" class="photo-slot">
+                                <i class="fas fa-plus text-slate-400 text-[11px] mb-1"></i>
+                                <span class="text-[8px] text-slate-400 font-bold">รูปที่ 3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capture Action Button -->
+                    <button onclick="capturePhotoForActiveSlot()" id="btn-capture" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-[0.98]">
+                        <i class="fas fa-camera"></i> กดปุ่มนี้เพื่อถ่ายรูป (เข้าช่องที่เลือก)
+                    </button>
+
+                    <!-- Note input -->
+                    <div class="space-y-1">
+                        <label class="text-[10.5px] font-bold text-slate-650 block">บันทึกเพิ่มเติม (ไม่บังคับ):</label>
+                        <input type="text" id="scan-note-input" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-400 text-xs bg-slate-50 font-medium" placeholder="ระบุเหตุการณ์..." value="ตรวจเดินลาดตระเวนปกติ">
+                    </div>
+
+                    <!-- Save Record button -->
+                    <button onclick="saveCheckpointRecord()" id="btn-save-record" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]">
+                        <i class="fas fa-circle-check"></i> บันทึกรายงานการตรวจ (SAVE)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script Configuration -->
+    <script>
+        // --- 1. CONFIGURATION & STATE ---
+        const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
+        
+        let supabaseClient;
+        let userData = null;
+        let activeSite = "Show DC";
+        
+        let localRounds = [];
+        let localCheckpoints = [];
+        let completedCheckpoints = {}; // { roundIndex_cpCode: true }
+
+        let currentRound = null;
+        let currentRoundIndex = null;
+        let currentCheckpoint = null;
+        
+        let cameraStream = null;
+        
+        // 3-Photos State
+        let capturedPhotos = [null, null, null]; // [base64_1, base64_2, base64_3]
+        let activeSlotIndex = 0;
+
+        // Initialize Supabase Client
+        if (typeof supabase !== 'undefined') {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+
+        // Live Header Date
+        function updateLiveDate() {
+            const options = { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' };
+            const now = new Date();
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('th-TH', options);
+            
+            // Render current simulated time
+            const hourStr = String(now.getHours()).padStart(2, '0');
+            const minStr = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('system-time-display').innerText = `${hourStr}:${minStr} น.`;
+        }
+        updateLiveDate();
+        setInterval(updateLiveDate, 30000); // update every 30 sec
+
+        // Check if round's time has passed (เลยเวลาตรวจ)
+        function isRoundExpired(round) {
+            const now = new Date();
+            // Get current Thailand hour and minute (e.g. "18:05")
+            const thaiTimeStr = now.toLocaleTimeString('en-GB', { 
+                timeZone: 'Asia/Bangkok', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+            });
+            return thaiTimeStr > round.end;
+        }
+
+        // --- 2. AUTHENTICATION & SESSION LOADING ---
+        function loadUserSession() {
+            const sessionStr = localStorage.getItem('nextgen_user');
+            if (sessionStr) {
+                userData = JSON.parse(sessionStr);
+                document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${userData.name} (${userData.role || 'รปภ.'})`;
+                activeSite = userData.unit || "Show DC";
+                document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
+            } else {
+                document.getElementById('guardNameLabel').innerText = `👨‍✈️ พนักงานทดสอบ (รปภ.01)`;
+                document.getElementById('unitNameLabel').innerText = `🏢 Show DC`;
+            }
+            
+            // Load completed status logs from localStorage
+            const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
+            if (savedCompleted) {
+                completedCheckpoints = JSON.parse(savedCompleted);
+            }
+            
+            fetchRoundsAndCheckpoints();
+        }
+
+        // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
+        async function fetchRoundsAndCheckpoints() {
+            try {
+                // Fetch Rounds from LocalStorage or use defaults
+                const lsRounds = localStorage.getItem('patrol_rounds');
+                if (lsRounds) {
+                    localRounds = JSON.parse(lsRounds);
+                } else {
+                    localRounds = [
+                        { name: 'รอบเช้าตรู่ (รอบที่ 1)', start: '06:00', end: '08:00', siteName: activeSite, status: 'ใช้งานอยู่' },
+                        { name: 'รอบกะเช้า (รอบที่ 1)', start: '08:00', end: '10:00', siteName: activeSite, status: 'ใช้งานอยู่' },
+                        { name: 'รอบกะเช้า (รอบที่ 2)', start: '12:00', end: '14:00', siteName: activeSite, status: 'ใช้งานอยู่' },
+                        { name: 'รอบกะบ่าย (รอบที่ 1)', start: '15:00', end: '17:00', siteName: activeSite, status: 'ใช้งานอยู่' },
+                        { name: 'รอบกะดึก (รอบที่ 1)', start: '20:00', end: '22:00', siteName: activeSite, status: 'ใช้งานอยู่' }
+                    ];
+                }
+
+                // Filter rounds for this site
+                localRounds = localRounds.filter(r => r.siteName.toLowerCase() === activeSite.toLowerCase());
+                if (localRounds.length === 0) {
+                    localRounds = [
+                        { name: 'รอบเช้าตรู่ (รอบที่ 1)', start: '06:00', end: '08:00', siteName: activeSite, status: 'ใช้งานอยู่' },
+                        { name: 'รอบกะเช้า (รอบที่ 1)', start: '08:00', end: '10:00', siteName: activeSite, status: 'ใช้งานอยู่' }
+                    ];
+                }
+
+                // Fetch Checkpoints from LocalStorage or use defaults
+                const lsCheckpoints = localStorage.getItem('patrol_checkpoints');
+                if (lsCheckpoints) {
+                    localCheckpoints = JSON.parse(lsCheckpoints);
+                } else {
+                    localCheckpoints = [
+                        { code: 'NFC-SDC_01', siteName: activeSite, name: 'ลานจอดรถ VIP ชั้น 1', gps: '13.7512, 100.5733' },
+                        { code: 'QR-SDC_02', siteName: activeSite, name: 'ห้องควบคุมไฟหลัก MDB', gps: '13.7514, 100.5735' },
+                        { code: 'NFC-SDC_03', siteName: activeSite, name: 'ประตูโหลดสินค้าด้านหลัง', gps: '13.7511, 100.5730' },
+                        { code: 'QR-SDC_04', siteName: activeSite, name: 'คลังสินค้าหลัก Zone A', gps: '13.7515, 100.5740' }
+                    ];
+                }
+
+                // Filter checkpoints for this site
+                localCheckpoints = localCheckpoints.filter(cp => cp.siteName.toLowerCase() === activeSite.toLowerCase());
+                if (localCheckpoints.length === 0) {
+                    localCheckpoints = [
+                        { code: 'NFC-SDC_01', siteName: activeSite, name: 'ลานจอดรถ VIP ชั้น 1', gps: '13.7512, 100.5733' },
+                        { code: 'QR-SDC_02', siteName: activeSite, name: 'ห้องควบคุมไฟหลัก MDB', gps: '13.7514, 100.5735' }
+                    ];
+                }
+
+                renderRoundsList();
+
+            } catch (e) {
+                console.error("Fetch error:", e);
+            }
+        }
+
+        // --- 4. RENDER MODULES ---
+        function renderRoundsList() {
+            const container = document.getElementById('rounds-list-container');
+            container.innerHTML = '';
+
+            localRounds.forEach((round, index) => {
+                // Calculate completion metrics
+                const roundCPs = localCheckpoints;
+                let completedCount = 0;
+                roundCPs.forEach(cp => {
+                    if (completedCheckpoints[`${index}_${cp.code}`]) {
+                        completedCount++;
+                    }
+                });
+
+                const totalCP = roundCPs.length;
+                const progressPercent = totalCP > 0 ? Math.round((completedCount / totalCP) * 100) : 0;
+                const expired = isRoundExpired(round);
+                
+                const card = document.createElement('div');
+                
+                // Add styling based on expiration or completion
+                if (expired) {
+                    card.className = "app-card app-card-disabled p-4.5";
+                } else {
+                    card.className = "app-card app-card-interactive p-4.5";
+                }
+
+                card.onclick = () => {
+                    selectRound(round, index);
+                };
+                
+                let statusBadge = '';
+                if (expired) {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-red-50 text-red-600 border border-red-100"><i class="fas fa-lock mr-0.5"></i> เลยเวลาตรวจ</span>`;
+                } else if (progressPercent === 100) {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-100">เสร็จสิ้น</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">กำลังตรวจ</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-slate-900 font-extrabold text-xs mb-1">${round.name}</h3>
+                            <p class="text-slate-500 text-[10.5px] font-medium">
+                                <i class="far fa-clock mr-1 text-slate-400"></i> ช่วงเวลา: ${round.start} - ${round.end} น.
+                            </p>
+                        </div>
+                        ${statusBadge}
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="mt-4">
+                        <div class="flex justify-between text-[8.5px] text-slate-400 font-bold mb-1">
+                            <span>ความคืบหน้าจุดสแกน</span>
+                            <span>ตรวจแล้ว ${completedCount} / ${totalCP} จุด</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                            <div class="h-full ${expired ? 'bg-slate-400' : 'bg-emerald-500'} rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCheckpointsList() {
+            const container = document.getElementById('checkpoints-list-container');
+            container.innerHTML = '';
+
+            const isExpired = isRoundExpired(currentRound);
+
+            let completedCount = 0;
+            localCheckpoints.forEach((cp, cpIndex) => {
+                const isCompleted = completedCheckpoints[`${currentRoundIndex}_${cp.code}`];
+                if (isCompleted) completedCount++;
+
+                const card = document.createElement('div');
+                
+                // Add styling based on status and round duration
+                if (isCompleted) {
+                    card.className = "app-card app-card-interactive p-4 flex justify-between items-center bg-white border-slate-200";
+                } else if (isExpired) {
+                    card.className = "app-card app-card-disabled p-4 flex justify-between items-center";
+                } else {
+                    card.className = "app-card app-card-interactive p-4 flex justify-between items-center";
+                }
+
+                card.onclick = () => {
+                    if (isCompleted) {
+                        alert("📍 จุดตรวจนี้ได้รับการสแกนและบันทึกรายงานเรียบร้อยแล้วในรอบนี้ ไม่สามารถกดสแกนซ้ำได้ค่ะ");
+                        return;
+                    }
+                    if (isExpired) {
+                        alert(`🕒 รอบเวลาตรวจนี้หมดเวลาลงแล้วเมื่อ ${currentRound.end} น.\nไม่สามารถเข้าทำการสแกนลาดตระเวนย้อนหลังได้ค่ะ`);
+                        return;
+                    }
+                    selectCheckpoint(cp);
+                };
+
+                let rightStatusHtml = '';
+                if (isCompleted) {
+                    rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-emerald-600"><i class="fas fa-circle-check mr-0.5"></i> ตรวจแล้ว</span>`;
+                } else if (isExpired) {
+                    rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-red-500"><i class="fas fa-lock mr-0.5"></i> เลยเวลาตรวจ</span>`;
+                } else {
+                    rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-slate-500">แตะเพื่อสแกน <i class="fas fa-chevron-right text-[8px] ml-0.5 text-slate-350"></i></span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8.5 h-8.5 rounded-full flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : (isExpired ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-500 border border-slate-200')}">
+                            <i class="fas ${isCompleted ? 'fa-check text-[11px]' : (isExpired ? 'fa-lock text-xs' : 'fa-qrcode text-xs')}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-slate-900 text-xs font-bold leading-tight mb-0.5">${cp.name}</h4>
+                            <span class="text-slate-400 font-mono text-[9px]">รหัสป้าย: ${cp.code}</span>
+                        </div>
+                    </div>
+                    <div>
+                        ${rightStatusHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('selected-round-desc').innerText = `จุดตรวจทั้งหมด: ${localCheckpoints.length} จุด | ตรวจแล้ว: ${completedCount} จุด`;
+
+            // Display or hide expired banner at the top
+            const expiredBanner = document.getElementById('round-expired-banner');
+            if (isExpired) {
+                expiredBanner.classList.remove('hidden');
+            } else {
+                expiredBanner.classList.add('hidden');
+            }
+        }
+
+        // --- 5. NAVIGATION ---
+        function showScreen(screenId) {
+            document.getElementById('screen-rounds').classList.add('hidden');
+            document.getElementById('screen-checkpoints').classList.add('hidden');
+            document.getElementById('screen-scanner').classList.add('hidden');
+
+            document.getElementById(`screen-${screenId}`).classList.remove('hidden');
+
+            if (screenId !== 'scanner') {
+                stopCameraStream();
+            }
+        }
+
+        function selectRound(round, index) {
+            currentRound = round;
+            currentRoundIndex = index;
+            document.getElementById('selected-round-title').innerText = round.name;
+            renderCheckpointsList();
+            showScreen('checkpoints');
+        }
+
+        function selectCheckpoint(checkpoint) {
+            currentCheckpoint = checkpoint;
+            document.getElementById('selected-checkpoint-title').innerText = checkpoint.name;
+            document.getElementById('selected-checkpoint-code').innerText = `ID: ${checkpoint.code} | พิกัด GPS: ${checkpoint.gps}`;
+            
+            // Clear captures and note
+            capturedPhotos = [null, null, null];
+            activeSlotIndex = 0;
+            updatePhotoSlotsUI();
+            
+            document.getElementById('scan-note-input').value = "ตรวจเดินลาดตระเวนปกติ";
+            
+            showScreen('scanner');
+            startCameraStream();
+        }
+
+        // --- 6. 3-PHOTOS SLOTS SYSTEM ---
+        function selectPhotoSlot(index) {
+            activeSlotIndex = index;
+            updatePhotoSlotsUI();
+        }
+
+        function updatePhotoSlotsUI() {
+            for (let i = 0; i < 3; i++) {
+                const slotDiv = document.getElementById(`photo-slot-${i}`);
+                
+                // Clear active styling
+                slotDiv.className = "photo-slot";
+                if (i === activeSlotIndex) {
+                    slotDiv.classList.add('active');
+                }
+
+                const photoData = capturedPhotos[i];
+                if (photoData) {
+                    slotDiv.innerHTML = `
+                        <img src="${photoData}" alt="Photo ${i+1}">
+                        <button onclick="deletePhoto(${i}, event)" class="photo-delete-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                } else {
+                    slotDiv.innerHTML = `
+                        <i class="fas fa-plus text-slate-400 text-[11px] mb-1"></i>
+                        <span class="text-[8px] text-slate-400 font-bold">รูปที่ ${i+1}</span>
+                    `;
+                }
+            }
+
+            // Update photo count badge
+            let takenCount = 0;
+            capturedPhotos.forEach(p => { if (p) takenCount++; });
+            document.getElementById('photo-count-label').innerText = `ถ่ายแล้ว ${takenCount}/3 รูป`;
+        }
+
+        function deletePhoto(index, event) {
+            if (event) event.stopPropagation(); // prevent triggering selectPhotoSlot
+            capturedPhotos[index] = null;
+            activeSlotIndex = index; // switch back to this slot to allow retaking
+            updatePhotoSlotsUI();
+        }
+
+        // Capture photo for the current active empty slot
+        function capturePhotoForActiveSlot() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('capture-canvas');
+
+            playShutterSound();
+
+            let base64Image = "";
+            if (cameraStream) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                base64Image = canvas.toDataURL('image/jpeg');
+            } else {
+                // Mock image for browser testing
+                base64Image = "https://mvcsbylbsffgbkocehzx.supabase.co/storage/v1/object/public/profile/default-avatar.png";
+            }
+
+            // Save to active slot
+            capturedPhotos[activeSlotIndex] = base64Image;
+            
+            // Advance activeSlotIndex to the next empty slot
+            let nextEmpty = -1;
+            for (let i = 0; i < 3; i++) {
+                if (!capturedPhotos[i]) {
+                    nextEmpty = i;
+                    break;
+                }
+            }
+
+            if (nextEmpty !== -1) {
+                activeSlotIndex = nextEmpty;
+            }
+
+            updatePhotoSlotsUI();
+        }
+
+        // --- 7. CAMERA API CONNECTIONS ---
+        async function startCameraStream() {
+            const video = document.getElementById('camera-stream');
+            const fallbackLabel = document.getElementById('camera-fallback-label');
+            fallbackLabel.classList.add('hidden');
+
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" },
+                        audio: false
+                    });
+                    video.srcObject = cameraStream;
+                    video.classList.remove('hidden');
+                } else {
+                    throw new Error("No mediaDevices support");
+                }
+            } catch (err) {
+                console.warn("Camera fallback active:", err);
+                video.classList.add('hidden');
+                fallbackLabel.classList.remove('hidden');
+            }
+        }
+
+        function stopCameraStream() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            const video = document.getElementById('camera-stream');
+            video.srcObject = null;
+        }
+
+        function playShutterSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function playBeepSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) { }
+        }
+
+        // --- 8. SAVE PATROL LOG TO SUPABASE ---
+        async function saveCheckpointRecord() {
+            const noteInput = document.getElementById('scan-note-input').value;
+            const btnSave = document.getElementById('btn-save-record');
+
+            // Ensure 3 photos taken
+            let photosTakenCount = 0;
+            capturedPhotos.forEach(p => { if (p) photosTakenCount++; });
+            
+            if (photosTakenCount < 3) {
+                alert(`🚨 โปรดถ่ายรูปประกอบการตรวจให้ครบทั้ง 3 รูปค่ะ! (ขณะนี้เพิ่งถ่ายได้ ${photosTakenCount}/3 รูป)`);
+                return;
+            }
+
+            btnSave.disabled = true;
+            btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังบันทึกข้อมูล...`;
+
+            let myGps = currentCheckpoint.gps || "13.7512,100.5733";
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                });
+                myGps = `${pos.coords.latitude},${pos.coords.longitude}`;
+            } catch (gpsErr) {
+                console.warn("Using checkpoint fallback coordinates.");
+            }
+
+            const thaiNow = getThaiISOString();
+
+            try {
+                // Save to Supabase Table duty_logs
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('duty_logs')
+                        .insert([{
+                            emp_id: userData ? userData.emp_id : "TEST_G001",
+                            name: userData ? userData.name : "พนักงานทดสอบ",
+                            role: userData ? userData.level || userData.role : "guard",
+                            unit_name: activeSite,
+                            action_type: 'patrol',
+                            gps_location: myGps,
+                            timestamp: thaiNow,
+                            note: `[รอบ: ${currentRound.name}] จุด: ${currentCheckpoint.name} | ${noteInput} (บันทึกภาพตรวจ 3 ภาพ)`
+                        }]);
+
+                    if (error) {
+                        console.error("Supabase insert error:", error);
+                    }
+                }
+
+                // Update checked status in memory & localStorage
+                completedCheckpoints[`${currentRoundIndex}_${currentCheckpoint.code}`] = true;
+                localStorage.setItem('patrol_completed_checkpoints', JSON.stringify(completedCheckpoints));
+
+                // Save to local patrol reports cache
+                const lsReportsStr = localStorage.getItem('patrol_reports') || '[]';
+                const lsReports = JSON.parse(lsReportsStr);
+                lsReports.unshift({
+                    time: thaiNow,
+                    guardCode: userData ? userData.emp_id : "TEST_G001",
+                    siteName: activeSite,
+                    checkpointCode: currentCheckpoint.code,
+                    status: `ตรวจเสร็จสิ้น (${currentRound.name})`
+                });
+                localStorage.setItem('patrol_reports', JSON.stringify(lsReports));
+
+                playBeepSound();
+
+                alert(`💾 บันทึกความปลอดภัยสำเร็จ!\n- จุดตรวจ: ${currentCheckpoint.name}\n- ถ่ายรูปครบ: 3 รูป\n\nข้อมูลของท่านอัปโหลดเข้าระบบเรียบร้อยแล้วค่ะ`);
+                
+                // Return to checkpoints screen
+                renderCheckpointsList();
+                renderRoundsList();
+                showScreen('checkpoints');
+
+            } catch (err) {
+                console.error("Save failed:", err);
+                alert("❌ การบันทึกข้อมูลล้มเหลว โปรดตรวจสอบสัญญาณเครือข่ายอินเทอร์เน็ต");
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = `<i class="fas fa-circle-check"></i> บันทึกรายงานการตรวจ (SAVE)`;
+            }
+        }
+
+        // Helper date string
+        function getThaiISOString() {
+            const now = new Date();
+            const tzOffset = 7 * 60 * 60 * 1000;
+            const localTime = new Date(now.getTime() + tzOffset);
+            return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
+        }
+
+        window.onload = () => {
+            loadUserSession();
+        };
+    </script>
+</body>
+
+</html>

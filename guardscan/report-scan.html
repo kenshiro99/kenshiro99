@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexgen Patrol - Backend Dashboard</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --cyber-dark: #020617;
+            --cyber-blue: #0ea5e9;
+            --cyber-gold: #f59e0b;
+            --cyber-green: #10b981;
+            --cyber-red: #f43f5e;
+            --glass: rgba(15, 23, 42, 0.65);
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient background glows */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .orb-1 {
+            width: 450px;
+            height: 450px;
+            background: rgba(14, 165, 233, 0.12);
+            top: -50px;
+            right: 5%;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: rgba(245, 158, 11, 0.08);
+            bottom: 10%;
+            left: 5%;
+        }
+
+        /* Glassmorphic Panel styling */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(14, 165, 233, 0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(14, 165, 233, 0.15);
+            box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(14, 165, 233, 0.05);
+        }
+
+        /* Status Badge colors */
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+        }
+
+        .badge-danger {
+            background: rgba(244, 63, 94, 0.15);
+            color: #f43f5e;
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.1);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.5);
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <!-- Ambient glows -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- MAIN DASHBOARD BOX -->
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- NAVBAR -->
+        <header class="glass-card rounded-[24px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center border border-amber-600/30 shadow-lg">
+                    <i class="fas fa-shield-halved text-xl text-amber-500"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tighter uppercase leading-none mb-1">
+                        NEXGEN <span class="text-amber-500">PATROL DASHBOARD</span>
+                    </h1>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[3px]">
+                        ระบบติดตามรายงานการเดินตรวจสายตรวจและจุดสแกน รปภ.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Info & Clock -->
+            <div class="flex items-center gap-5 bg-white/5 border border-white/5 rounded-2xl px-5 py-2.5 ml-auto md:ml-0">
+                <div class="flex flex-col items-end border-r border-white/10 pr-5">
+                    <span id="current-time" class="text-lg font-black text-amber-500 font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">00:00:00</span>
+                    <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">ระบบเวลาปัจจุบัน</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <p class="text-white text-xs font-black leading-none mb-1.5 flex items-center gap-1.5">
+                        <i class="fas fa-circle-user text-sky-400"></i> บอส (Administrator)
+                    </p>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[8px] font-black border border-amber-500/15">MAIN BACKEND</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- STATS / SUMMARY CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Card 1 -->
+            <div class="glass-card rounded-[24px] p-5 border-l-4 border-sky-500 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                <div class="absolute right-5 top-1/2 -translate-y-1/2 text-5xl text-sky-500/10 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-map-location-dot"></i>
+                </div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">📍 จุดตรวจทั้งหมด (วันนี้)</p>
+                <h3 class="text-3xl font-black text-white font-mono">120 <span class="text-xs text-slate-400 font-semibold font-sans">จุดตรวจ</span></h3>
+            </div>
+            <!-- Card 2 -->
+            <div class="glass-card rounded-[24px] p-5 border-l-4 border-emerald-500 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                <div class="absolute right-5 top-1/2 -translate-y-1/2 text-5xl text-emerald-500/10 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">✅ สแกนสำเร็จแล้ว</p>
+                <h3 class="text-3xl font-black text-emerald-400 font-mono">95 <span class="text-xs text-slate-400 font-semibold font-sans">ครั้ง</span></h3>
+            </div>
+            <!-- Card 3 -->
+            <div class="glass-card rounded-[24px] p-5 border-l-4 border-rose-500 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                <div class="absolute right-5 top-1/2 -translate-y-1/2 text-5xl text-rose-500/10 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-circle-exclamation"></i>
+                </div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">⚠️ พิกัดผิดปกติ / ข้ามจุด</p>
+                <h3 class="text-3xl font-black text-rose-500 font-mono">2 <span class="text-xs text-slate-400 font-semibold font-sans">รายการ</span></h3>
+            </div>
+        </div>
+
+        <!-- TABLE SECTION -->
+        <div class="glass-card rounded-[24px] p-6 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/5">
+                <h2 class="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                    <i class="fas fa-route text-amber-500"></i> บันทึกการเดินตรวจล่าสุด (Real-time Patrol Logs)
+                </h2>
+                
+                <!-- Quick Filter Search Input -->
+                <div class="relative w-full md:w-80">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                    <input type="text" id="logSearch" onkeyup="filterLogs()" placeholder="ค้นหาง่ายๆ (ชื่อ รปภ., สาขา, จุดตรวจ)..." class="w-full bg-[#020617] border border-slate-700/50 rounded-xl py-2 pl-11 pr-4 text-white text-xs focus:border-amber-500 outline-none transition-all shadow-inner">
+                </div>
+            </div>
+
+            <!-- Responsive Table Container -->
+            <div class="overflow-x-auto custom-scrollbar border border-white/5 rounded-2xl">
+                <table class="w-full text-left text-xs min-w-[700px]">
+                    <thead class="bg-white/[0.02] border-b border-white/5 text-slate-400 font-black uppercase tracking-wider text-[10px]">
+                        <tr>
+                            <th class="px-5 py-4 w-[20%]">เวลาที่สแกน</th>
+                            <th class="px-5 py-4 w-[12%]">รหัส รปภ.</th>
+                            <th class="px-5 py-4 w-[18%]">ชื่อพนักงาน</th>
+                            <th class="px-5 py-4 w-[15%]">สาขา/หน่วยงาน</th>
+                            <th class="px-5 py-4 w-[23%]">จุดตรวจ</th>
+                            <th class="px-5 py-4 w-[12%] text-center">สถานะ GPS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody" class="divide-y divide-white/5 text-slate-200">
+                        <!-- Row 1 -->
+                        <tr class="hover:bg-white/[0.01] transition-colors">
+                            <td class="px-5 py-4 font-bold text-white">27 พ.ค. 2026, 19:10 น.</td>
+                            <td class="px-5 py-4 font-mono font-bold text-amber-500">TEST_G045</td>
+                            <td class="px-5 py-4 font-bold">Guard Test 45</td>
+                            <td class="px-5 py-4">Show DC</td>
+                            <td class="px-5 py-4 text-slate-300 font-semibold">ลานจอดรถ ชั้น 1 (NFC-SDC01)</td>
+                            <td class="px-5 py-4 text-center">
+                                <span class="badge-success px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                    <i class="fas fa-circle-check mr-1.5"></i>ปกติ (Normal)
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Row 2 -->
+                        <tr class="hover:bg-white/[0.01] transition-colors">
+                            <td class="px-5 py-4 font-bold text-white">27 พ.ค. 2026, 19:05 น.</td>
+                            <td class="px-5 py-4 font-mono font-bold text-amber-500">TEST_G012</td>
+                            <td class="px-5 py-4 font-bold">Guard Test 12</td>
+                            <td class="px-5 py-4">PCG 171</td>
+                            <td class="px-5 py-4 text-slate-300 font-semibold">ประตูหลังโกดัง (NFC-P17103)</td>
+                            <td class="px-5 py-4 text-center">
+                                <span class="badge-success px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                    <i class="fas fa-circle-check mr-1.5"></i>ปกติ (Normal)
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Row 3 -->
+                        <tr class="hover:bg-white/[0.01] transition-colors">
+                            <td class="px-5 py-4 font-bold text-white">27 พ.ค. 2026, 18:50 น.</td>
+                            <td class="px-5 py-4 font-mono font-bold text-amber-500">TEST_G088</td>
+                            <td class="px-5 py-4 font-bold">Guard Test 88</td>
+                            <td class="px-5 py-4">SE-ED</td>
+                            <td class="px-5 py-4 text-slate-300 font-semibold">ตู้เมนบอร์ดไฟ (QR-SED05)</td>
+                            <td class="px-5 py-4 text-center">
+                                <span class="badge-danger px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                    <i class="fas fa-circle-xmark mr-1.5 animate-pulse"></i>พิกัดไม่ตรง (Wrong GPS)
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Row 4 -->
+                        <tr class="hover:bg-white/[0.01] transition-colors">
+                            <td class="px-5 py-4 font-bold text-white">27 พ.ค. 2026, 18:45 น.</td>
+                            <td class="px-5 py-4 font-mono font-bold text-amber-500">TEST_G045</td>
+                            <td class="px-5 py-4 font-bold">Guard Test 45</td>
+                            <td class="px-5 py-4">Show DC</td>
+                            <td class="px-5 py-4 text-slate-300 font-semibold">จุดโหลดสินค้า (NFC-SDC02)</td>
+                            <td class="px-5 py-4 text-center">
+                                <span class="badge-success px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                    <i class="fas fa-circle-check mr-1.5"></i>ปกติ (Normal)
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Row 5 -->
+                        <tr class="hover:bg-white/[0.01] transition-colors">
+                            <td class="px-5 py-4 font-bold text-white">27 พ.ค. 2026, 18:30 น.</td>
+                            <td class="px-5 py-4 font-mono font-bold text-amber-500">TEST_G003</td>
+                            <td class="px-5 py-4 font-bold">Guard Test 3</td>
+                            <td class="px-5 py-4">PCG 173</td>
+                            <td class="px-5 py-4 text-slate-300 font-semibold">ป้อมหน้าทางเข้า (NFC-P17301)</td>
+                            <td class="px-5 py-4 text-center">
+                                <span class="badge-success px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                    <i class="fas fa-circle-check mr-1.5"></i>ปกติ (Normal)
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTER BRANDING -->
+        <footer class="text-center pt-4 pb-8 border-t border-white/5 space-y-2">
+            <p class="text-[9px] text-slate-500 font-bold tracking-[3px] uppercase">
+                &copy; 2026 &bull; NEXTGEN SYSTEM CENTER &bull; Secure Patrol Reports
+            </p>
+        </footer>
+    </div>
+
+    <!-- Script Configuration -->
+    <script>
+        // Update Time dynamically
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            document.getElementById('current-time').innerText = timeStr;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // JavaScript Live Filtering of Table Rows
+        function filterLogs() {
+            const query = document.getElementById('logSearch').value.toLowerCase();
+            const table = document.getElementById('logsTableBody');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let match = false;
+                
+                // Search across Guard ID, Name, Site/Branch, and Checkpoint columns
+                const guardId = cells[1]?.textContent.toLowerCase() || '';
+                const name = cells[2]?.textContent.toLowerCase() || '';
+                const site = cells[3]?.textContent.toLowerCase() || '';
+                const checkpoint = cells[4]?.textContent.toLowerCase() || '';
+                const status = cells[5]?.textContent.toLowerCase() || '';
+                
+                if (guardId.includes(query) || name.includes(query) || site.includes(query) || checkpoint.includes(query) || status.includes(query)) {
+                    match = true;
+                }
+                
+                if (match) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
