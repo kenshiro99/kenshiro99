@@ -488,8 +488,8 @@
 
         <!-- LOGIN CARD (Shows after AI interaction) -->
         <div class="login-card order-2 lg:order-2" id="loginCard">
-            <div class="brand-logo">
-                <img src="img/logo-1.jpg"
+            <div class="brand-logo" id="brandLogo">
+                <img src="img/logo-1.jpg" id="logoImg"
                     onerror="this.src='https://ui-avatars.com/api/?name=N&background=0ea5e9&color=fff'" alt="NEXTGEN">
             </div>
 
@@ -538,6 +538,8 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let isRegistrationMode = false;
+
         async function handleLogin(e) {
             e.preventDefault();
             const user_id = document.getElementById('username').value.trim();
@@ -550,7 +552,7 @@
 
             // UI Feedback
             errorMsg.classList.add('hidden');
-            btnText.innerText = 'กำลังตรวจสอบ...';
+            btnText.innerText = isRegistrationMode ? 'กำลังผูกบัญชี...' : 'กำลังตรวจสอบ...';
             btnLoader.style.display = 'block';
             btnIcon.style.display = 'none';
             mainBtn.style.pointerEvents = 'none';
@@ -581,7 +583,48 @@
                     return;
                 }
 
-                // บันทึก Session
+                // 4. ถ้าอยู่ในโหมดลงทะเบียน (Registration Mode)
+                if (isRegistrationMode && globalLineUserId) {
+                    btnText.innerText = 'กำลังผูกบัญชี LINE...';
+                    try {
+                        const { data: rpcData, error: rpcError } = await supabaseClient.rpc('register_staff_line', {
+                            p_emp_id: user_id,
+                            p_password: pass,
+                            p_line_user_id: globalLineUserId
+                        });
+                        
+                        if (rpcError) throw rpcError;
+                        
+                        // สมมติว่าสำเร็จ
+                        btnText.innerText = 'ผูกบัญชีสำเร็จ!';
+                        // ใช้ SweetAlert ถ้ามี ไม่งั้นใช้ alert ธรรมดา
+                        if (typeof Swal !== 'undefined') {
+                            await Swal.fire({
+                                title: 'ลงทะเบียนสำเร็จ!',
+                                text: 'ระบบได้ผูกบัญชี LINE ของคุณเรียบร้อยแล้ว',
+                                icon: 'success',
+                                confirmButtonColor: '#0ea5e9'
+                            });
+                        } else {
+                            alert('🎉 ลงทะเบียนสำเร็จ! ระบบได้ผูกบัญชี LINE ของคุณเรียบร้อยแล้ว');
+                        }
+
+                        // ส่งข้อความให้ n8n ทำงานต่อ (เปลี่ยนริชเมนู, ส่งข้อความต้อนรับ, เชิญเข้ากลุ่ม)
+                        await liff.sendMessages([{
+                            type: 'text',
+                            text: '✅ ลงทะเบียนพนักงานสำเร็จ'
+                        }]);
+                        liff.closeWindow();
+                        return;
+                    } catch (rpcErr) {
+                        console.error('RPC Error:', rpcErr);
+                        alert('เกิดข้อผิดพลาดในการผูกบัญชี: ' + rpcErr.message + '\n\nผู้ดูแลระบบ: กรุณารัน SQL GRANT Permission ก่อนใช้งานฟังก์ชันนี้');
+                        resetUI();
+                        return;
+                    }
+                }
+
+                // บันทึก Session (สำหรับการใช้งานผ่านเบราว์เซอร์ปกติ หรือลงทะเบียนแล้ว)
                 localStorage.setItem('nextgen_user', JSON.stringify(data));
                 sessionStorage.setItem('nextgen_user', JSON.stringify(data));
 
@@ -702,8 +745,13 @@
             const btnLoader = document.getElementById('btnLoader');
             const mainBtn = document.getElementById('mainSubmitBtn');
 
-            btnText.innerText = 'เข้าสู่ระบบ';
-            btnIcon.className = 'fas fa-sign-in-alt';
+            if (isRegistrationMode) {
+                btnText.innerText = 'ลงทะเบียนพนักงาน';
+                btnIcon.className = 'fas fa-user-plus';
+            } else {
+                btnText.innerText = 'เข้าสู่ระบบ';
+                btnIcon.className = 'fas fa-sign-in-alt';
+            }
             btnLoader.style.display = 'none';
             btnIcon.style.display = 'block';
             mainBtn.style.pointerEvents = 'auto';
@@ -711,6 +759,7 @@
         }
 
         const LIFF_ID = '2010305006-snZGIJEw';
+        let globalLineUserId = null;
 
         function logDebug(msg) {
             console.log("[DEBUG]", msg);
@@ -751,6 +800,7 @@
                         logDebug("Fetching LINE profile...");
                         const profile = await liff.getProfile();
                         const lineUserId = profile.userId;
+                        globalLineUserId = lineUserId;
                         logDebug("LINE User ID: " + lineUserId);
                         
                         logDebug("Querying Supabase staff table...");
@@ -799,6 +849,8 @@
                         } else {
                             logDebug("No matching staff member found in Supabase.");
                             typeText(aiText, "❌ บัญชี LINE ของคุณยังไม่ได้ลงทะเบียนผูกกับรหัสพนักงานค่ะ กรุณากรอกข้อมูลเพื่อลงชื่อเข้าใช้งานก่อนนะคะ");
+                            initRegistrationLogin();
+                            return;
                         }
                     } else {
                         logDebug("Outside LINE app. Using standard fallback login.");
@@ -813,6 +865,29 @@
 
             // Fallback: ทำการล็อกอินปกติ
             initNormalLogin();
+        }
+
+        function initRegistrationLogin() {
+            isRegistrationMode = true;
+            localStorage.removeItem('nextgen_user');
+            sessionStorage.removeItem('nextgen_user');
+            console.log("System Ready. Entering Registration Mode.");
+            
+            // เปลี่ยน UI ให้เป็นหน้าลงทะเบียนชัดเจน
+            const logo = document.getElementById('brandLogo');
+            if (logo) {
+                logo.style.width = '140px';
+                logo.style.height = '140px';
+                logo.style.borderRadius = '50%';
+                document.getElementById('logoImg').src = 'https://cdn-icons-png.flaticon.com/512/8206/8206899.png'; // ไอคอนลงทะเบียนแนวล้ำๆ
+            }
+            document.getElementById('formSubtitle').innerText = 'STAFF ACCOUNT REGISTRATION';
+            document.getElementById('formSubtitle').style.color = '#22c55e'; // สีเขียวให้ดูต่างจากล็อกอิน
+            document.getElementById('btnText').innerText = 'ลงทะเบียนพนักงาน';
+            document.getElementById('btnIcon').className = 'fas fa-user-plus';
+            document.getElementById('mainSubmitBtn').style.background = 'linear-gradient(45deg, #0ea5e9, #22c55e)';
+            
+            setTimeout(initAIGreeting, 1000);
         }
 
         function initNormalLogin() {
