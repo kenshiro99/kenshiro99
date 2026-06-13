@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -310,10 +311,15 @@
                     <i class="fas fa-chevron-left"></i> ย้อนกลับไปดูจุดตรวจ
                 </button>
 
-                <div class="bg-white/80 border border-slate-200 rounded-2xl p-3.5 shadow-sm">
-                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">จุดตรวจที่สแกน</span>
-                    <h3 class="text-slate-900 font-extrabold text-xs" id="selected-checkpoint-title">ลานจอดรถ VIP ชั้น 1</h3>
-                    <p class="text-slate-500 text-[10px] font-medium mt-0.5" id="selected-checkpoint-code">ID: NFC-SDC_01</p>
+                <div class="bg-white/80 border border-slate-200 rounded-2xl p-3.5 shadow-sm flex justify-between items-center">
+                    <div>
+                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">จุดตรวจที่สแกน</span>
+                        <h3 class="text-slate-900 font-extrabold text-xs" id="selected-checkpoint-title">ลานจอดรถ VIP ชั้น 1</h3>
+                        <p class="text-slate-500 text-[10px] font-medium mt-0.5" id="selected-checkpoint-code">ID: NFC-SDC_01</p>
+                    </div>
+                    <div id="qr-verification-badge" class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
+                        <i class="fas fa-qrcode mr-1 animate-pulse"></i> รอสแกนป้าย...
+                    </div>
                 </div>
 
                 <!-- Live Camera Viewport -->
@@ -409,6 +415,12 @@
         let capturedPhotos = [null, null, null]; // [base64_1, base64_2, base64_3]
         let activeSlotIndex = 0;
 
+        // QR Code Reader State
+        let isScanningActive = false;
+        let isQrVerified = false;
+        let lastScannedCode = "";
+        let lastScanTime = 0;
+
         // Initialize Supabase Client
         if (typeof supabase !== 'undefined') {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -445,6 +457,82 @@
                 }
             } catch (err) {
                 console.error("Error in updateLiveDate:", err);
+            }
+        }
+
+        // --- 1.1 QR CODE DECODER LOOP & HANDLERS ---
+        function updateQrVerificationUI() {
+            const badge = document.getElementById('qr-verification-badge');
+            if (!badge) return;
+
+            if (isQrVerified) {
+                badge.className = "px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center";
+                badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> สแกนป้ายสำเร็จ`;
+            } else {
+                badge.className = "px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center";
+                badge.innerHTML = `<i class="fas fa-qrcode mr-1 animate-pulse"></i> รอสแกนป้าย...`;
+            }
+        }
+
+        function scanQrCodeLoop() {
+            if (!isScanningActive || !cameraStream) return;
+
+            const video = document.getElementById('camera-stream');
+            if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.getElementById('capture-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                if (typeof jsQR !== 'undefined') {
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+                    
+                    if (code) {
+                        console.log("Found QR code:", code.data);
+                        handleDecodedQrCode(code.data);
+                    }
+                } else {
+                    console.warn("jsQR library is not loaded.");
+                }
+            }
+            
+            if (isScanningActive) {
+                requestAnimationFrame(scanQrCodeLoop);
+            }
+        }
+
+        function handleDecodedQrCode(scannedText) {
+            const now = Date.now();
+            // Debounce scanning the same code too quickly
+            if (scannedText === lastScannedCode && now - lastScanTime < 3000) {
+                return;
+            }
+            
+            lastScannedCode = scannedText;
+            lastScanTime = now;
+
+            console.log("Decoded QR Text:", scannedText);
+            
+            // Check if it matches the current checkpoint's code
+            if (currentCheckpoint && scannedText.trim().toLowerCase() === currentCheckpoint.code.trim().toLowerCase()) {
+                isQrVerified = true;
+                playBeepSound();
+                updateQrVerificationUI();
+                
+                alert(`🎯 สแกนป้ายจุดตรวจสำเร็จ!\n- รหัสป้าย: ${scannedText}\n- จุดตรวจ: ${currentCheckpoint.name}\n\nกรุณาถ่ายภาพประกอบการตรวจให้ครบ 3 รูปเพื่อบันทึกงานค่ะ`);
+            } else {
+                // Check if it belongs to another checkpoint
+                const foundCheckpoint = localCheckpoints.find(cp => cp.code.trim().toLowerCase() === scannedText.trim().toLowerCase());
+                if (foundCheckpoint) {
+                    alert(`⚠️ รหัสป้ายไม่ถูกต้อง!\n- ป้ายที่สแกน: "${foundCheckpoint.name}" (${scannedText})\n- จุดตรวจที่เลือก: "${currentCheckpoint.name}"\n\nกรุณาสแกนป้ายให้ตรงกับจุดตรวจที่เลือกค่ะ หรือย้อนกลับไปเลือกจุดตรวจให้ตรงกับป้ายนี้`);
+                } else {
+                    alert(`❌ ไม่พบรหัสป้ายนี้ในระบบ!\n- ป้ายที่สแกน: "${scannedText}"\n- จุดตรวจที่เลือก: "${currentCheckpoint.name}"`);
+                }
             }
         }
 
@@ -892,10 +980,12 @@
             document.getElementById('selected-checkpoint-title').innerText = checkpoint.name;
             document.getElementById('selected-checkpoint-code').innerText = `ID: ${checkpoint.code} | พิกัด GPS: ${checkpoint.gps}`;
             
-            // Clear captures and note
+            // Clear captures, note, and QR verification status
             capturedPhotos = [null, null, null];
             activeSlotIndex = 0;
+            isQrVerified = false;
             updatePhotoSlotsUI();
+            updateQrVerificationUI();
             
             document.getElementById('scan-note-input').value = "ตรวจเดินลาดตระเวนปกติ";
             
@@ -1000,6 +1090,10 @@
                     });
                     video.srcObject = cameraStream;
                     video.classList.remove('hidden');
+                    
+                    // Activate QR Scanning Loop
+                    isScanningActive = true;
+                    requestAnimationFrame(scanQrCodeLoop);
                 } else {
                     throw new Error("No mediaDevices support");
                 }
@@ -1011,6 +1105,7 @@
         }
 
         function stopCameraStream() {
+            isScanningActive = false; // Stop scanning loop
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
@@ -1055,6 +1150,12 @@
         async function saveCheckpointRecord() {
             const noteInput = document.getElementById('scan-note-input').value;
             const btnSave = document.getElementById('btn-save-record');
+
+            // Ensure QR Code/NFC is verified
+            if (!isQrVerified) {
+                alert(`🚨 โปรดสแกนป้าย QR Code/NFC ประจำจุดตรวจนี้ให้ผ่านก่อนค่ะ จึงจะสามารถกดบันทึกรายงานการตรวจได้`);
+                return;
+            }
 
             // Ensure 3 photos taken
             let photosTakenCount = 0;
