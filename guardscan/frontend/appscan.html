@@ -176,11 +176,63 @@
     <!-- MOBILE CONTAINER -->
     <div class="mobile-app">
 
+        <!-- ================= SCREEN 0: LOGIN SCREEN ================= -->
+        <div id="screen-login" class="absolute inset-0 bg-slate-100 flex flex-col justify-between p-6 z-50">
+            <!-- Top brand section -->
+            <div class="flex-grow flex flex-col justify-center space-y-8 max-w-sm w-full mx-auto">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md mb-3">
+                        <i class="fas fa-user-shield text-2xl"></i>
+                    </div>
+                    <h2 class="text-slate-900 text-xl font-extrabold tracking-tight">เข้าสู่ระบบ รปภ.</h2>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">NEXGEN PATROL SCANNER</p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Username Input -->
+                    <div class="space-y-1">
+                        <label class="text-[10.5px] font-bold text-slate-650 block">รหัสพนักงาน</label>
+                        <div class="relative">
+                            <i class="fas fa-fingerprint absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="login-username" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-350 focus:outline-none focus:border-slate-500 text-xs bg-white font-medium" placeholder="ระบุรหัสพนักงาน (เช่น 5908064g)">
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="space-y-1">
+                        <label class="text-[10.5px] font-bold text-slate-650 block">รหัสผ่าน</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="password" id="login-password" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-350 focus:outline-none focus:border-slate-500 text-xs bg-white font-medium" placeholder="••••">
+                        </div>
+                    </div>
+
+                    <div id="login-error-msg" class="text-[10.5px] text-red-500 font-bold text-center hidden">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง
+                    </div>
+                </div>
+
+                <button onclick="handleLoginSubmit()" id="btn-login-submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]">
+                    <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบตรวจการ
+                </button>
+            </div>
+
+            <!-- Footer section -->
+            <div class="text-center pb-2">
+                <p class="text-[9px] text-slate-400 font-bold tracking-wider">NEXTGEN SYSTEM CENTER &copy; 2026</p>
+            </div>
+        </div>
+
         <!-- APP HEADER -->
         <div class="bg-white px-5 pt-6 pb-4 border-b border-slate-200 shadow-sm relative z-20">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-slate-900 text-base font-extrabold tracking-tight">ระบบตระเวนจุดตรวจ รปภ.</h1>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-slate-900 text-base font-extrabold tracking-tight">ระบบตระเวนจุดตรวจ รปภ.</h1>
+                        <button onclick="handleLogout()" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="ออกจากระบบ">
+                            <i class="fas fa-sign-out-alt text-xs"></i>
+                        </button>
+                    </div>
                     <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">NEXGEN PATROL SYSTEM</p>
                 </div>
                 <!-- Date Badge -->
@@ -440,42 +492,185 @@
             if (sessionStr && sessionStr !== 'undefined' && sessionStr !== 'null') {
                 try {
                     userData = JSON.parse(sessionStr);
-                    if (userData && typeof userData === 'object') {
+                    if (userData && typeof userData === 'object' && userData.level && userData.level.toLowerCase() === 'guard') {
                         const guardName = userData.name || 'พนักงาน';
                         const guardRole = userData.role || userData.level || 'รปภ.';
                         activeSite = userData.unit || userData.unit_name || 'Show DC';
                         
                         document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${guardName} (${guardRole})`;
                         document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
-                    } else {
-                        useFallbackSession();
+                        
+                        // Hide login screen
+                        document.getElementById('screen-login').classList.add('hidden');
+                        
+                        // Load completed status logs from localStorage
+                        try {
+                            const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
+                            if (savedCompleted) {
+                                completedCheckpoints = JSON.parse(savedCompleted);
+                            }
+                        } catch (e) {
+                            console.error("Error parsing completed checkpoints:", e);
+                        }
+                        
+                        fetchRoundsAndCheckpoints();
+                        return;
                     }
                 } catch (e) {
                     console.error("Error parsing user session:", e);
-                    useFallbackSession();
                 }
-            } else {
-                useFallbackSession();
             }
             
-            // Load completed status logs from localStorage
-            try {
-                const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
-                if (savedCompleted) {
-                    completedCheckpoints = JSON.parse(savedCompleted);
-                }
-            } catch (e) {
-                console.error("Error parsing completed checkpoints:", e);
-            }
-            
-            fetchRoundsAndCheckpoints();
+            // If we reach here, we are not logged in as a guard.
+            // Check LIFF auto login first (for future LINE OA support)
+            checkLiffAutoLogin();
         }
 
-        function useFallbackSession() {
-            userData = null;
-            activeSite = "Show DC";
-            document.getElementById('guardNameLabel').innerText = `👨‍✈️ พนักงานทดสอบ (รปภ.01)`;
-            document.getElementById('unitNameLabel').innerText = `🏢 Show DC`;
+        async function checkLiffAutoLogin() {
+            try {
+                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    const lineUserId = profile.userId;
+                    
+                    if (lineUserId && supabaseClient) {
+                        console.log("LINE User ID found, trying auto-login:", lineUserId);
+                        const { data, error } = await supabaseClient
+                            .from('staff')
+                            .select('*')
+                            .eq('line_user_id', lineUserId)
+                            .eq('status', 'เปิด')
+                            .single();
+                            
+                        if (!error && data && data.level && data.level.toLowerCase() === 'guard') {
+                            localStorage.setItem('nextgen_user', JSON.stringify(data));
+                            userData = data;
+                            activeSite = data.unit || 'Show DC';
+                            
+                            document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${data.name} (${data.role || 'รปภ.'})`;
+                            document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
+                            
+                            document.getElementById('screen-login').classList.add('hidden');
+                            
+                            // Load completed status logs
+                            try {
+                                const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
+                                if (savedCompleted) {
+                                    completedCheckpoints = JSON.parse(savedCompleted);
+                                }
+                            } catch (e) {}
+
+                            fetchRoundsAndCheckpoints();
+                            return;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("LIFF auto-login failed:", err);
+            }
+
+            // Fallback: Show Login Screen
+            document.getElementById('screen-login').classList.remove('hidden');
+        }
+
+        async function handleLoginSubmit() {
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+            const errorMsgEl = document.getElementById('login-error-msg');
+            const btnSubmit = document.getElementById('btn-login-submit');
+
+            if (!usernameInput || !passwordInput) {
+                alert("กรุณากรอกรหัสพนักงานและรหัสผ่านให้ครบถ้วน");
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังตรวจสอบ...`;
+            errorMsgEl.classList.add('hidden');
+
+            try {
+                let loginSuccess = false;
+                let userObj = null;
+
+                // 1. Try Supabase Client
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('staff')
+                        .select('*')
+                        .eq('emp_id', usernameInput)
+                        .eq('password', passwordInput)
+                        .eq('status', 'เปิด')
+                        .single();
+
+                    if (!error && data) {
+                        if (data.level && data.level.toLowerCase() === 'guard') {
+                            loginSuccess = true;
+                            userObj = data;
+                        } else {
+                            alert("❌ ไม่อนุญาตให้เข้าใช้งาน: ระบบนี้จำกัดการเข้าถึงเฉพาะระดับพนักงาน รปภ. (Guard) เท่านั้น");
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = `<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบตรวจการ`;
+                            return;
+                        }
+                    }
+                }
+
+                // 2. Offline / Mock fallback for testing (e.g. 5908064g / 5908)
+                if (!loginSuccess) {
+                    if (usernameInput === '5908064g' && passwordInput === '5908') {
+                        loginSuccess = true;
+                        userObj = {
+                            emp_id: '5908064g',
+                            name: 'นายพรชัย อ่อนคำ',
+                            unit: 'ศูนย์ฝึก I.T.C',
+                            role: 'หน.ชุด',
+                            level: 'Guard',
+                            status: 'เปิด'
+                        };
+                    }
+                }
+
+                if (loginSuccess && userObj) {
+                    localStorage.setItem('nextgen_user', JSON.stringify(userObj));
+                    userData = userObj;
+                    activeSite = userObj.unit || 'Show DC';
+                    
+                    document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${userObj.name} (${userObj.role || 'รปภ.'})`;
+                    document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
+                    
+                    // Hide login screen
+                    document.getElementById('screen-login').classList.add('hidden');
+                    
+                    // Clear inputs
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                    
+                    fetchRoundsAndCheckpoints();
+                } else {
+                    errorMsgEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Login submission error:", err);
+                alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ โปรดตรวจสอบสัญญาณอินเทอร์เน็ต");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบตรวจการ`;
+            }
+        }
+
+        function handleLogout() {
+            if (confirm("ต้องการออกจากระบบใช่หรือไม่?")) {
+                localStorage.removeItem('nextgen_user');
+                userData = null;
+                document.getElementById('screen-login').classList.remove('hidden');
+                document.getElementById('guardNameLabel').innerText = '👨‍✈️ กำลังโหลดข้อมูล...';
+                document.getElementById('unitNameLabel').innerText = '🏢 Show DC';
+                document.getElementById('rounds-list-container').innerHTML = `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
+                        <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
+                        <p class="text-xs text-slate-500 font-medium">กำลังโหลดรอบการตรวจ...</p>
+                    </div>
+                `;
+            }
         }
 
         // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
