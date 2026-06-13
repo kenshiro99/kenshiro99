@@ -27,7 +27,7 @@
         body {
             font-family: 'Sarabun', sans-serif;
             background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -39,8 +39,8 @@
         .mobile-app {
             width: 100%;
             max-width: 420px;
-            height: 100%;
-            max-height: 860px;
+            height: 100vh;
+            max-height: 100vh;
             background-color: var(--bg-body);
             display: flex;
             flex-direction: column;
@@ -85,9 +85,9 @@
         }
 
         /* Custom scroll */
-        .custom-scroll::-webkit-scrollbar { width: 3px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #64748b; border-radius: 3px; }
 
         /* Camera scan viewfinder grid */
         .viewfinder-grid {
@@ -260,7 +260,7 @@
         </div>
 
         <!-- MAIN SCREENS CONTAINER (Scrollable) -->
-        <div class="flex-grow p-4 overflow-y-auto custom-scroll relative">
+        <div class="flex-grow p-4 overflow-y-auto custom-scroll relative" style="min-height: 0; -webkit-overflow-scrolling: touch;">
 
             <!-- ================= SCREEN 1: ROUNDS LIST (รอบการตรวจ) ================= -->
             <div id="screen-rounds" class="space-y-4">
@@ -333,7 +333,7 @@
                         <div class="camera-corner corner-br"></div>
 
                         <!-- Video Stream -->
-                        <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover absolute inset-0 z-0"></video>
+                        <video id="camera-stream" autoplay playsinline muted class="w-full h-full object-cover absolute inset-0 z-0"></video>
                         
                         <!-- Camera Canvas for image grabbing -->
                         <canvas id="capture-canvas" class="hidden"></canvas>
@@ -478,15 +478,29 @@
             if (!isScanningActive || !cameraStream) return;
 
             const video = document.getElementById('camera-stream');
-            if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+            if (video && video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
                 const canvas = document.getElementById('capture-canvas');
                 const ctx = canvas.getContext('2d');
                 
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                // Scale down the frame for faster QR decoding
+                let width = video.videoWidth;
+                let height = video.videoHeight;
+                const maxDim = 640;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
                 
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(video, 0, 0, width, height);
+                
+                const imageData = ctx.getImageData(0, 0, width, height);
                 if (typeof jsQR !== 'undefined') {
                     const code = jsQR(imageData.data, imageData.width, imageData.height, {
                         inversionAttempts: "dontInvert",
@@ -764,12 +778,67 @@
         // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
         async function fetchRoundsAndCheckpoints() {
             try {
-                // Fetch Rounds from LocalStorage or use defaults
-                const lsRounds = localStorage.getItem('patrol_rounds');
-                if (lsRounds) {
-                    localRounds = JSON.parse(lsRounds);
-                } else {
-                    localRounds = [
+                let fetchedRounds = [];
+                let fetchedCheckpoints = [];
+
+                if (supabaseClient) {
+                    // 1. Fetch rounds from Supabase
+                    const { data: dbRounds, error: roundsError } = await supabaseClient
+                        .from('patrol_rounds')
+                        .select('*')
+                        .order('start_time', { ascending: true });
+                    
+                    if (!roundsError && dbRounds) {
+                        fetchedRounds = dbRounds.map(r => ({
+                            id: r.id,
+                            name: r.name,
+                            start: r.start_time,
+                            end: r.end_time,
+                            siteName: r.site_name,
+                            status: r.status
+                        }));
+                        // Update cache
+                        localStorage.setItem('patrol_rounds', JSON.stringify(fetchedRounds));
+                    } else if (roundsError) {
+                        console.error("Supabase rounds fetch error:", roundsError);
+                    }
+
+                    // 2. Fetch checkpoints from Supabase
+                    const { data: dbCheckpoints, error: checkpointsError } = await supabaseClient
+                        .from('patrol_checkpoints')
+                        .select('*');
+
+                    if (!checkpointsError && dbCheckpoints) {
+                        fetchedCheckpoints = dbCheckpoints.map(cp => ({
+                            code: cp.code,
+                            siteName: cp.site_name,
+                            name: cp.name,
+                            gps: cp.gps
+                        }));
+                        // Update cache
+                        localStorage.setItem('patrol_checkpoints', JSON.stringify(fetchedCheckpoints));
+                    } else if (checkpointsError) {
+                        console.error("Supabase checkpoints fetch error:", checkpointsError);
+                    }
+                }
+
+                // If Supabase fetch failed or returned empty (offline or error), load from localStorage fallback
+                if (fetchedRounds.length === 0) {
+                    const lsRounds = localStorage.getItem('patrol_rounds');
+                    if (lsRounds) {
+                        fetchedRounds = JSON.parse(lsRounds);
+                    }
+                }
+                if (fetchedCheckpoints.length === 0) {
+                    const lsCheckpoints = localStorage.getItem('patrol_checkpoints');
+                    if (lsCheckpoints) {
+                        fetchedCheckpoints = JSON.parse(lsCheckpoints);
+                    }
+                }
+
+                // If still empty, use hardcoded defaults
+                if (fetchedRounds.length === 0) {
+                    fetchedRounds = [
                         { name: 'รอบเช้าตรู่ (รอบที่ 1)', start: '06:00', end: '08:00', siteName: activeSite, status: 'ใช้งานอยู่' },
                         { name: 'รอบกะเช้า (รอบที่ 1)', start: '08:00', end: '10:00', siteName: activeSite, status: 'ใช้งานอยู่' },
                         { name: 'รอบกะเช้า (รอบที่ 2)', start: '12:00', end: '14:00', siteName: activeSite, status: 'ใช้งานอยู่' },
@@ -777,22 +846,8 @@
                         { name: 'รอบกะดึก (รอบที่ 1)', start: '20:00', end: '22:00', siteName: activeSite, status: 'ใช้งานอยู่' }
                     ];
                 }
-
-                // Filter rounds for this site
-                localRounds = localRounds.filter(r => isSiteMatch(r.siteName, activeSite));
-                if (localRounds.length === 0) {
-                    localRounds = [
-                        { name: 'รอบเช้าตรู่ (รอบที่ 1)', start: '06:00', end: '08:00', siteName: activeSite, status: 'ใช้งานอยู่' },
-                        { name: 'รอบกะเช้า (รอบที่ 1)', start: '08:00', end: '10:00', siteName: activeSite, status: 'ใช้งานอยู่' }
-                    ];
-                }
-
-                // Fetch Checkpoints from LocalStorage or use defaults
-                const lsCheckpoints = localStorage.getItem('patrol_checkpoints');
-                if (lsCheckpoints) {
-                    localCheckpoints = JSON.parse(lsCheckpoints);
-                } else {
-                    localCheckpoints = [
+                if (fetchedCheckpoints.length === 0) {
+                    fetchedCheckpoints = [
                         { code: 'NFC-SDC_01', siteName: activeSite, name: 'ลานจอดรถ VIP ชั้น 1', gps: '13.7512, 100.5733' },
                         { code: 'QR-SDC_02', siteName: activeSite, name: 'ห้องควบคุมไฟหลัก MDB', gps: '13.7514, 100.5735' },
                         { code: 'NFC-SDC_03', siteName: activeSite, name: 'ประตูโหลดสินค้าด้านหลัง', gps: '13.7511, 100.5730' },
@@ -800,19 +855,25 @@
                     ];
                 }
 
-                // Filter checkpoints for this site
-                localCheckpoints = localCheckpoints.filter(cp => isSiteMatch(cp.siteName, activeSite));
+                // Filter for current active site
+                localRounds = fetchedRounds.filter(r => isSiteMatch(r.siteName, activeSite));
+                // If no rounds for this site, fallback to general rounds under this site
+                if (localRounds.length === 0) {
+                    localRounds = fetchedRounds.filter(r => r.siteName === 'Show DC' || r.siteName === 'ศูนย์ฝึก I.T.C');
+                    // update siteName to activeSite so they display
+                    localRounds = localRounds.map(r => ({ ...r, siteName: activeSite }));
+                }
+
+                localCheckpoints = fetchedCheckpoints.filter(cp => isSiteMatch(cp.siteName, activeSite));
                 if (localCheckpoints.length === 0) {
-                    localCheckpoints = [
-                        { code: 'NFC-SDC_01', siteName: activeSite, name: 'ลานจอดรถ VIP ชั้น 1', gps: '13.7512, 100.5733' },
-                        { code: 'QR-SDC_02', siteName: activeSite, name: 'ห้องควบคุมไฟหลัก MDB', gps: '13.7514, 100.5735' }
-                    ];
+                    localCheckpoints = fetchedCheckpoints.filter(cp => cp.siteName === 'Show DC' || cp.siteName === 'ศูนย์ฝึก I.T.C');
+                    localCheckpoints = localCheckpoints.map(cp => ({ ...cp, siteName: activeSite }));
                 }
 
                 renderRoundsList();
 
             } catch (e) {
-                console.error("Fetch error:", e);
+                console.error("Fetch error in fetchRoundsAndCheckpoints:", e);
             }
         }
 
@@ -1089,7 +1150,14 @@
                         audio: false
                     });
                     video.srcObject = cameraStream;
+                    video.muted = true;
                     video.classList.remove('hidden');
+                    
+                    try {
+                        await video.play();
+                    } catch (playErr) {
+                        console.warn("video.play() failed, trying again...", playErr);
+                    }
                     
                     // Activate QR Scanning Loop
                     isScanningActive = true;
