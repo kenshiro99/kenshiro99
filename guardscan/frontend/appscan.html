@@ -364,51 +364,118 @@
 
         // Live Header Date
         function updateLiveDate() {
-            const options = { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' };
-            const now = new Date();
-            document.getElementById('liveDate').innerText = now.toLocaleDateString('th-TH', options);
-            
-            // Render current simulated time
-            const hourStr = String(now.getHours()).padStart(2, '0');
-            const minStr = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('system-time-display').innerText = `${hourStr}:${minStr} น.`;
+            try {
+                const now = new Date();
+                
+                // Safe date update
+                const liveDateEl = document.getElementById('liveDate');
+                if (liveDateEl) {
+                    let dateStr = "";
+                    try {
+                        const options = { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' };
+                        dateStr = now.toLocaleDateString('th-TH', options);
+                    } catch (e) {
+                        try {
+                            dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                        } catch (e2) {
+                            dateStr = now.toDateString();
+                        }
+                    }
+                    liveDateEl.innerText = dateStr;
+                }
+
+                // Render current time
+                const systemTimeEl = document.getElementById('system-time-display');
+                if (systemTimeEl) {
+                    const hourStr = String(now.getHours()).padStart(2, '0');
+                    const minStr = String(now.getMinutes()).padStart(2, '0');
+                    systemTimeEl.innerText = `${hourStr}:${minStr} น.`;
+                }
+            } catch (err) {
+                console.error("Error in updateLiveDate:", err);
+            }
         }
-        updateLiveDate();
-        setInterval(updateLiveDate, 30000); // update every 30 sec
+
+        // Helper to match site names flexibly (e.g. "ศูนย์ฝึก" should match "ศูนย์ฝึก I.T.C")
+        function isSiteMatch(dbSite, userSite) {
+            if (!dbSite || !userSite) return false;
+            const s1 = dbSite.trim().toLowerCase();
+            const s2 = userSite.trim().toLowerCase();
+            return s1 === s2 || s1.includes(s2) || s2.includes(s1);
+        }
 
         // Check if round's time has passed (เลยเวลาตรวจ)
         function isRoundExpired(round) {
-            const now = new Date();
-            // Get current Thailand hour and minute (e.g. "18:05")
-            const thaiTimeStr = now.toLocaleTimeString('en-GB', { 
-                timeZone: 'Asia/Bangkok', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: false 
-            });
-            return thaiTimeStr > round.end;
+            try {
+                if (!round || !round.end) return false;
+                const now = new Date();
+                let hour = now.getHours();
+                let minute = now.getMinutes();
+
+                try {
+                    // Try to get Thailand time specifically
+                    const options = { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false };
+                    const parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(now);
+                    const hPart = parts.find(p => p.type === 'hour');
+                    const mPart = parts.find(p => p.type === 'minute');
+                    if (hPart && mPart) {
+                        hour = parseInt(hPart.value, 10);
+                        minute = parseInt(mPart.value, 10);
+                    }
+                } catch (e) {
+                    console.warn("Intl Asia/Bangkok timeZone not supported, falling back to local time", e);
+                }
+
+                const thaiTimeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                return thaiTimeStr > round.end;
+            } catch (err) {
+                console.error("Error in isRoundExpired:", err);
+                return false;
+            }
         }
 
         // --- 2. AUTHENTICATION & SESSION LOADING ---
         function loadUserSession() {
             const sessionStr = localStorage.getItem('nextgen_user');
-            if (sessionStr) {
-                userData = JSON.parse(sessionStr);
-                document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${userData.name} (${userData.role || 'รปภ.'})`;
-                activeSite = userData.unit || "Show DC";
-                document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
+            if (sessionStr && sessionStr !== 'undefined' && sessionStr !== 'null') {
+                try {
+                    userData = JSON.parse(sessionStr);
+                    if (userData && typeof userData === 'object') {
+                        const guardName = userData.name || 'พนักงาน';
+                        const guardRole = userData.role || userData.level || 'รปภ.';
+                        activeSite = userData.unit || userData.unit_name || 'Show DC';
+                        
+                        document.getElementById('guardNameLabel').innerText = `👨‍✈️ ${guardName} (${guardRole})`;
+                        document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
+                    } else {
+                        useFallbackSession();
+                    }
+                } catch (e) {
+                    console.error("Error parsing user session:", e);
+                    useFallbackSession();
+                }
             } else {
-                document.getElementById('guardNameLabel').innerText = `👨‍✈️ พนักงานทดสอบ (รปภ.01)`;
-                document.getElementById('unitNameLabel').innerText = `🏢 Show DC`;
+                useFallbackSession();
             }
             
             // Load completed status logs from localStorage
-            const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
-            if (savedCompleted) {
-                completedCheckpoints = JSON.parse(savedCompleted);
+            try {
+                const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
+                if (savedCompleted) {
+                    completedCheckpoints = JSON.parse(savedCompleted);
+                }
+            } catch (e) {
+                console.error("Error parsing completed checkpoints:", e);
             }
             
             fetchRoundsAndCheckpoints();
+        }
+
+        function useFallbackSession() {
+            userData = null;
+            activeSite = "Show DC";
+            document.getElementById('guardNameLabel').innerText = `👨‍✈️ พนักงานทดสอบ (รปภ.01)`;
+            document.getElementById('unitNameLabel').innerText = `🏢 Show DC`;
         }
 
         // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
@@ -429,7 +496,7 @@
                 }
 
                 // Filter rounds for this site
-                localRounds = localRounds.filter(r => r.siteName.toLowerCase() === activeSite.toLowerCase());
+                localRounds = localRounds.filter(r => isSiteMatch(r.siteName, activeSite));
                 if (localRounds.length === 0) {
                     localRounds = [
                         { name: 'รอบเช้าตรู่ (รอบที่ 1)', start: '06:00', end: '08:00', siteName: activeSite, status: 'ใช้งานอยู่' },
@@ -451,7 +518,7 @@
                 }
 
                 // Filter checkpoints for this site
-                localCheckpoints = localCheckpoints.filter(cp => cp.siteName.toLowerCase() === activeSite.toLowerCase());
+                localCheckpoints = localCheckpoints.filter(cp => isSiteMatch(cp.siteName, activeSite));
                 if (localCheckpoints.length === 0) {
                     localCheckpoints = [
                         { code: 'NFC-SDC_01', siteName: activeSite, name: 'ลานจอดรถ VIP ชั้น 1', gps: '13.7512, 100.5733' },
@@ -881,9 +948,31 @@
             return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
         }
 
-        window.onload = () => {
-            loadUserSession();
-        };
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                updateLiveDate();
+            } catch (e) {
+                console.error("updateLiveDate failed:", e);
+            }
+            
+            try {
+                setInterval(() => {
+                    try {
+                        updateLiveDate();
+                    } catch (e) {
+                        console.error("Interval updateLiveDate failed:", e);
+                    }
+                }, 30000);
+            } catch (e) {
+                console.error("setInterval failed:", e);
+            }
+
+            try {
+                loadUserSession();
+            } catch (e) {
+                console.error("loadUserSession failed:", e);
+            }
+        });
     </script>
 </body>
 
