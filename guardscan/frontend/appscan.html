@@ -993,7 +993,7 @@
             }
         }
 
-        // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
+
         async function fetchRoundsAndCheckpoints() {
             try {
                 // Check and reset daily progress if the day has changed
@@ -1078,17 +1078,43 @@
 
                 // Filter for current active site
                 localRounds = fetchedRounds.filter(r => isSiteMatch(r.siteName, activeSite));
-                // If no rounds for this site, fallback to general rounds under this site
+                let fallbackUsed = false;
+                let fallbackSite = '';
+
                 if (localRounds.length === 0) {
-                    localRounds = fetchedRounds.filter(r => r.siteName === 'Show DC' || r.siteName === 'ศูนย์ฝึก I.T.C');
-                    // update siteName to activeSite so they display
-                    localRounds = localRounds.map(r => ({ ...r, siteName: activeSite }));
+                    const availableRounds = fetchedRounds.filter(r => r.siteName === 'ศูนย์ฝึก I.T.C' || r.siteName === 'Show DC');
+                    if (availableRounds.length > 0) {
+                        fallbackUsed = true;
+                        fallbackSite = availableRounds[0].siteName;
+                        localRounds = availableRounds.filter(r => r.siteName === fallbackSite);
+                    }
                 }
 
                 localCheckpoints = fetchedCheckpoints.filter(cp => isSiteMatch(cp.siteName, activeSite));
                 if (localCheckpoints.length === 0) {
-                    localCheckpoints = fetchedCheckpoints.filter(cp => cp.siteName === 'Show DC' || cp.siteName === 'ศูนย์ฝึก I.T.C');
-                    localCheckpoints = localCheckpoints.map(cp => ({ ...cp, siteName: activeSite }));
+                    if (fallbackUsed) {
+                        localCheckpoints = fetchedCheckpoints.filter(cp => cp.siteName === fallbackSite);
+                    } else {
+                        const availableCheckpoints = fetchedCheckpoints.filter(cp => cp.siteName === 'ศูนย์ฝึก I.T.C' || cp.siteName === 'Show DC');
+                        if (availableCheckpoints.length > 0) {
+                            fallbackUsed = true;
+                            fallbackSite = availableCheckpoints[0].siteName;
+                            localCheckpoints = availableCheckpoints.filter(cp => cp.siteName === fallbackSite);
+                        }
+                    }
+                }
+
+                // If a fallback was used, update the activeSite and UI so the guard scans at the real site
+                if (fallbackUsed && fallbackSite && fallbackSite !== activeSite) {
+                    activeSite = fallbackSite;
+                    if (userData) {
+                        userData.unit_name = activeSite;
+                        localStorage.setItem('nextgen_user', JSON.stringify(userData));
+                    }
+                    const unitNameEl = document.getElementById('unitNameLabel');
+                    if (unitNameEl) {
+                        unitNameEl.innerText = `🏢 ${activeSite}`;
+                    }
                 }
 
                 // Sync completed checkpoints from database patrol_logs for today and activeSite
