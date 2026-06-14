@@ -11,6 +11,7 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -463,6 +464,23 @@
 
     <!-- Script Configuration -->
     <script>
+        // Global Alert Override using SweetAlert2
+        window.alert = function(message) {
+            Swal.fire({
+                title: 'NEXGEN PATROL',
+                html: message.replace(/\n/g, '<br>'), // Support newlines in messages
+                icon: 'info',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#0f172a',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    title: 'text-lg font-extrabold text-slate-800',
+                    confirmButton: 'rounded-xl px-6 py-2 font-bold',
+                    htmlContainer: 'text-sm text-slate-600 font-medium text-left'
+                }
+            });
+        };
+
         // --- 1. CONFIGURATION & STATE ---
         const SUPABASE_URL = 'https://mvcsbylbsffgbkocehzx.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12Y3NieWxic2ZmZ2Jrb2NlaHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjI2NzgsImV4cCI6MjA5MTg5ODY3OH0.pxuSq1TuaSetJZAabrSPqXy6RAXAwaI_VWZ9zf5TypI';
@@ -938,26 +956,43 @@
         }
 
         function handleLogout() {
-            if (confirm("ต้องการออกจากระบบใช่หรือไม่?")) {
-                localStorage.removeItem('nextgen_user');
-                userData = null;
-                document.getElementById('screen-login').classList.remove('hidden');
-                document.getElementById('guardNameLabel').innerText = '👨‍✈️ กำลังโหลดข้อมูล...';
-                document.getElementById('unitNameLabel').innerText = '🏢 Show DC';
-                
-                // Hide bottom navigation bar
-                const navBar = document.getElementById('app-nav-bar');
-                if (navBar) {
-                    navBar.classList.add('hidden');
+            Swal.fire({
+                title: 'NEXGEN PATROL',
+                text: "ต้องการออกจากระบบใช่หรือไม่?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#e3342f',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    title: 'text-lg font-extrabold text-slate-800',
+                    confirmButton: 'rounded-xl px-6 py-2 font-bold',
+                    cancelButton: 'rounded-xl px-6 py-2 font-bold text-slate-800 bg-slate-200'
                 }
-                
-                document.getElementById('rounds-list-container').innerHTML = `
-                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
-                        <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
-                        <p class="text-xs text-slate-500 font-medium">กำลังโหลดรอบการตรวจ...</p>
-                    </div>
-                `;
-            }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('nextgen_user');
+                    userData = null;
+                    document.getElementById('screen-login').classList.remove('hidden');
+                    document.getElementById('guardNameLabel').innerText = '👨‍✈️ กำลังโหลดข้อมูล...';
+                    document.getElementById('unitNameLabel').innerText = '🏢 Show DC';
+                    
+                    // Hide bottom navigation bar
+                    const navBar = document.getElementById('app-nav-bar');
+                    if (navBar) {
+                        navBar.classList.add('hidden');
+                    }
+                    
+                    document.getElementById('rounds-list-container').innerHTML = `
+                        <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
+                            <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
+                            <p class="text-xs text-slate-500 font-medium">กำลังโหลดรอบการตรวจ...</p>
+                        </div>
+                    `;
+                }
+            });
         }
 
         // Helper to get today's date in Bangkok time zone (YYYY-MM-DD)
