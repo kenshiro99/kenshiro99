@@ -130,7 +130,7 @@
         /* 3-Photo slots styling */
         .photo-slot {
             position: relative;
-            height: 80px;
+            height: 68px;
             border-radius: 14px;
             border: 2px dashed #cbd5e1;
             background-color: #f8fafc;
@@ -285,13 +285,18 @@
                     <i class="fas fa-chevron-left"></i> ย้อนกลับไปเลือกรอบตรวจ
                 </button>
 
-                <div class="bg-white/80 border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">รอบเดินตรวจที่เลือก</span>
-                    <h3 class="text-slate-900 font-extrabold text-sm" id="selected-round-title">รอบกะเช้า (08:00 - 10:00)</h3>
-                    <p class="text-slate-500 text-[10.5px] font-medium mt-1" id="selected-round-desc">จุดตรวจทั้งหมด: 4 จุด | ตรวจแล้ว: 0 จุด</p>
+                <div class="bg-white/80 border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden flex justify-between items-center gap-4">
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">รอบเดินตรวจที่เลือก</span>
+                        <h3 class="text-slate-900 font-extrabold text-sm break-words" id="selected-round-title">รอบกะเช้า (08:00 - 10:00)</h3>
+                        <p class="text-slate-500 text-[10.5px] font-medium mt-1" id="selected-round-desc">จุดตรวจทั้งหมด: 4 จุด | ตรวจแล้ว: 0 จุด</p>
+                    </div>
                     
-                    <div id="round-expired-banner" class="absolute top-0 right-0 bottom-0 bg-red-500/10 border-l border-red-500/25 px-4 flex items-center justify-center hidden">
-                        <span class="text-red-600 text-[10px] font-extrabold uppercase tracking-widest"><i class="fas fa-lock mr-1"></i> เลยเวลาตรวจ</span>
+                    <div id="round-expired-banner" class="flex-shrink-0 bg-red-50 text-red-600 border border-red-100 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider hidden">
+                        <i class="fas fa-lock mr-1"></i> เลยเวลาตรวจ
+                    </div>
+                    <div id="round-not-started-banner" class="flex-shrink-0 bg-amber-50 text-amber-600 border border-amber-100 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider hidden">
+                        <i class="fas fa-clock mr-1"></i> ยังไม่ถึงรอบ
                     </div>
                 </div>
 
@@ -306,12 +311,12 @@
             </div>
 
             <!-- ================= SCREEN 3: CAMERA SCANNER & 3 PHOTO SLOTS ================= -->
-            <div id="screen-scanner" class="hidden space-y-4">
+            <div id="screen-scanner" class="hidden space-y-3">
                 <button onclick="showScreen('checkpoints')" class="text-xs font-bold text-slate-650 flex items-center gap-1.5 px-1 py-1 hover:text-slate-900 transition-colors">
                     <i class="fas fa-chevron-left"></i> ย้อนกลับไปดูจุดตรวจ
                 </button>
 
-                <div class="bg-white/80 border border-slate-200 rounded-2xl p-3.5 shadow-sm flex justify-between items-center">
+                <div class="bg-white/80 border border-slate-200 rounded-2xl p-3 shadow-sm flex justify-between items-center">
                     <div>
                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">จุดตรวจที่สแกน</span>
                         <h3 class="text-slate-900 font-extrabold text-xs" id="selected-checkpoint-title">ลานจอดรถ VIP ชั้น 1</h3>
@@ -323,8 +328,8 @@
                 </div>
 
                 <!-- Live Camera Viewport -->
-                <div class="large-card p-4 space-y-4 bg-white border border-slate-200 rounded-2xl">
-                    <div class="h-56 rounded-2xl bg-black border border-slate-350 relative overflow-hidden viewfinder-grid flex items-center justify-center shadow-inner">
+                <div class="large-card p-3 space-y-3 bg-white border border-slate-200 rounded-2xl">
+                    <div class="h-40 rounded-2xl bg-black border border-slate-350 relative overflow-hidden viewfinder-grid flex items-center justify-center shadow-inner">
                         <div id="scanner-laser" class="laser-sweep"></div>
                         <!-- Camera corners -->
                         <div class="camera-corner corner-tl"></div>
@@ -348,8 +353,8 @@
                     <!-- 3-Photo Slots Section -->
                     <div class="space-y-1.5">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10.5px] font-bold text-slate-650">ภาพถ่ายจุดตรวจประกอบรายงาน (ต้องการ 3 รูป):</span>
-                            <span id="photo-count-label" class="text-[9.5px] text-slate-500 font-bold">ถ่ายแล้ว 0/3 รูป</span>
+                            <span class="text-[10px] font-bold text-slate-650">ภาพถ่ายจุดตรวจประกอบรายงาน (ต้องการ 3 รูป):</span>
+                            <span id="photo-count-label" class="text-[9px] text-slate-500 font-bold">ถ่ายแล้ว 0/3 รูป</span>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <!-- Slot 1 -->
@@ -370,21 +375,21 @@
                         </div>
                     </div>
 
-                    <!-- Capture Action Button -->
-                    <button onclick="capturePhotoForActiveSlot()" id="btn-capture" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-[0.98]">
-                        <i class="fas fa-camera"></i> กดปุ่มนี้เพื่อถ่ายรูป (เข้าช่องที่เลือก)
-                    </button>
-
                     <!-- Note input -->
-                    <div class="space-y-1">
-                        <label class="text-[10.5px] font-bold text-slate-650 block">บันทึกเพิ่มเติม (ไม่บังคับ):</label>
-                        <input type="text" id="scan-note-input" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-400 text-xs bg-slate-50 font-medium" placeholder="ระบุเหตุการณ์..." value="ตรวจเดินลาดตระเวนปกติ">
-                    </div>
+                    <input type="text" id="scan-note-input" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-400 text-xs bg-slate-50 font-medium" placeholder="ระบุเหตุการณ์เพิ่มเติม (ไม่บังคับ)..." value="ตรวจเดินลาดตระเวนปกติ">
 
-                    <!-- Save Record button -->
-                    <button onclick="saveCheckpointRecord()" id="btn-save-record" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98]">
-                        <i class="fas fa-circle-check"></i> บันทึกรายงานการตรวจ (SAVE)
-                    </button>
+                    <!-- Action Buttons Grid -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <!-- Capture Action Button -->
+                        <button onclick="capturePhotoForActiveSlot()" id="btn-capture" class="py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-[0.98]">
+                            <i class="fas fa-camera"></i> ถ่ายรูปภาพ
+                        </button>
+
+                        <!-- Save Record button -->
+                        <button onclick="saveCheckpointRecord()" id="btn-save-record" class="py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-[0.98]">
+                            <i class="fas fa-circle-check"></i> บันทึก (SAVE)
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -566,14 +571,12 @@
             return s1 === s2 || s1.includes(s2) || s2.includes(s1);
         }
 
-        // Check if round's time has passed (เลยเวลาตรวจ)
-        function isRoundExpired(round) {
+        // Helper to get current time in Bangkok in HH:MM format
+        function getBangkokTimeStr() {
             try {
-                if (!round || !round.end) return false;
                 const now = new Date();
                 let hour = now.getHours();
                 let minute = now.getMinutes();
-
                 try {
                     // Try to get Thailand time specifically
                     const options = { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false };
@@ -587,12 +590,105 @@
                 } catch (e) {
                     console.warn("Intl Asia/Bangkok timeZone not supported, falling back to local time", e);
                 }
+                return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+            } catch (err) {
+                console.error("Error in getBangkokTimeStr:", err);
+                const now = new Date();
+                return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            }
+        }
 
-                const thaiTimeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        // Check if round's time has passed (เลยเวลาตรวจ)
+        function isRoundExpired(round) {
+            try {
+                if (!round || !round.end) return false;
+                const thaiTimeStr = getBangkokTimeStr();
                 return thaiTimeStr > round.end;
             } catch (err) {
                 console.error("Error in isRoundExpired:", err);
                 return false;
+            }
+        }
+
+        // Check if round's time has not started yet (ยังไม่ถึงรอบตรวจ)
+        function isRoundNotStarted(round) {
+            try {
+                if (!round || !round.start) return false;
+                const thaiTimeStr = getBangkokTimeStr();
+                return thaiTimeStr < round.start;
+            } catch (err) {
+                console.error("Error in isRoundNotStarted:", err);
+                return false;
+            }
+        }
+
+        let activeRoundsTracker = {};
+
+        // Web Audio API custom notification chime
+        function playNotificationSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // First tone (Ding - D5)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
+                gain1.gain.setValueAtTime(0.0, ctx.currentTime);
+                gain1.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.05);
+                gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start();
+                osc1.stop(ctx.currentTime + 0.5);
+                
+                // Second tone (Dong - A5) - delayed by 150ms
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                gain2.gain.setValueAtTime(0.0, ctx.currentTime + 0.15);
+                gain2.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.2);
+                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start();
+                osc2.stop(ctx.currentTime + 0.8);
+            } catch (e) {
+                console.error("Audio chime failed:", e);
+            }
+        }
+
+        // Periodic checker for round time transitions (still not started -> active)
+        function checkRoundTimeTransitions() {
+            if (!localRounds || localRounds.length === 0) return;
+            
+            let needsReRender = false;
+            localRounds.forEach((round, index) => {
+                const isNotStarted = isRoundNotStarted(round);
+                const isExpired = isRoundExpired(round);
+                const isActive = !isNotStarted && !isExpired;
+                
+                // If round state transitioned from false (not started) to true (active)
+                if (activeRoundsTracker[index] === false && isActive) {
+                    playNotificationSound();
+                    setTimeout(() => {
+                        alert(`🔔 ถึงเวลาเข้าตรวจรอบใหม่แล้วค่ะ!\n- รอบการตรวจ: ${round.name}\n- ช่วงเวลา: ${round.start} - ${round.end} น.\n\nขณะนี้ระบบเปิดให้เข้าสแกนและบันทึกเวลาของรอบนี้ได้แล้วค่ะ`);
+                    }, 50);
+                    needsReRender = true;
+                }
+                
+                // Update tracking state
+                activeRoundsTracker[index] = isActive;
+            });
+            
+            if (needsReRender) {
+                renderRoundsList();
+                // If user is currently looking at this round's checkpoints, refresh them too
+                if (currentRound && currentRoundIndex !== null) {
+                    currentRound = localRounds[currentRoundIndex];
+                    renderCheckpointsList();
+                }
             }
         }
 
@@ -939,48 +1035,102 @@
                 const totalCP = roundCPs.length;
                 const progressPercent = totalCP > 0 ? Math.round((completedCount / totalCP) * 100) : 0;
                 const expired = isRoundExpired(round);
+                const notStarted = isRoundNotStarted(round);
+                
+                // Initialize tracking state on first render
+                if (activeRoundsTracker[index] === undefined) {
+                    activeRoundsTracker[index] = !notStarted && !expired;
+                }
                 
                 const card = document.createElement('div');
                 
-                // Add styling based on expiration or completion
-                if (expired) {
-                    card.className = "app-card app-card-disabled p-4.5";
+                // Color configuration based on status
+                let stateColor = "slate";
+                let stateText = "กำลังตรวจ";
+                let leftBorderColor = "border-l-slate-400";
+                let badgeClass = "bg-slate-50 text-slate-600 border border-slate-200";
+                let iconClass = "fa-clock text-slate-400";
+                let cardOpacity = "opacity-100";
+                
+                if (notStarted) {
+                    stateColor = "amber";
+                    stateText = "ยังไม่ถึงรอบตรวจ";
+                    leftBorderColor = "border-l-amber-400";
+                    badgeClass = "bg-amber-50/80 text-amber-600 border border-amber-100";
+                    iconClass = "fa-hourglass-start text-amber-400";
+                    cardOpacity = "opacity-80";
+                } else if (expired) {
+                    stateColor = "red";
+                    stateText = "เลยเวลาตรวจ";
+                    leftBorderColor = "border-l-red-400";
+                    badgeClass = "bg-red-50/80 text-red-600 border border-red-100";
+                    iconClass = "fa-lock text-red-400";
+                    cardOpacity = "opacity-80";
+                } else if (progressPercent === 100) {
+                    stateColor = "emerald";
+                    stateText = "เสร็จสิ้น";
+                    leftBorderColor = "border-l-emerald-500";
+                    badgeClass = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                    iconClass = "fa-circle-check text-emerald-500";
+                    cardOpacity = "opacity-100";
                 } else {
-                    card.className = "app-card app-card-interactive p-4.5";
+                    // Active (กำลังตรวจ)
+                    stateColor = "sky";
+                    stateText = "กำลังตรวจ";
+                    leftBorderColor = "border-l-sky-500";
+                    badgeClass = "bg-sky-50 text-sky-600 border border-sky-100";
+                    iconClass = "fa-route text-sky-500";
+                    cardOpacity = "opacity-100";
+                }
+
+                // Construct card classes - using standard Tailwind v3 padding (p-4)
+                card.className = `app-card p-4 border-l-4 ${leftBorderColor} ${cardOpacity} transition-all duration-200 hover:shadow-md`;
+                if (!expired && !notStarted) {
+                    card.classList.add("app-card-interactive");
                 }
 
                 card.onclick = () => {
+                    if (notStarted) {
+                        alert(`🕒 ยังไม่ถึงเวลาตรวจรอบนี้ (เริ่มเวลา ${round.start} น.)\nไม่สามารถเข้าทำการสแกนลาดตระเวนได้ค่ะ`);
+                        return;
+                    }
                     selectRound(round, index);
                 };
                 
-                let statusBadge = '';
-                if (expired) {
-                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-red-50 text-red-600 border border-red-100"><i class="fas fa-lock mr-0.5"></i> เลยเวลาตรวจ</span>`;
-                } else if (progressPercent === 100) {
-                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-100">เสร็จสิ้น</span>`;
-                } else {
-                    statusBadge = `<span class="px-2.5 py-1 rounded-full text-[9px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">กำลังตรวจ</span>`;
-                }
-
                 card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-slate-900 font-extrabold text-xs mb-1">${round.name}</h3>
-                            <p class="text-slate-500 text-[10.5px] font-medium">
-                                <i class="far fa-clock mr-1 text-slate-400"></i> ช่วงเวลา: ${round.start} - ${round.end} น.
-                            </p>
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full ${
+                                    stateColor === 'sky' ? 'bg-sky-500 animate-pulse' : (stateColor === 'emerald' ? 'bg-emerald-500' : (stateColor === 'amber' ? 'bg-amber-400' : 'bg-red-400'))
+                                } flex-shrink-0"></span>
+                                <h3 class="text-slate-900 font-extrabold text-xs break-words leading-tight">${round.name}</h3>
+                            </div>
+                            <div class="flex items-center gap-1 text-slate-500 text-[10.5px] font-semibold">
+                                <i class="far fa-clock text-slate-400"></i>
+                                <span>ช่วงเวลาตรวจ: <strong class="text-slate-700 font-bold">${round.start} - ${round.end} น.</strong></span>
+                            </div>
                         </div>
-                        ${statusBadge}
+                        <div class="flex-shrink-0">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold flex items-center gap-1 ${badgeClass}">
+                                <i class="fas ${iconClass} text-[9px]"></i>
+                                ${stateText}
+                            </span>
+                        </div>
                     </div>
 
-                    <!-- Progress bar -->
-                    <div class="mt-4">
-                        <div class="flex justify-between text-[8.5px] text-slate-400 font-bold mb-1">
-                            <span>ความคืบหน้าจุดสแกน</span>
-                            <span>ตรวจแล้ว ${completedCount} / ${totalCP} จุด</span>
+                    <!-- Progress Section -->
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <div class="flex justify-between items-center text-[9px] font-bold mb-1.5 gap-1">
+                            <span class="text-slate-400 truncate">ความคืบหน้าจุดสแกน</span>
+                            <span class="${progressPercent === 100 ? 'text-emerald-600' : 'text-slate-500'} flex-shrink-0">
+                                ตรวจแล้ว ${completedCount} / ${totalCP} จุด (${progressPercent}%)
+                            </span>
                         </div>
                         <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                            <div class="h-full ${expired ? 'bg-slate-400' : 'bg-emerald-500'} rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                            <div class="h-full rounded-full transition-all duration-500 ${
+                                expired ? 'bg-slate-400' : (progressPercent === 100 ? 'bg-emerald-500' : 'bg-sky-500')
+                            }" style="width: ${progressPercent}%"></div>
                         </div>
                     </div>
                 `;
@@ -993,6 +1143,13 @@
             container.innerHTML = '';
 
             const isExpired = isRoundExpired(currentRound);
+            const isNotStarted = isRoundNotStarted(currentRound);
+
+            if (isNotStarted) {
+                alert(`🕒 ยังไม่ถึงเวลาตรวจรอบนี้ (เริ่มเวลา ${currentRound.start} น.)`);
+                showScreen('rounds');
+                return;
+            }
 
             let completedCount = 0;
             localCheckpoints.forEach((cp, cpIndex) => {
@@ -1004,7 +1161,7 @@
                 // Add styling based on status and round duration
                 if (isCompleted) {
                     card.className = "app-card app-card-interactive p-4 flex justify-between items-center bg-white border-slate-200";
-                } else if (isExpired) {
+                } else if (isExpired || isNotStarted) {
                     card.className = "app-card app-card-disabled p-4 flex justify-between items-center";
                 } else {
                     card.className = "app-card app-card-interactive p-4 flex justify-between items-center";
@@ -1013,6 +1170,10 @@
                 card.onclick = () => {
                     if (isCompleted) {
                         alert("📍 จุดตรวจนี้ได้รับการสแกนและบันทึกรายงานเรียบร้อยแล้วในรอบนี้ ไม่สามารถกดสแกนซ้ำได้ค่ะ");
+                        return;
+                    }
+                    if (isNotStarted) {
+                        alert(`🕒 ยังไม่ถึงเวลาตรวจรอบนี้ (เริ่มเวลา ${currentRound.start} น.)\nไม่สามารถเข้าทำการสแกนลาดตระเวนได้ค่ะ`);
                         return;
                     }
                     if (isExpired) {
@@ -1025,6 +1186,8 @@
                 let rightStatusHtml = '';
                 if (isCompleted) {
                     rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-emerald-600"><i class="fas fa-circle-check mr-0.5"></i> ตรวจแล้ว</span>`;
+                } else if (isNotStarted) {
+                    rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-amber-600"><i class="fas fa-clock mr-0.5"></i> ยังไม่ถึงรอบ</span>`;
                 } else if (isExpired) {
                     rightStatusHtml = `<span class="text-[9.5px] font-extrabold text-red-500"><i class="fas fa-lock mr-0.5"></i> เลยเวลาตรวจ</span>`;
                 } else {
@@ -1032,16 +1195,16 @@
                 }
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-8.5 h-8.5 rounded-full flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : (isExpired ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-500 border border-slate-200')}">
+                    <div class="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                        <div class="w-8.5 h-8.5 rounded-full flex-shrink-0 flex items-center justify-center ${isCompleted ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' : (isExpired ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-500 border border-slate-200')}">
                             <i class="fas ${isCompleted ? 'fa-check text-[11px]' : (isExpired ? 'fa-lock text-xs' : 'fa-qrcode text-xs')}"></i>
                         </div>
-                        <div>
-                            <h4 class="text-slate-900 text-xs font-bold leading-tight mb-0.5">${cp.name}</h4>
-                            <span class="text-slate-400 font-mono text-[9px]">รหัสป้าย: ${cp.code}</span>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-slate-900 text-xs font-bold leading-tight mb-0.5 break-words">${cp.name}</h4>
+                            <span class="text-slate-400 font-mono text-[9px] block truncate">รหัสป้าย: ${cp.code}</span>
                         </div>
                     </div>
-                    <div>
+                    <div class="flex-shrink-0 text-right">
                         ${rightStatusHtml}
                     </div>
                 `;
@@ -1050,12 +1213,19 @@
 
             document.getElementById('selected-round-desc').innerText = `จุดตรวจทั้งหมด: ${localCheckpoints.length} จุด | ตรวจแล้ว: ${completedCount} จุด`;
 
-            // Display or hide expired banner at the top
+            // Display or hide banners at the top
             const expiredBanner = document.getElementById('round-expired-banner');
+            const notStartedBanner = document.getElementById('round-not-started-banner');
+            
             if (isExpired) {
-                expiredBanner.classList.remove('hidden');
+                if (expiredBanner) expiredBanner.classList.remove('hidden');
+                if (notStartedBanner) notStartedBanner.classList.add('hidden');
+            } else if (isNotStarted) {
+                if (expiredBanner) expiredBanner.classList.add('hidden');
+                if (notStartedBanner) notStartedBanner.classList.remove('hidden');
             } else {
-                expiredBanner.classList.add('hidden');
+                if (expiredBanner) expiredBanner.classList.add('hidden');
+                if (notStartedBanner) notStartedBanner.classList.add('hidden');
             }
         }
 
@@ -1081,6 +1251,16 @@
         }
 
         function selectCheckpoint(checkpoint) {
+            if (currentRound) {
+                if (isRoundNotStarted(currentRound)) {
+                    alert(`🕒 ยังไม่ถึงเวลาตรวจของรอบนี้ (เริ่มเวลา ${currentRound.start} น.)`);
+                    return;
+                }
+                if (isRoundExpired(currentRound)) {
+                    alert(`🕒 เลยเวลาตรวจของรอบนี้แล้ว (สิ้นสุดเวลา ${currentRound.end} น.)`);
+                    return;
+                }
+            }
             currentCheckpoint = checkpoint;
             document.getElementById('selected-checkpoint-title').innerText = checkpoint.name;
             document.getElementById('selected-checkpoint-code').innerText = `ID: ${checkpoint.code} | พิกัด GPS: ${checkpoint.gps}`;
@@ -1333,6 +1513,18 @@
             const noteInput = document.getElementById('scan-note-input').value;
             const btnSave = document.getElementById('btn-save-record');
 
+            // Ensure round is active (not expired and has started)
+            if (currentRound) {
+                if (isRoundNotStarted(currentRound)) {
+                    alert(`🕒 ไม่สามารถบันทึกเวลาได้ เนื่องจากยังไม่ถึงเวลาตรวจของรอบนี้ (เริ่มเวลา ${currentRound.start} น.)`);
+                    return;
+                }
+                if (isRoundExpired(currentRound)) {
+                    alert(`🕒 ไม่สามารถบันทึกเวลาได้ เนื่องจากเลยเวลาตรวจของรอบนี้แล้ว (สิ้นสุดเวลา ${currentRound.end} น.)`);
+                    return;
+                }
+            }
+
             // Ensure QR Code/NFC is verified
             if (!isQrVerified) {
                 alert(`🚨 โปรดสแกนป้าย QR Code/NFC ประจำจุดตรวจนี้ให้ผ่านก่อนค่ะ จึงจะสามารถกดบันทึกรายงานการตรวจได้`);
@@ -1483,6 +1675,19 @@
                 }, 30000);
             } catch (e) {
                 console.error("setInterval failed:", e);
+            }
+
+            // Periodically check for round transitions (every 10 seconds)
+            try {
+                setInterval(() => {
+                    try {
+                        checkRoundTimeTransitions();
+                    } catch (e) {
+                        console.error("Interval checkRoundTimeTransitions failed:", e);
+                    }
+                }, 10000);
+            } catch (e) {
+                console.error("setInterval for transitions failed:", e);
             }
 
             try {
