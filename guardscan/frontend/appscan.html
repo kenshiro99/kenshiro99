@@ -783,9 +783,45 @@
             }
         }
 
+        // Helper to get today's date in Bangkok time zone (YYYY-MM-DD)
+        function getBangkokTodayDateStr() {
+            try {
+                const now = new Date();
+                const options = { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' };
+                const formatter = new Intl.DateTimeFormat('en-GB', options);
+                const parts = formatter.formatToParts(now);
+                const day = parts.find(p => p.type === 'day').value;
+                const month = parts.find(p => p.type === 'month').value;
+                const year = parts.find(p => p.type === 'year').value;
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+
+        // Daily reset for completed checkpoints status
+        function checkAndResetDailyProgress() {
+            const todayStr = getBangkokTodayDateStr();
+            const savedDate = localStorage.getItem('patrol_completed_checkpoints_date');
+            
+            if (savedDate !== todayStr) {
+                completedCheckpoints = {};
+                localStorage.setItem('patrol_completed_checkpoints', JSON.stringify(completedCheckpoints));
+                localStorage.setItem('patrol_completed_checkpoints_date', todayStr);
+                console.log("New day detected. Resetting completed checkpoints progress.");
+            }
+        }
+
         // --- 3. FETCH ROUNDS AND CHECKPOINTS ---
         async function fetchRoundsAndCheckpoints() {
             try {
+                // Check and reset daily progress if the day has changed
+                checkAndResetDailyProgress();
+
                 let fetchedRounds = [];
                 let fetchedCheckpoints = [];
 
@@ -1243,6 +1279,55 @@
             } catch (e) { }
         }
 
+        // Helper to convert base64 DataURL to Blob
+        function dataURLtoBlob(dataurl) {
+            try {
+                const arr = dataurl.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new Blob([u8arr], { type: mime });
+            } catch (e) {
+                console.error("dataURLtoBlob conversion failed:", e);
+                return null;
+            }
+        }
+
+        // Helper to upload base64 photo to Supabase storage public bucket 'patrol'
+        async function uploadBase64PhotoToSupabase(base64Data, filename) {
+            if (!base64Data) return null;
+            try {
+                const blob = dataURLtoBlob(base64Data);
+                if (!blob) return null;
+                const file = new File([blob], filename, { type: "image/jpeg" });
+                
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient.storage
+                        .from('patrol')
+                        .upload(filename, file);
+                        
+                    if (error) {
+                        console.error("Storage upload error:", error);
+                        return null;
+                    }
+                    
+                    const { data: urlData } = supabaseClient.storage
+                        .from('patrol')
+                        .getPublicUrl(filename);
+                        
+                    return urlData.publicUrl;
+                }
+                return null;
+            } catch (err) {
+                console.error("uploadBase64PhotoToSupabase exception:", err);
+                return null;
+            }
+        }
+
         // --- 8. SAVE PATROL LOG TO SUPABASE ---
         async function saveCheckpointRecord() {
             const noteInput = document.getElementById('scan-note-input').value;
@@ -1264,7 +1349,7 @@
             }
 
             btnSave.disabled = true;
-            btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังบันทึกข้อมูล...`;
+            btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังเตรียมอัปโหลดรูปภาพ...`;
 
             let myGps = currentCheckpoint.gps || "13.7512,100.5733";
             try {
@@ -1277,14 +1362,53 @@
             }
 
             const thaiNow = getThaiISOString();
+            const guardEmpId = userData ? userData.emp_id : "TEST_G001";
 
             try {
-                // Save to Supabase Table duty_logs
+                // 1. Upload captured photos to Supabase Storage
+                let uploadedUrls = [];
+                for (let i = 0; i < 3; i++) {
+                    btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังอัปโหลดรูปภาพ ${i + 1}/3...`;
+                    const timestampMs = Date.now();
+                    const cleanCode = currentCheckpoint.code.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const filename = `${guardEmpId}_${cleanCode}_${timestampMs}_${i + 1}.jpg`;
+                    const publicUrl = await uploadBase64PhotoToSupabase(capturedPhotos[i], filename);
+                    uploadedUrls.push(publicUrl || "");
+                }
+
+                btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังบันทึกรายงานสายตรวจ...`;
+
+                // 2. Save to the new public.patrol_logs table
                 if (supabaseClient) {
-                    const { error } = await supabaseClient
+                    const { error: patrolError } = await supabaseClient
+                        .from('patrol_logs')
+                        .insert([{
+                            guard_emp_id: guardEmpId,
+                            guard_name: userData ? userData.name : "พนักงานทดสอบ",
+                            role: userData ? userData.level || userData.role : "guard",
+                            unit_name: activeSite,
+                            round_name: currentRound.name,
+                            checkpoint_code: currentCheckpoint.code,
+                            checkpoint_name: currentCheckpoint.name,
+                            gps_location: myGps,
+                            timestamp: thaiNow,
+                            note: noteInput,
+                            photo_url_1: uploadedUrls[0] || null,
+                            photo_url_2: uploadedUrls[1] || null,
+                            photo_url_3: uploadedUrls[2] || null
+                        }]);
+
+                    if (patrolError) {
+                        console.error("Supabase patrol_logs insert error:", patrolError);
+                    }
+                }
+
+                // 3. Save to duty_logs table for backward compatibility with general system logs
+                if (supabaseClient) {
+                    const { error: dutyError } = await supabaseClient
                         .from('duty_logs')
                         .insert([{
-                            emp_id: userData ? userData.emp_id : "TEST_G001",
+                            emp_id: guardEmpId,
                             name: userData ? userData.name : "พนักงานทดสอบ",
                             role: userData ? userData.level || userData.role : "guard",
                             unit_name: activeSite,
@@ -1294,21 +1418,22 @@
                             note: `[รอบ: ${currentRound.name}] จุด: ${currentCheckpoint.name} | ${noteInput} (บันทึกภาพตรวจ 3 ภาพ)`
                         }]);
 
-                    if (error) {
-                        console.error("Supabase insert error:", error);
+                    if (dutyError) {
+                        console.error("Supabase duty_logs insert error:", dutyError);
                     }
                 }
 
                 // Update checked status in memory & localStorage
                 completedCheckpoints[`${currentRoundIndex}_${currentCheckpoint.code}`] = true;
                 localStorage.setItem('patrol_completed_checkpoints', JSON.stringify(completedCheckpoints));
+                localStorage.setItem('patrol_completed_checkpoints_date', getBangkokTodayDateStr());
 
                 // Save to local patrol reports cache
                 const lsReportsStr = localStorage.getItem('patrol_reports') || '[]';
                 const lsReports = JSON.parse(lsReportsStr);
                 lsReports.unshift({
                     time: thaiNow,
-                    guardCode: userData ? userData.emp_id : "TEST_G001",
+                    guardCode: guardEmpId,
                     siteName: activeSite,
                     checkpointCode: currentCheckpoint.code,
                     status: `ตรวจเสร็จสิ้น (${currentRound.name})`
@@ -1317,7 +1442,7 @@
 
                 playBeepSound();
 
-                alert(`💾 บันทึกความปลอดภัยสำเร็จ!\n- จุดตรวจ: ${currentCheckpoint.name}\n- ถ่ายรูปครบ: 3 รูป\n\nข้อมูลของท่านอัปโหลดเข้าระบบเรียบร้อยแล้วค่ะ`);
+                alert(`💾 บันทึกความปลอดภัยสำเร็จ!\n- จุดตรวจ: ${currentCheckpoint.name}\n- อัปโหลดรูปภาพครบ: 3 รูป\n\nข้อมูลและรูปถ่ายส่งขึ้นระบบเรียบร้อยแล้วค่ะ`);
                 
                 // Return to checkpoints screen
                 renderCheckpointsList();
