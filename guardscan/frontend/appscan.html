@@ -253,7 +253,7 @@
                     <span class="text-slate-900 font-bold" id="unitNameLabel">🏢 Show DC</span>
                 </div>
                 <div class="flex justify-between items-center text-xs border-t border-slate-200/60 pt-2">
-                    <span class="text-slate-500 font-medium">เวลาจำลองระบบ:</span>
+                    <span class="text-slate-500 font-medium">เวลา:</span>
                     <span id="system-time-display" class="text-slate-700 font-bold">18:00 น.</span>
                 </div>
             </div>
@@ -263,7 +263,7 @@
         <div class="flex-grow p-4 overflow-y-auto custom-scroll relative" style="min-height: 0; -webkit-overflow-scrolling: touch;">
 
             <!-- ================= SCREEN 1: ROUNDS LIST (รอบการตรวจ) ================= -->
-            <div id="screen-rounds" class="space-y-4">
+            <div id="screen-rounds" class="space-y-4 pb-12">
                 <div class="flex justify-between items-center px-1">
                     <h2 class="text-sm font-extrabold text-slate-800">
                         <i class="fas fa-clock mr-1.5 text-slate-500"></i> เลือกกะ / รอบการตรวจ
@@ -280,7 +280,7 @@
             </div>
 
             <!-- ================= SCREEN 2: CHECKPOINTS LIST (จุดสแกนในรอบ) ================= -->
-            <div id="screen-checkpoints" class="hidden space-y-4">
+            <div id="screen-checkpoints" class="hidden space-y-4 pb-12">
                 <button onclick="showScreen('rounds')" class="text-xs font-bold text-slate-650 flex items-center gap-1.5 px-1 py-1 hover:text-slate-900 transition-colors">
                     <i class="fas fa-chevron-left"></i> ย้อนกลับไปเลือกรอบตรวจ
                 </button>
@@ -311,7 +311,7 @@
             </div>
 
             <!-- ================= SCREEN 3: CAMERA SCANNER & 3 PHOTO SLOTS ================= -->
-            <div id="screen-scanner" class="hidden space-y-3">
+            <div id="screen-scanner" class="hidden space-y-3 pb-12">
                 <button onclick="showScreen('checkpoints')" class="text-xs font-bold text-slate-650 flex items-center gap-1.5 px-1 py-1 hover:text-slate-900 transition-colors">
                     <i class="fas fa-chevron-left"></i> ย้อนกลับไปดูจุดตรวจ
                 </button>
@@ -393,6 +393,71 @@
                 </div>
             </div>
 
+            <!-- ================= SCREEN 4: SCAN HISTORY (ประวัติการตรวจ) ================= -->
+            <div id="screen-history" class="hidden space-y-4 pb-12">
+                <div class="flex justify-between items-center px-1">
+                    <h2 class="text-sm font-extrabold text-slate-800">
+                        <i class="fas fa-history mr-1.5 text-slate-500"></i> ประวัติการสแกนย้อนหลัง
+                    </h2>
+                    <span class="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full border border-slate-200" id="history-total-badge">0 รายการ</span>
+                </div>
+
+                <!-- Filters panel -->
+                <div class="bg-white/85 border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Start Date Picker -->
+                        <div class="space-y-1">
+                            <label class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">วันที่เริ่มต้น</label>
+                            <div class="relative">
+                                <i class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
+                                <span id="history-start-date-display" class="absolute left-8 right-6 top-0 bottom-0 flex items-center text-[10.5px] font-bold text-slate-700 z-10 pointer-events-none"></span>
+                                <input type="date" id="history-start-date-filter" onchange="onHistoryStartDateChange(this.value)" class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
+                            </div>
+                        </div>
+                        <!-- End Date Picker -->
+                        <div class="space-y-1">
+                            <label class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">วันที่สิ้นสุด</label>
+                            <div class="relative">
+                                <i class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
+                                <span id="history-end-date-display" class="absolute left-8 right-6 top-0 bottom-0 flex items-center text-[10.5px] font-bold text-slate-700 z-10 pointer-events-none"></span>
+                                <input type="date" id="history-end-date-filter" onchange="onHistoryEndDateChange(this.value)" class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Site Selection -->
+                    <div class="space-y-1">
+                        <label class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">ไซต์งานที่ต้องการดูประวัติ</label>
+                        <div class="relative">
+                            <i class="fas fa-building absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
+                            <select id="history-site-select" onchange="fetchHistoryLogs()" class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-slate-700 cursor-pointer appearance-none">
+                                <!-- Dynamic options -->
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History list container -->
+                <div id="history-list-container" class="space-y-3">
+                    <!-- Dynamic history item cards -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- APP NAV BAR -->
+        <div id="app-nav-bar" class="hidden border-t border-slate-200 bg-white/95 backdrop-blur-md flex justify-around items-center py-2.5 px-4 relative z-25 transition-all duration-300">
+            <button onclick="switchTab('patrol')" id="nav-btn-patrol" class="flex flex-col items-center gap-1 text-slate-800 font-extrabold text-[10.5px] transition-colors relative flex-1">
+                <i class="fas fa-route text-base"></i>
+                <span>เดินตรวจ</span>
+                <span id="nav-indicator-patrol" class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-slate-800 rounded-full"></span>
+            </button>
+            <button onclick="switchTab('history')" id="nav-btn-history" class="flex flex-col items-center gap-1 text-slate-450 font-medium text-[10.5px] hover:text-slate-800 transition-colors relative flex-1">
+                <i class="fas fa-history text-base"></i>
+                <span>ประวัติการตรวจ</span>
+                <span id="nav-indicator-history" class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-slate-800 rounded-full hidden"></span>
+            </button>
         </div>
     </div>
 
@@ -709,6 +774,9 @@
                         // Hide login screen
                         document.getElementById('screen-login').classList.add('hidden');
                         
+                        // Show bottom navigation bar
+                        onLoginSuccess();
+                        
                         // Load completed status logs from localStorage
                         try {
                             const savedCompleted = localStorage.getItem('patrol_completed_checkpoints');
@@ -756,6 +824,9 @@
                             document.getElementById('unitNameLabel').innerText = `🏢 ${activeSite}`;
                             
                             document.getElementById('screen-login').classList.add('hidden');
+                            
+                            // Show bottom navigation bar
+                            onLoginSuccess();
                             
                             // Load completed status logs
                             try {
@@ -846,6 +917,9 @@
                     // Hide login screen
                     document.getElementById('screen-login').classList.add('hidden');
                     
+                    // Show bottom navigation bar
+                    onLoginSuccess();
+                    
                     // Clear inputs
                     document.getElementById('login-username').value = '';
                     document.getElementById('login-password').value = '';
@@ -870,6 +944,13 @@
                 document.getElementById('screen-login').classList.remove('hidden');
                 document.getElementById('guardNameLabel').innerText = '👨‍✈️ กำลังโหลดข้อมูล...';
                 document.getElementById('unitNameLabel').innerText = '🏢 Show DC';
+                
+                // Hide bottom navigation bar
+                const navBar = document.getElementById('app-nav-bar');
+                if (navBar) {
+                    navBar.classList.add('hidden');
+                }
+                
                 document.getElementById('rounds-list-container').innerHTML = `
                     <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
                         <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
@@ -1010,6 +1091,36 @@
                     localCheckpoints = localCheckpoints.map(cp => ({ ...cp, siteName: activeSite }));
                 }
 
+                // Sync completed checkpoints from database patrol_logs for today and activeSite
+                if (supabaseClient) {
+                    const todayDateStr = getBangkokTodayDateStr();
+                    const startOfDay = `${todayDateStr}T00:00:00+07:00`;
+                    const endOfDay = `${todayDateStr}T23:59:59+07:00`;
+
+                    try {
+                        const { data: dbLogs, error: logsError } = await supabaseClient
+                            .from('patrol_logs')
+                            .select('round_name, checkpoint_code')
+                            .eq('unit_name', activeSite)
+                            .gte('timestamp', startOfDay)
+                            .lte('timestamp', endOfDay);
+
+                        if (!logsError && dbLogs) {
+                            completedCheckpoints = {};
+                            dbLogs.forEach(log => {
+                                const roundIndex = localRounds.findIndex(r => r.name === log.round_name);
+                                if (roundIndex !== -1) {
+                                    completedCheckpoints[`${roundIndex}_${log.checkpoint_code}`] = true;
+                                }
+                            });
+                            localStorage.setItem('patrol_completed_checkpoints', JSON.stringify(completedCheckpoints));
+                            localStorage.setItem('patrol_completed_checkpoints_date', todayDateStr);
+                        }
+                    } catch (syncErr) {
+                        console.error("Error syncing patrol logs from Supabase:", syncErr);
+                    }
+                }
+
                 renderRoundsList();
 
             } catch (e) {
@@ -1052,6 +1163,16 @@
                 let iconClass = "fa-clock text-slate-400";
                 let cardOpacity = "opacity-100";
                 
+                // Find missing checkpoints for this round
+                const missingCPs = [];
+                if (expired && progressPercent < 100) {
+                    roundCPs.forEach(cp => {
+                        if (!completedCheckpoints[`${index}_${cp.code}`]) {
+                            missingCPs.push(cp.name);
+                        }
+                    });
+                }
+
                 if (notStarted) {
                     stateColor = "amber";
                     stateText = "ยังไม่ถึงรอบตรวจ";
@@ -1060,11 +1181,19 @@
                     iconClass = "fa-hourglass-start text-amber-400";
                     cardOpacity = "opacity-80";
                 } else if (expired) {
-                    stateColor = "red";
-                    stateText = "เลยเวลาตรวจ";
-                    leftBorderColor = "border-l-red-400";
-                    badgeClass = "bg-red-50/80 text-red-600 border border-red-100";
-                    iconClass = "fa-lock text-red-400";
+                    if (progressPercent === 100) {
+                        stateColor = "emerald";
+                        stateText = "ตรวจครบแล้ว";
+                        leftBorderColor = "border-l-emerald-500";
+                        badgeClass = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                        iconClass = "fa-circle-check text-emerald-500";
+                    } else {
+                        stateColor = "red";
+                        stateText = "ตรวจไม่ครบ";
+                        leftBorderColor = "border-l-red-500";
+                        badgeClass = "bg-red-50 text-red-700 border border-red-100";
+                        iconClass = "fa-triangle-exclamation text-red-500";
+                    }
                     cardOpacity = "opacity-80";
                 } else if (progressPercent === 100) {
                     stateColor = "emerald";
@@ -1094,9 +1223,23 @@
                         alert(`🕒 ยังไม่ถึงเวลาตรวจรอบนี้ (เริ่มเวลา ${round.start} น.)\nไม่สามารถเข้าทำการสแกนลาดตระเวนได้ค่ะ`);
                         return;
                     }
+                    if (expired) {
+                        alert(`🕒 รอบเวลาตรวจนี้หมดเวลาลงแล้วเมื่อ ${round.end} น.\nไม่สามารถเข้าทำการสแกนลาดตระเวนย้อนหลังได้ค่ะ`);
+                        return;
+                    }
                     selectRound(round, index);
                 };
                 
+                let missingHtml = '';
+                if (expired && progressPercent < 100 && missingCPs.length > 0) {
+                    missingHtml = `
+                        <div class="mt-2.5 p-2 bg-red-50/70 border border-red-100 rounded-xl text-[9.5px] text-red-750 leading-relaxed font-semibold">
+                            <span class="font-extrabold text-red-800 block mb-0.5"><i class="fas fa-triangle-exclamation mr-1"></i>จุดที่ไม่ได้ตรวจ (${missingCPs.length} จุด):</span>
+                            ${missingCPs.join(', ')}
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start gap-3">
                         <div class="min-w-0 flex-1">
@@ -1129,9 +1272,10 @@
                         </div>
                         <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
                             <div class="h-full rounded-full transition-all duration-500 ${
-                                expired ? 'bg-slate-400' : (progressPercent === 100 ? 'bg-emerald-500' : 'bg-sky-500')
+                                expired ? (progressPercent === 100 ? 'bg-emerald-500' : 'bg-red-400') : (progressPercent === 100 ? 'bg-emerald-500' : 'bg-sky-500')
                             }" style="width: ${progressPercent}%"></div>
                         </div>
+                        ${missingHtml}
                     </div>
                 `;
                 container.appendChild(card);
@@ -1147,6 +1291,12 @@
 
             if (isNotStarted) {
                 alert(`🕒 ยังไม่ถึงเวลาตรวจรอบนี้ (เริ่มเวลา ${currentRound.start} น.)`);
+                showScreen('rounds');
+                return;
+            }
+
+            if (isExpired) {
+                alert(`🕒 รอบเวลาตรวจนี้หมดเวลาลงแล้วเมื่อ ${currentRound.end} น.\nระบบจะนำคุณกลับไปที่หน้ารอบตรวจหลักค่ะ`);
                 showScreen('rounds');
                 return;
             }
@@ -1234,12 +1384,18 @@
             document.getElementById('screen-rounds').classList.add('hidden');
             document.getElementById('screen-checkpoints').classList.add('hidden');
             document.getElementById('screen-scanner').classList.add('hidden');
+            const screenHistoryEl = document.getElementById('screen-history');
+            if (screenHistoryEl) {
+                screenHistoryEl.classList.add('hidden');
+            }
 
             document.getElementById(`screen-${screenId}`).classList.remove('hidden');
 
             if (screenId !== 'scanner') {
                 stopCameraStream();
             }
+            
+            updateNavBarActiveState(screenId);
         }
 
         function selectRound(round, index) {
@@ -1629,7 +1785,7 @@
 
                 // Save to local patrol reports cache
                 const lsReportsStr = localStorage.getItem('patrol_reports') || '[]';
-                const lsReports = JSON.parse(lsReportsStr);
+                let lsReports = JSON.parse(lsReportsStr);
                 lsReports.unshift({
                     time: thaiNow,
                     guardCode: guardEmpId,
@@ -1637,6 +1793,10 @@
                     checkpointCode: currentCheckpoint.code,
                     status: `ตรวจเสร็จสิ้น (${currentRound.name})`
                 });
+                // Cap to keep only the latest 100 items to prevent local device performance degradation
+                if (lsReports.length > 100) {
+                    lsReports = lsReports.slice(0, 100);
+                }
                 localStorage.setItem('patrol_reports', JSON.stringify(lsReports));
 
                 playBeepSound();
@@ -1665,6 +1825,442 @@
             return localTime.toISOString().split('.')[0].slice(0, 19) + '+07:00';
         }
 
+        // --- 10. APP NAVIGATION & HISTORY LOGS ---
+        let activeTab = 'patrol';
+        let lastPatrolScreen = 'rounds';
+        let historyScope = 'me';
+
+        function onLoginSuccess() {
+            const navBar = document.getElementById('app-nav-bar');
+            if (navBar) {
+                navBar.classList.remove('hidden');
+                updateNavBarActiveState('rounds');
+            }
+            activeTab = 'patrol';
+            lastPatrolScreen = 'rounds';
+        }
+
+        function switchTab(tabName) {
+            if (!userData) return;
+            activeTab = tabName;
+            
+            if (tabName === 'patrol') {
+                showScreen(lastPatrolScreen);
+            } else if (tabName === 'history') {
+                const roundsVisible = !document.getElementById('screen-rounds').classList.contains('hidden');
+                const checkpointsVisible = !document.getElementById('screen-checkpoints').classList.contains('hidden');
+                const scannerVisible = !document.getElementById('screen-scanner').classList.contains('hidden');
+                
+                if (roundsVisible) lastPatrolScreen = 'rounds';
+                else if (checkpointsVisible) lastPatrolScreen = 'checkpoints';
+                else if (scannerVisible) lastPatrolScreen = 'scanner';
+                
+                showScreen('history');
+                
+                const startDateFilter = document.getElementById('history-start-date-filter');
+                const endDateFilter = document.getElementById('history-end-date-filter');
+                const todayStr = getBangkokTodayDateStr();
+                
+                if (startDateFilter) {
+                    if (!startDateFilter.value) {
+                        startDateFilter.value = todayStr;
+                    }
+                    updateHistoryDateDisplay(startDateFilter.value, 'start');
+                }
+                
+                if (endDateFilter) {
+                    if (!endDateFilter.value) {
+                        endDateFilter.value = todayStr;
+                    }
+                    updateHistoryDateDisplay(endDateFilter.value, 'end');
+                }
+                
+                loadHistorySitesDropdown().then(() => {
+                    fetchHistoryLogs();
+                });
+            }
+        }
+
+        function updateNavBarActiveState(screenId) {
+            const navPatrolBtn = document.getElementById('nav-btn-patrol');
+            const navHistoryBtn = document.getElementById('nav-btn-history');
+            const navPatrolInd = document.getElementById('nav-indicator-patrol');
+            const navHistoryInd = document.getElementById('nav-indicator-history');
+            
+            if (!navPatrolBtn || !navHistoryBtn) return;
+            
+            if (screenId === 'history') {
+                navPatrolBtn.className = "flex flex-col items-center gap-1 text-slate-400 font-medium text-[10.5px] hover:text-slate-800 transition-colors relative flex-1";
+                navHistoryBtn.className = "flex flex-col items-center gap-1 text-slate-800 font-extrabold text-[10.5px] transition-colors relative flex-1";
+                if (navPatrolInd) navPatrolInd.classList.add('hidden');
+                if (navHistoryInd) navHistoryInd.classList.remove('hidden');
+            } else {
+                navPatrolBtn.className = "flex flex-col items-center gap-1 text-slate-800 font-extrabold text-[10.5px] transition-colors relative flex-1";
+                navHistoryBtn.className = "flex flex-col items-center gap-1 text-slate-400 font-medium text-[10.5px] hover:text-slate-800 transition-colors relative flex-1";
+                if (navPatrolInd) navPatrolInd.classList.remove('hidden');
+                if (navHistoryInd) navHistoryInd.classList.add('hidden');
+            }
+        }
+
+        function onHistoryStartDateChange(value) {
+            updateHistoryDateDisplay(value, 'start');
+            fetchHistoryLogs();
+        }
+
+        function onHistoryEndDateChange(value) {
+            updateHistoryDateDisplay(value, 'end');
+            fetchHistoryLogs();
+        }
+
+        function updateHistoryDateDisplay(value, type) {
+            const displayEl = document.getElementById(`history-${type}-date-display`);
+            if (displayEl) {
+                displayEl.innerText = formatThaiBuddhistDate(value);
+            }
+        }
+
+        function formatThaiBuddhistDate(dateStr) {
+            if (!dateStr) return "";
+            try {
+                const parts = dateStr.split('-');
+                if (parts.length !== 3) return dateStr;
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                
+                const thaiYear = year + 543;
+                
+                const thaiMonthsShort = [
+                    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", 
+                    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+                ];
+                
+                return `${day} ${thaiMonthsShort[month]} ${thaiYear}`;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        async function loadHistorySitesDropdown() {
+            const selectEl = document.getElementById('history-site-select');
+            if (!selectEl) return;
+            
+            const defaultSite = activeSite || "";
+            let sites = [];
+            if (defaultSite) {
+                sites.push(defaultSite);
+            }
+            
+            const guardEmpId = userData ? userData.emp_id : "";
+            if (supabaseClient && guardEmpId) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('patrol_logs')
+                        .select('unit_name')
+                        .eq('guard_emp_id', guardEmpId);
+                    
+                    if (!error && data) {
+                        const loggedSites = data.map(item => item.unit_name).filter(Boolean);
+                        loggedSites.forEach(s => {
+                            if (!sites.includes(s)) {
+                                sites.push(s);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("loadHistorySitesDropdown error:", e);
+                }
+            }
+            
+            let html = '';
+            sites.forEach(site => {
+                const isCurrent = (site === defaultSite);
+                html += `<option value="${site}" ${isCurrent ? 'selected' : ''}>${site}${isCurrent ? ' (ไซต์ปัจจุบัน)' : ''}</option>`;
+            });
+            
+            selectEl.innerHTML = html || `<option value="">ไม่มีข้อมูลไซต์งาน</option>`;
+        }
+
+        async function fetchHistoryLogs() {
+            const container = document.getElementById('history-list-container');
+            const totalBadge = document.getElementById('history-total-badge');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
+                    <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
+                    <p class="text-xs text-slate-500 font-medium">กำลังโหลดประวัติการสแกน...</p>
+                </div>
+            `;
+            
+            const startDateEl = document.getElementById('history-start-date-filter');
+            const endDateEl = document.getElementById('history-end-date-filter');
+            const siteSelectEl = document.getElementById('history-site-select');
+            
+            const startDateVal = startDateEl ? (startDateEl.value || getBangkokTodayDateStr()) : getBangkokTodayDateStr();
+            const endDateVal = endDateEl ? (endDateEl.value || getBangkokTodayDateStr()) : getBangkokTodayDateStr();
+            const targetSite = siteSelectEl ? siteSelectEl.value : activeSite;
+            
+            // Sync date displays
+            updateHistoryDateDisplay(startDateVal, 'start');
+            updateHistoryDateDisplay(endDateVal, 'end');
+            
+            if (!supabaseClient) {
+                container.innerHTML = `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                        <p class="text-xs font-bold">ระบบขัดข้อง: ไม่พบการเชื่อมต่อฐานข้อมูล</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('patrol_logs')
+                    .select('*')
+                    .eq('unit_name', targetSite)
+                    .gte('timestamp', `${startDateVal}T00:00:00+07:00`)
+                    .lte('timestamp', `${endDateVal}T23:59:59+07:00`)
+                    .order('timestamp', { ascending: false })
+                    .limit(20);
+                
+                if (error) {
+                    console.error("fetchHistoryLogs error:", error);
+                    container.innerHTML = `
+                        <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8 text-red-500">
+                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                            <p class="text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${error.message}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (totalBadge) {
+                    totalBadge.innerText = `${data.length} รายการ`;
+                }
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-8 bg-white rounded-2xl border border-slate-200 text-center text-slate-500">
+                            <i class="fas fa-folder-open text-3xl mb-2 text-slate-355"></i>
+                            <p class="text-xs font-bold">ไม่พบประวัติการสแกน</p>
+                            <p class="text-[10px] text-slate-400 mt-1">ในวันที่ ${formatThaiBuddhistDate(dateVal)}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">';
+                data.forEach(log => {
+                    const formattedTime = formatLogTime(log.timestamp);
+                    const formattedDateShort = formatLogDateShort(log.timestamp);
+                    
+                    const photos = [log.photo_url_1, log.photo_url_2, log.photo_url_3].filter(Boolean);
+                    const photosJson = JSON.stringify(photos).replace(/"/g, '&quot;');
+                    
+                    const roundText = log.round_name || 'ทั่วไป';
+                    const guardFullName = log.guard_name || 'รปภ. นิรนาม';
+                    
+                    html += `
+                    <div class="px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="text-slate-500 font-extrabold text-[10px] w-[50px] truncate">
+                                ${formattedDateShort}
+                            </span>
+                            <span class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[9px] font-bold truncate max-w-[65px]">
+                                ${roundText}
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <span class="text-slate-900 font-extrabold truncate block text-[11px]" title="${log.checkpoint_name || 'จุดตรวจนิรนาม'}">
+                                ${log.checkpoint_name || 'จุดตรวจนิรนาม'}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="text-slate-500 font-bold truncate max-w-[85px] text-[9.5px]" title="${guardFullName}">
+                                ${guardFullName}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                ${photos.length > 0 ? `
+                                    <button onclick="event.stopPropagation(); openLightbox('${photos[0]}', '${photosJson}')" class="text-blue-500 hover:text-blue-700 flex items-center justify-center p-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200/50 transition-colors" title="ดูรูปภาพ">
+                                        <i class="fas fa-camera text-[10px]"></i>
+                                    </button>
+                                ` : ''}
+                                <span class="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200/50 px-1.5 py-0.5 rounded font-extrabold">
+                                    เรียบร้อย
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                html += '</div>';
+                
+                container.innerHTML = html;
+            } catch (e) {
+                console.error("fetchHistoryLogs catch error:", e);
+                container.innerHTML = `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                        <p class="text-xs font-bold">ระบบล้มเหลวขณะประมวลผลข้อมูล</p>
+                        <p class="text-[10px] text-slate-400 mt-1">${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function formatLogTime(timestampStr) {
+            if (!timestampStr) return "";
+            try {
+                const dateObj = new Date(timestampStr);
+                if (isNaN(dateObj.getTime())) {
+                    const parts = timestampStr.split('T');
+                    if (parts.length > 1) {
+                        return parts[1].slice(0, 5);
+                    }
+                    return "";
+                }
+                return dateObj.toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                console.error("Error formatting log time:", e);
+                return "";
+            }
+        }
+
+        function formatLogDate(timestampStr) {
+            if (!timestampStr) return "";
+            try {
+                const dateObj = new Date(timestampStr);
+                if (isNaN(dateObj.getTime())) {
+                    const parts = timestampStr.split('T');
+                    const dParts = parts[0].split('-');
+                    if (dParts.length === 3) {
+                        const yr = parseInt(dParts[0], 10) + 543;
+                        return `${dParts[2]}/${dParts[1]}/${yr}`;
+                    }
+                    return parts[0] || "";
+                }
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear() + 543;
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                console.error("Error formatting log date:", e);
+                return "";
+            }
+        }
+
+        function formatLogDateShort(timestampStr) {
+            if (!timestampStr) return "";
+            try {
+                const dateObj = new Date(timestampStr);
+                let day = "";
+                let month = "";
+                let yearBE = 0;
+                
+                if (isNaN(dateObj.getTime())) {
+                    const parts = timestampStr.split('T');
+                    const dParts = parts[0].split('-');
+                    if (dParts.length === 3) {
+                        day = dParts[2];
+                        month = dParts[1];
+                        yearBE = parseInt(dParts[0], 10) + 543;
+                    } else {
+                        return parts[0] || "";
+                    }
+                } else {
+                    day = String(dateObj.getDate()).padStart(2, '0');
+                    month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    yearBE = dateObj.getFullYear() + 543;
+                }
+                
+                const shortYear = String(yearBE).slice(-2);
+                return `${day}/${month}/${shortYear}`;
+            } catch (e) {
+                console.error("Error formatting log date short:", e);
+                return "";
+            }
+        }
+
+        let lightboxUrls = [];
+        let activeLightboxIndex = 0;
+
+        function openLightbox(url, urlsJsonStr) {
+            const lightbox = document.getElementById('photo-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (!lightbox || !img) return;
+
+            lightboxUrls = [];
+            try {
+                if (urlsJsonStr) {
+                    lightboxUrls = JSON.parse(urlsJsonStr).filter(u => u);
+                }
+            } catch (e) {}
+
+            if (lightboxUrls.length === 0) {
+                lightboxUrls = [url];
+            }
+
+            activeLightboxIndex = lightboxUrls.indexOf(url);
+            if (activeLightboxIndex === -1) activeLightboxIndex = 0;
+
+            renderLightboxImage();
+            lightbox.classList.remove('hidden');
+            lightbox.classList.add('flex');
+        }
+
+        function renderLightboxImage() {
+            const img = document.getElementById('lightbox-img');
+            if (!img || lightboxUrls.length === 0) return;
+
+            img.src = lightboxUrls[activeLightboxIndex];
+
+            // Render thumbnail nav at the bottom of the lightbox
+            let navContainer = document.getElementById('lightbox-nav-thumbnails');
+            if (!navContainer) {
+                navContainer = document.createElement('div');
+                navContainer.id = 'lightbox-nav-thumbnails';
+                navContainer.className = "absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-70";
+                document.getElementById('photo-lightbox').appendChild(navContainer);
+            }
+
+            if (lightboxUrls.length > 1) {
+                navContainer.innerHTML = lightboxUrls.map((url, index) => {
+                    const isActive = index === activeLightboxIndex;
+                    return `
+                        <div onclick="event.stopPropagation(); setLightboxIndex(${index})" class="w-10 h-10 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${isActive ? 'border-white scale-110 shadow-lg' : 'border-white/30 hover:border-white/60'}">
+                            <img src="${url}" class="w-full h-full object-cover">
+                        </div>
+                    `;
+                }).join('');
+                navContainer.classList.remove('hidden');
+            } else {
+                navContainer.classList.add('hidden');
+            }
+        }
+
+        function setLightboxIndex(index) {
+            activeLightboxIndex = index;
+            renderLightboxImage();
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('photo-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (lightbox && img) {
+                lightbox.classList.remove('flex');
+                lightbox.classList.add('hidden');
+                img.src = "";
+            }
+            const navContainer = document.getElementById('lightbox-nav-thumbnails');
+            if (navContainer) {
+                navContainer.innerHTML = "";
+                navContainer.classList.add('hidden');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             try {
                 updateLiveDate();
@@ -1676,8 +2272,12 @@
                 setInterval(() => {
                     try {
                         updateLiveDate();
+                        // Sync status from server in background to keep multiple devices updated
+                        if (userData) {
+                            fetchRoundsAndCheckpoints();
+                        }
                     } catch (e) {
-                        console.error("Interval updateLiveDate failed:", e);
+                        console.error("Interval updateLiveDate/sync failed:", e);
                     }
                 }, 30000);
             } catch (e) {
@@ -1704,6 +2304,14 @@
             }
         });
     </script>
+
+    <!-- PHOTO LIGHTBOX MODAL -->
+    <div id="photo-lightbox" class="absolute inset-0 bg-black/90 hidden items-center justify-center z-[60] backdrop-blur-sm transition-all duration-300">
+        <button type="button" onclick="closeLightbox()" class="absolute top-5 right-5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+        <img id="lightbox-img" src="" class="max-w-[90%] max-h-[80%] rounded-xl object-contain shadow-2xl border border-white/10" alt="Preview">
+    </div>
 </body>
 
 </html>
