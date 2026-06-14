@@ -14,6 +14,11 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Flatpickr for Thai Calendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10ns/th.js"></script>
 
     <style>
         :root {
@@ -412,16 +417,21 @@
                             <div class="relative">
                                 <i class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
                                 <span id="history-start-date-display" class="absolute left-8 right-6 top-0 bottom-0 flex items-center text-[10.5px] font-bold text-slate-700 z-10 pointer-events-none"></span>
-                                <input type="date" id="history-start-date-filter" onchange="onHistoryStartDateChange(this.value)" class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
+                                <input type="text" id="history-start-date-filter" readonly class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
                             </div>
                         </div>
                         <!-- End Date Picker -->
                         <div class="space-y-1">
                             <label class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">วันที่สิ้นสุด</label>
-                            <div class="relative">
-                                <i class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
-                                <span id="history-end-date-display" class="absolute left-8 right-6 top-0 bottom-0 flex items-center text-[10.5px] font-bold text-slate-700 z-10 pointer-events-none"></span>
-                                <input type="date" id="history-end-date-filter" onchange="onHistoryEndDateChange(this.value)" class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
+                            <div class="flex gap-1.5">
+                                <div class="relative flex-1">
+                                    <i class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] z-10 pointer-events-none"></i>
+                                    <span id="history-end-date-display" class="absolute left-8 right-6 top-0 bottom-0 flex items-center text-[10.5px] font-bold text-slate-700 z-10 pointer-events-none"></span>
+                                    <input type="text" id="history-end-date-filter" readonly class="w-full pl-8 pr-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-slate-450 text-[10.5px] bg-slate-50 font-bold text-transparent select-none relative z-0 cursor-pointer">
+                                </div>
+                                <button type="button" onclick="fetchHistoryLogs()" class="px-3.5 bg-slate-800 hover:bg-slate-900 active:scale-[0.93] text-white rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 shadow-sm transition-all shrink-0">
+                                    <i class="fas fa-search text-[10.5px]"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -995,22 +1005,24 @@
             });
         }
 
-        // Helper to get today's date in Bangkok time zone (YYYY-MM-DD)
-        function getBangkokTodayDateStr() {
+        // Helper to get date in Bangkok time zone (YYYY-MM-DD) - Forced Gregorian Year
+        function getBangkokTodayDateStr(dateObj = new Date()) {
+            if (typeof dateObj === 'string') dateObj = new Date(dateObj);
             try {
-                const now = new Date();
                 const options = { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' };
-                const formatter = new Intl.DateTimeFormat('en-GB', options);
-                const parts = formatter.formatToParts(now);
+                // Use 'en-US-u-ca-gregory' locale to guarantee Gregorian year output regardless of device settings
+                const formatter = new Intl.DateTimeFormat('en-US-u-ca-gregory', options);
+                const parts = formatter.formatToParts(dateObj);
                 const day = parts.find(p => p.type === 'day').value;
                 const month = parts.find(p => p.type === 'month').value;
-                const year = parts.find(p => p.type === 'year').value;
+                let year = parseInt(parts.find(p => p.type === 'year').value, 10);
+                if (year > 2400) year -= 543;
                 return `${year}-${month}-${day}`;
             } catch (e) {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
+                let year = dateObj.getFullYear();
+                if (year > 2400) year -= 543;
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
             }
         }
@@ -1890,6 +1902,8 @@
         let activeTab = 'patrol';
         let lastPatrolScreen = 'rounds';
         let historyScope = 'me';
+        let historyStartPicker = null;
+        let historyEndPicker = null;
 
         function onLoginSuccess() {
             const navBar = document.getElementById('app-nav-bar');
@@ -1899,6 +1913,88 @@
             }
             activeTab = 'patrol';
             lastPatrolScreen = 'rounds';
+        }
+
+        function initHistoryFlatpickr() {
+            const startDateFilter = document.getElementById('history-start-date-filter');
+            const endDateFilter = document.getElementById('history-end-date-filter');
+            if (!startDateFilter || !endDateFilter) return;
+            
+            const todayStr = getBangkokTodayDateStr();
+            const currentStartVal = startDateFilter.value || todayStr;
+            const currentEndVal = endDateFilter.value || todayStr;
+
+            // Helper to update year display in calendar header to B.E. (พ.ศ.)
+            const localizeFlatpickrYear = (instance) => {
+                setTimeout(() => {
+                    const calendar = instance.calendarContainer;
+                    if (!calendar) return;
+                    
+                    const yearInput = calendar.querySelector(".cur-year");
+                    if (yearInput) {
+                        const gregYear = parseInt(yearInput.value || instance.currentYear, 10);
+                        if (gregYear && gregYear < 2400) {
+                            yearInput.value = gregYear + 543;
+                        }
+                    }
+                }, 0);
+            };
+            
+            if (!historyStartPicker) {
+                historyStartPicker = flatpickr("#history-start-date-filter", {
+                    locale: "th",
+                    dateFormat: "Y-m-d",
+                    defaultDate: currentStartVal,
+                    disableMobile: true,
+                    onReady: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                        updateHistoryDateDisplay(dateStr, 'start');
+                    },
+                    onOpen: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onMonthChange: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onYearChange: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onChange: function(selectedDates, dateStr) {
+                        onHistoryStartDateChange(dateStr);
+                    }
+                });
+            } else {
+                historyStartPicker.setDate(currentStartVal, false);
+                updateHistoryDateDisplay(currentStartVal, 'start');
+            }
+            
+            if (!historyEndPicker) {
+                historyEndPicker = flatpickr("#history-end-date-filter", {
+                    locale: "th",
+                    dateFormat: "Y-m-d",
+                    defaultDate: currentEndVal,
+                    disableMobile: true,
+                    onReady: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                        updateHistoryDateDisplay(dateStr, 'end');
+                    },
+                    onOpen: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onMonthChange: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onYearChange: function(selectedDates, dateStr, instance) {
+                        localizeFlatpickrYear(instance);
+                    },
+                    onChange: function(selectedDates, dateStr) {
+                        onHistoryEndDateChange(dateStr);
+                    }
+                });
+            } else {
+                historyEndPicker.setDate(currentEndVal, false);
+                updateHistoryDateDisplay(currentEndVal, 'end');
+            }
         }
 
         function switchTab(tabName) {
@@ -1918,23 +2014,7 @@
                 
                 showScreen('history');
                 
-                const startDateFilter = document.getElementById('history-start-date-filter');
-                const endDateFilter = document.getElementById('history-end-date-filter');
-                const todayStr = getBangkokTodayDateStr();
-                
-                if (startDateFilter) {
-                    if (!startDateFilter.value) {
-                        startDateFilter.value = todayStr;
-                    }
-                    updateHistoryDateDisplay(startDateFilter.value, 'start');
-                }
-                
-                if (endDateFilter) {
-                    if (!endDateFilter.value) {
-                        endDateFilter.value = todayStr;
-                    }
-                    updateHistoryDateDisplay(endDateFilter.value, 'end');
-                }
+                initHistoryFlatpickr();
                 
                 loadHistorySitesDropdown().then(() => {
                     fetchHistoryLogs();
@@ -2050,7 +2130,7 @@
             container.innerHTML = `
                 <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8">
                     <i class="fas fa-circle-notch animate-spin text-slate-400 text-xl mb-2"></i>
-                    <p class="text-xs text-slate-500 font-medium">กำลังโหลดประวัติการสแกน...</p>
+                    <p class="text-xs text-slate-500 font-medium">กำลังโหลดรายงานสรุปผล...</p>
                 </div>
             `;
             
@@ -2077,89 +2157,163 @@
             }
             
             try {
-                const { data, error } = await supabaseClient
+                // 1. Fetch Rounds (descending order to show newest first)
+                const { data: dbRounds } = await supabaseClient
+                    .from('patrol_rounds')
+                    .select('*')
+                    .eq('site_name', targetSite)
+                    .order('start_time', { ascending: false });
+                
+                // 2. Fetch Checkpoints for total count and detail displaying
+                const { data: dbCheckpoints } = await supabaseClient
+                    .from('patrol_checkpoints')
+                    .select('code, name')
+                    .eq('site_name', targetSite);
+                    
+                const totalCP = dbCheckpoints ? dbCheckpoints.length : 0;
+                
+                // 3. Fetch Logs
+                const { data: dbLogs, error: logError } = await supabaseClient
                     .from('patrol_logs')
                     .select('*')
                     .eq('unit_name', targetSite)
                     .gte('timestamp', `${startDateVal}T00:00:00+07:00`)
-                    .lte('timestamp', `${endDateVal}T23:59:59+07:00`)
-                    .order('timestamp', { ascending: false })
-                    .limit(20);
+                    .lte('timestamp', `${endDateVal}T23:59:59+07:00`);
+                    
+                if (logError) throw logError;
+
+                // Create dates array
+                const datesArray = [];
+                let currDate = new Date(`${startDateVal}T00:00:00`);
+                const lastDate = new Date(`${endDateVal}T00:00:00`);
+                // safety limit for arbitrary ranges
+                let loopCount = 0;
+                while (currDate <= lastDate && loopCount < 365) {
+                    datesArray.push(currDate.toISOString().split('T')[0]);
+                    currDate.setDate(currDate.getDate() + 1);
+                    loopCount++;
+                }
+                datesArray.reverse(); // newest first
+
+                const now = new Date();
+                const nowMs = now.getHours() * 60 + now.getMinutes();
+                const todayStr = getBangkokTodayDateStr();
                 
-                if (error) {
-                    console.error("fetchHistoryLogs error:", error);
-                    container.innerHTML = `
-                        <div class="p-4 bg-white rounded-2xl border border-slate-200 text-center py-8 text-red-500">
-                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
-                            <p class="text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล</p>
-                            <p class="text-[10px] text-slate-400 mt-1">${error.message}</p>
+                let html = '<div class="space-y-4">';
+                let totalRoundsDisplayed = 0;
+                window.historyRoundData = {}; // Clear global cache for modals
+                
+                datesArray.forEach(dateStr => {
+                    const dayLogs = dbLogs.filter(l => getBangkokTodayDateStr(l.timestamp) === dateStr);
+                    
+                    const isToday = (dateStr === todayStr);
+                    const dateObj = new Date(`${dateStr}T00:00:00`);
+                    const todayObj = new Date(`${todayStr}T00:00:00`);
+                    
+                    // Filter rounds to only show past/current rounds, or rounds with actual data
+                    const activeRounds = (dbRounds || []).filter(round => {
+                        const roundLogs = dayLogs.filter(l => l.round_name === round.name);
+                        if (roundLogs.length > 0) return true; // always show if there's data
+                        
+                        if (dateObj > todayObj) return false;
+                        
+                        const [startH, startM] = round.start_time.split(':').map(Number);
+                        const roundStartMs = startH * 60 + startM;
+                        if (isToday && nowMs < roundStartMs) return false;
+                        
+                        return true;
+                    });
+                    
+                    if (activeRounds.length === 0) return; // skip rendering this day entirely
+                    
+                    html += `
+                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm mb-4 last:mb-0">
+                        <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex items-center justify-between">
+                            <span class="font-extrabold text-slate-800 text-xs"><i class="far fa-calendar-alt text-slate-400 mr-1.5"></i> วันที่ ${formatThaiBuddhistDate(dateStr)}</span>
                         </div>
                     `;
-                    return;
-                }
+                    
+                    activeRounds.forEach(round => {
+                        totalRoundsDisplayed++;
+                        const roundLogs = dayLogs.filter(l => l.round_name === round.name);
+                        
+                        const uniqueCps = new Set();
+                        let guardName = "-";
+                        roundLogs.forEach(l => {
+                            uniqueCps.add(l.checkpoint_code || l.checkpoint_name);
+                            if (l.guard_name && guardName === "-") guardName = l.guard_name;
+                        });
+                        const scannedCount = uniqueCps.size;
+                        
+                        let statusConfig = { text: 'ไม่ทราบสถานะ', bg: 'bg-slate-100', textCol: 'text-slate-600', icon: 'fa-circle' };
+                        
+                        const isToday = (dateStr === todayStr);
+                        const [startH, startM] = round.start_time.split(':').map(Number);
+                        const [endH, endM] = round.end_time.split(':').map(Number);
+                        const roundStartMs = startH * 60 + startM;
+                        const roundEndMs = endH * 60 + endM;
+                        
+                        if (scannedCount >= totalCP && totalCP > 0) {
+                            statusConfig = { text: 'ครบถ้วน', bg: 'bg-emerald-50 border-emerald-200', textCol: 'text-emerald-600', icon: 'fa-check-circle' };
+                        } else if (scannedCount > 0 && scannedCount < totalCP) {
+                            if (isToday && nowMs >= roundStartMs && nowMs <= roundEndMs) {
+                                statusConfig = { text: 'กำลังตรวจ', bg: 'bg-amber-50 border-amber-200', textCol: 'text-amber-600', icon: 'fa-spinner fa-spin' };
+                            } else {
+                                statusConfig = { text: 'ไม่ครบ', bg: 'bg-red-50 border-red-200', textCol: 'text-red-600', icon: 'fa-exclamation-circle' };
+                            }
+                        } else if (scannedCount === 0) {
+                            const dateObj = new Date(`${dateStr}T00:00:00`);
+                            const todayObj = new Date(`${todayStr}T00:00:00`);
+                            if (dateObj > todayObj || (isToday && nowMs < roundStartMs)) {
+                                statusConfig = { text: 'รอเวลา', bg: 'bg-slate-50 border-slate-200', textCol: 'text-slate-400', icon: 'fa-clock' };
+                            } else {
+                                statusConfig = { text: 'ขาดตรวจ', bg: 'bg-red-50 border-red-200', textCol: 'text-red-600', icon: 'fa-times-circle' };
+                            }
+                        }
+                        
+                        const roundKey = `${dateStr}_${round.name}`;
+                        window.historyRoundData[roundKey] = { logs: roundLogs, checkpoints: dbCheckpoints };
+                        
+                        html += `
+                        <div onclick="showRoundDetailsModal('${dateStr}', '${round.name}', '${round.start_time}-${round.end_time}', '${roundKey}')" class="px-3 py-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors cursor-pointer active:bg-slate-100 group">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="text-slate-900 font-extrabold text-[12px] truncate group-hover:text-emerald-700 transition-colors">${round.name}</span>
+                                    <span class="text-slate-400 text-[10px] font-bold shrink-0">(${round.start_time}-${round.end_time})</span>
+                                </div>
+                                <div class="text-[10px] font-bold text-slate-500 truncate">
+                                    สแกนแล้ว: <span class="${scannedCount >= totalCP ? 'text-emerald-600' : (scannedCount > 0 ? 'text-amber-600' : 'text-slate-400')}">${scannedCount}/${totalCP} จุด</span>
+                                    ${guardName !== "-" ? ` <span class="text-slate-300 mx-0.5">|</span> รปภ: ${guardName}` : ''}
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 flex items-center gap-2">
+                                <span class="px-2.5 py-1.5 rounded-lg border text-[10px] font-extrabold flex items-center gap-1.5 ${statusConfig.bg} ${statusConfig.textCol} shadow-sm">
+                                    <i class="fas ${statusConfig.icon}"></i> ${statusConfig.text}
+                                </span>
+                                <i class="fas fa-chevron-right text-slate-300 text-[10px] group-hover:text-emerald-500 transition-colors"></i>
+                            </div>
+                        </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                });
                 
-                if (totalBadge) {
-                    totalBadge.innerText = `${data.length} รายการ`;
-                }
+                html += '</div>';
                 
-                if (!data || data.length === 0) {
+                if (totalBadge) totalBadge.innerText = `${totalRoundsDisplayed} รอบการตรวจ`;
+                
+                if (totalRoundsDisplayed === 0) {
                     container.innerHTML = `
                         <div class="p-8 bg-white rounded-2xl border border-slate-200 text-center text-slate-500">
                             <i class="fas fa-folder-open text-3xl mb-2 text-slate-355"></i>
-                            <p class="text-xs font-bold">ไม่พบประวัติการสแกน</p>
-                            <p class="text-[10px] text-slate-400 mt-1">ในวันที่ ${formatThaiBuddhistDate(dateVal)}</p>
+                            <p class="text-xs font-bold">ไม่พบข้อมูลรอบการตรวจในวันที่เลือก</p>
                         </div>
                     `;
-                    return;
+                } else {
+                    container.innerHTML = html;
                 }
                 
-                let html = '<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">';
-                data.forEach(log => {
-                    const formattedTime = formatLogTime(log.timestamp);
-                    const formattedDateShort = formatLogDateShort(log.timestamp);
-                    
-                    const photos = [log.photo_url_1, log.photo_url_2, log.photo_url_3].filter(Boolean);
-                    const photosJson = JSON.stringify(photos).replace(/"/g, '&quot;');
-                    
-                    const roundText = log.round_name || 'ทั่วไป';
-                    const guardFullName = log.guard_name || 'รปภ. นิรนาม';
-                    
-                    html += `
-                    <div class="px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
-                        <div class="flex items-center gap-1.5 flex-shrink-0">
-                            <span class="text-slate-500 font-extrabold text-[10px] w-[50px] truncate">
-                                ${formattedDateShort}
-                            </span>
-                            <span class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[9px] font-bold truncate max-w-[65px]">
-                                ${roundText}
-                            </span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <span class="text-slate-900 font-extrabold truncate block text-[11px]" title="${log.checkpoint_name || 'จุดตรวจนิรนาม'}">
-                                ${log.checkpoint_name || 'จุดตรวจนิรนาม'}
-                            </span>
-                        </div>
-                        <div class="flex items-center gap-1.5 flex-shrink-0">
-                            <span class="text-slate-500 font-bold truncate max-w-[85px] text-[9.5px]" title="${guardFullName}">
-                                ${guardFullName}
-                            </span>
-                            <div class="flex items-center gap-1">
-                                ${photos.length > 0 ? `
-                                    <button onclick="event.stopPropagation(); openLightbox('${photos[0]}', '${photosJson}')" class="text-blue-500 hover:text-blue-700 flex items-center justify-center p-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200/50 transition-colors" title="ดูรูปภาพ">
-                                        <i class="fas fa-camera text-[10px]"></i>
-                                    </button>
-                                ` : ''}
-                                <span class="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200/50 px-1.5 py-0.5 rounded font-extrabold">
-                                    เรียบร้อย
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    `;
-                });
-                html += '</div>';
-                
-                container.innerHTML = html;
             } catch (e) {
                 console.error("fetchHistoryLogs catch error:", e);
                 container.innerHTML = `
@@ -2170,6 +2324,153 @@
                     </div>
                 `;
             }
+        }
+
+        function showRoundDetailsModal(dateStr, roundName, roundTime, roundKey) {
+            const data = window.historyRoundData[roundKey];
+            if (!data) return;
+            const { logs, checkpoints } = data;
+            
+            const formattedDate = formatThaiBuddhistDate(dateStr);
+            const todayStr = getBangkokTodayDateStr();
+            const now = new Date();
+            const nowMs = now.getHours() * 60 + now.getMinutes();
+            
+            let html = `
+            <div class="text-left font-sans text-xs space-y-3">
+                <div class="flex justify-between items-center bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                    <span class="font-extrabold text-slate-800"><i class="far fa-calendar-alt mr-1"></i> วันที่: ${formattedDate}</span>
+                    <span class="font-extrabold text-slate-600"><i class="far fa-clock mr-1"></i> เวลา: ${roundTime} น.</span>
+                </div>
+                
+                <div class="space-y-3 max-h-[350px] overflow-y-auto pr-1 custom-scroll">
+            `;
+            
+            if (!checkpoints || checkpoints.length === 0) {
+                html += `
+                <div class="text-center py-6 text-slate-400 font-bold">
+                    <i class="fas fa-info-circle text-lg mb-1 block"></i>
+                    ไม่มีข้อมูลจุดตรวจในไซต์งานนี้
+                </div>
+                `;
+            } else {
+                checkpoints.forEach((cp, index) => {
+                    const cpLog = logs.find(l => l.checkpoint_code === cp.code || (l.checkpoint_name && l.checkpoint_name === cp.name));
+                    
+                    if (cpLog) {
+                        const timeStr = formatLogTime(cpLog.timestamp);
+                        const guardStr = cpLog.guard_name || "ไม่ทราบชื่อ";
+                        const noteStr = cpLog.note || "";
+                        
+                        let photosHtml = '';
+                        const photoUrls = [cpLog.photo_url_1, cpLog.photo_url_2, cpLog.photo_url_3].filter(Boolean);
+                        if (photoUrls.length > 0) {
+                            photosHtml += `<div class="flex gap-2 mt-2">`;
+                            photoUrls.forEach((url, i) => {
+                                const escapedUrls = JSON.stringify(photoUrls).replace(/"/g, '&quot;');
+                                photosHtml += `
+                                <div class="relative w-14 h-14 rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-pointer hover:opacity-95 hover:scale-[1.02] active:scale-95 transition-all shrink-0" onclick="openLightbox('${url}', '${escapedUrls}')">
+                                    <img src="${url}" class="w-full h-full object-cover">
+                                    <span class="absolute bottom-0.5 right-1 bg-black/60 text-white text-[8px] px-1 rounded-sm font-extrabold">${i+1}</span>
+                                </div>
+                                `;
+                            });
+                            photosHtml += `</div>`;
+                        }
+                        
+                        let gpsHtml = '';
+                        if (cpLog.gps_location) {
+                            gpsHtml = `
+                            <a href="https://www.google.com/maps/search/?api=1&query=${cpLog.gps_location}" target="_blank" class="inline-flex items-center gap-1 text-[9px] font-extrabold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg border border-slate-250 mt-1 transition-all active:scale-95">
+                                <i class="fas fa-map-marker-alt text-red-500"></i> ดูพิกัดแผนที่
+                            </a>
+                            `;
+                        }
+                        
+                        html += `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm hover:border-emerald-200 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-extrabold shrink-0">${index + 1}</span>
+                                    <div class="min-w-0">
+                                        <p class="font-extrabold text-slate-800 text-xs truncate">${cp.name || cp.code}</p>
+                                        <p class="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider">CODE: ${cp.code}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-extrabold flex items-center gap-1">
+                                        <i class="fas fa-check-circle"></i> สแกนแล้ว
+                                    </span>
+                                    <span class="text-[9.5px] font-bold text-slate-500 block mt-1"><i class="far fa-clock mr-0.5 text-slate-400"></i> ${timeStr} น.</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-2 pl-7 border-l-2 border-slate-100 space-y-1.5">
+                                <p class="text-[10px] text-slate-600 font-bold">รปภ: <span class="text-slate-800 font-extrabold">${guardStr}</span></p>
+                                ${noteStr ? `<p class="text-[10px] text-slate-600 bg-slate-50 border border-slate-100 p-2 rounded-xl mt-1 font-medium leading-relaxed"><i class="far fa-comment-dots text-slate-400 mr-1"></i> ${noteStr}</p>` : ''}
+                                <div class="flex flex-wrap gap-2 items-center">
+                                    ${gpsHtml}
+                                    ${photosHtml}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    } else {
+                        // Checkpoint was not scanned
+                        let statusText = 'ขาดการตรวจ';
+                        let statusBg = 'bg-red-50 text-red-650 border-red-200';
+                        let statusIcon = 'fa-times-circle';
+                        
+                        const dateObj = new Date(`${dateStr}T00:00:00`);
+                        const todayObj = new Date(`${todayStr}T00:00:00`);
+                        const [startH, startM] = roundTime.split('-')[0].split(':').map(Number);
+                        const roundStartMs = startH * 60 + startM;
+                        
+                        if (dateObj > todayObj || (dateStr === todayStr && nowMs < roundStartMs)) {
+                            statusText = 'รอคิวสแกน';
+                            statusBg = 'bg-slate-50 text-slate-400 border-slate-200';
+                            statusIcon = 'fa-clock';
+                        }
+                        
+                        html += `
+                        <div class="bg-slate-50/75 border border-slate-200 rounded-2xl p-3 shadow-sm">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-5 h-5 rounded-full bg-slate-250 text-slate-500 flex items-center justify-center text-[10px] font-extrabold shrink-0">${index + 1}</span>
+                                    <div class="min-w-0">
+                                        <p class="font-extrabold text-slate-600 text-xs truncate">${cp.name || cp.code}</p>
+                                        <p class="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider">CODE: ${cp.code}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="px-2 py-0.5 rounded-full ${statusBg} text-[9px] font-extrabold flex items-center gap-1 shrink-0">
+                                        <i class="fas ${statusIcon}"></i> ${statusText}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }
+                });
+            }
+            
+            html += `
+                </div>
+            </div>
+            `;
+            
+            Swal.fire({
+                title: roundName,
+                html: html,
+                showCloseButton: true,
+                showConfirmButton: false,
+                width: '380px',
+                customClass: {
+                    popup: 'rounded-3xl border border-slate-200 shadow-xl bg-slate-50 font-sans',
+                    title: 'text-slate-900 font-extrabold text-sm border-b border-slate-200 pb-3.5 mb-2 mx-4 pt-4 text-center',
+                    closeButton: 'text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-0'
+                }
+            });
         }
 
         function formatLogTime(timestampStr) {
@@ -2198,14 +2499,16 @@
                     const parts = timestampStr.split('T');
                     const dParts = parts[0].split('-');
                     if (dParts.length === 3) {
-                        const yr = parseInt(dParts[0], 10) + 543;
+                        let yr = parseInt(dParts[0], 10);
+                        if (yr < 2400) yr += 543;
                         return `${dParts[2]}/${dParts[1]}/${yr}`;
                     }
                     return parts[0] || "";
                 }
                 const day = String(dateObj.getDate()).padStart(2, '0');
                 const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const year = dateObj.getFullYear() + 543;
+                let year = dateObj.getFullYear();
+                if (year < 2400) year += 543;
                 return `${day}/${month}/${year}`;
             } catch (e) {
                 console.error("Error formatting log date:", e);
@@ -2227,14 +2530,16 @@
                     if (dParts.length === 3) {
                         day = dParts[2];
                         month = dParts[1];
-                        yearBE = parseInt(dParts[0], 10) + 543;
+                        yearBE = parseInt(dParts[0], 10);
+                        if (yearBE < 2400) yearBE += 543;
                     } else {
                         return parts[0] || "";
                     }
                 } else {
                     day = String(dateObj.getDate()).padStart(2, '0');
                     month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    yearBE = dateObj.getFullYear() + 543;
+                    yearBE = dateObj.getFullYear();
+                    if (yearBE < 2400) yearBE += 543;
                 }
                 
                 const shortYear = String(yearBE).slice(-2);
