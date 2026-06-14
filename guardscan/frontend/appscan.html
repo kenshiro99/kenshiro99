@@ -475,7 +475,7 @@
         }
 
         function scanQrCodeLoop() {
-            if (!isScanningActive || !cameraStream) return;
+            if (!isScanningActive || !cameraStream || isQrVerified) return;
 
             const video = document.getElementById('camera-stream');
             if (video && video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
@@ -515,7 +515,7 @@
                 }
             }
             
-            if (isScanningActive) {
+            if (isScanningActive && !isQrVerified) {
                 requestAnimationFrame(scanQrCodeLoop);
             }
         }
@@ -535,6 +535,14 @@
             // Check if it matches the current checkpoint's code
             if (currentCheckpoint && scannedText.trim().toLowerCase() === currentCheckpoint.code.trim().toLowerCase()) {
                 isQrVerified = true;
+                isScanningActive = false; // Stop scanning further QR frames
+                
+                // Hide the laser line visually
+                const laser = document.getElementById('scanner-laser');
+                if (laser) {
+                    laser.classList.add('hidden');
+                }
+                
                 playBeepSound();
                 updateQrVerificationUI();
                 
@@ -1045,6 +1053,13 @@
             capturedPhotos = [null, null, null];
             activeSlotIndex = 0;
             isQrVerified = false;
+            
+            // Show the laser line again for scanning the new checkpoint
+            const laser = document.getElementById('scanner-laser');
+            if (laser) {
+                laser.classList.remove('hidden');
+            }
+
             updatePhotoSlotsUI();
             updateQrVerificationUI();
             
@@ -1143,6 +1158,16 @@
             const fallbackLabel = document.getElementById('camera-fallback-label');
             fallbackLabel.classList.add('hidden');
 
+            // Set scanning laser line visibility depending on whether QR is verified
+            const laser = document.getElementById('scanner-laser');
+            if (laser) {
+                if (isQrVerified) {
+                    laser.classList.add('hidden');
+                } else {
+                    laser.classList.remove('hidden');
+                }
+            }
+
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -1159,9 +1184,13 @@
                         console.warn("video.play() failed, trying again...", playErr);
                     }
                     
-                    // Activate QR Scanning Loop
-                    isScanningActive = true;
-                    requestAnimationFrame(scanQrCodeLoop);
+                    // Activate QR Scanning Loop if not verified yet
+                    if (!isQrVerified) {
+                        isScanningActive = true;
+                        requestAnimationFrame(scanQrCodeLoop);
+                    } else {
+                        isScanningActive = false;
+                    }
                 } else {
                     throw new Error("No mediaDevices support");
                 }
