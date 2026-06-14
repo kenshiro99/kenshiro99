@@ -1565,7 +1565,14 @@
                     const cleanCode = currentCheckpoint.code.replace(/[^a-zA-Z0-9_-]/g, '');
                     const filename = `${guardEmpId}_${cleanCode}_${timestampMs}_${i + 1}.jpg`;
                     const publicUrl = await uploadBase64PhotoToSupabase(capturedPhotos[i], filename);
-                    uploadedUrls.push(publicUrl || "");
+                    
+                    if (!publicUrl) {
+                        alert(`❌ อัปโหลดรูปภาพที่ ${i + 1} ล้มเหลว!\nการบันทึกถูกยกเลิก โปรดติดต่อแอดมิน (Admin) ให้ดำเนินการสร้างสิทธิ์ความปลอดภัย RLS (Storage Policies) บนถังเก็บข้อมูล 'patrol' ในระบบ Supabase ก่อนค่ะ`);
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = `<i class="fas fa-circle-check"></i> บันทึกรายงานการตรวจ (SAVE)`;
+                        return;
+                    }
+                    uploadedUrls.push(publicUrl);
                 }
 
                 btnSave.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> กำลังบันทึกรายงานสายตรวจ...`;
