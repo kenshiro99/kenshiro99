@@ -1440,6 +1440,27 @@
         }
 
         function initHistoryFlatpickr() {
+            // Define Flatpickr Thai locale inline to prevent CDN block issues (ERR_BLOCKED_BY_ORB)
+            if (typeof flatpickr !== 'undefined' && (!flatpickr.l10ns || !flatpickr.l10ns.th)) {
+                if (!flatpickr.l10ns) flatpickr.l10ns = {};
+                flatpickr.l10ns.th = {
+                    weekdays: {
+                        shorthand: ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."],
+                        longhand: ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"]
+                    },
+                    months: {
+                        shorthand: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."],
+                        longhand: ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+                    },
+                    firstDayOfWeek: 1,
+                    rangeSeparator: " ถึง ",
+                    scrollTitle: "เลื่อนเพื่อเพิ่มหรือลด",
+                    toggleTitle: "คลิกเพื่อเปลี่ยน",
+                    ordinal: () => "",
+                    time24hr: true
+                };
+            }
+
             const startDateFilter = document.getElementById('history-start-date-filter');
             const endDateFilter = document.getElementById('history-end-date-filter');
             if (!startDateFilter || !endDateFilter) return;
