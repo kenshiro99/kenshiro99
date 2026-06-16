@@ -48,6 +48,19 @@
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         }
 
+        // Parse query parameters for NFC Method 1 (URL Redirection)
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const nfcCp = urlParams.get('checkpoint');
+            if (nfcCp) {
+                localStorage.setItem('nfc_target_checkpoint', nfcCp.trim());
+                // Clean URL query params without reloading to prevent rescan on page refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (e) {
+            console.error("Error parsing NFC URL parameter:", e);
+        }
+
         // Live Header Date
         function updateLiveDate() {
             try {
@@ -177,6 +190,96 @@
                 } else {
                     alert(`❌ ไม่พบรหัสป้ายนี้ในระบบ!\n- ป้ายที่สแกน: "${scannedText}"\n- จุดตรวจที่เลือก: "${currentCheckpoint.name}"`);
                 }
+            }
+        }
+
+        // Process any pending NFC checkpoint from URL redirections
+        function processPendingNfcCheckpoint() {
+            try {
+                const targetCpCode = localStorage.getItem('nfc_target_checkpoint');
+                if (!targetCpCode) return;
+
+                // Ensure user is logged in and site data is available
+                if (!userData || !activeSite) {
+                    return;
+                }
+
+                if (!localCheckpoints || localCheckpoints.length === 0) {
+                    return;
+                }
+
+                // Find the checkpoint with the matching code
+                const checkpoint = localCheckpoints.find(cp => cp.code.trim().toLowerCase() === targetCpCode.trim().toLowerCase());
+                if (!checkpoint) {
+                    console.warn(`NFC checkpoint ${targetCpCode} not found in site ${activeSite}`);
+                    localStorage.removeItem('nfc_target_checkpoint');
+                    return;
+                }
+
+                // Determine active round based on current time
+                let roundToSelect = currentRound;
+                if (!roundToSelect) {
+                    const thaiTimeStr = getBangkokTimeStr();
+                    const [nowH, nowM] = thaiTimeStr.split(':').map(Number);
+                    const nowMs = nowH * 60 + nowM;
+                    
+                    const matchingRound = localRounds.find(r => {
+                        if (!r.start || !r.end) return false;
+                        const [startH, startM] = r.start.split(':').map(Number);
+                        const [endH, endM] = r.end.split(':').map(Number);
+                        const startMs = startH * 60 + startM;
+                        const endMs = endH * 60 + endM;
+                        return nowMs >= startMs && nowMs <= endMs;
+                    });
+
+                    if (matchingRound) {
+                        roundToSelect = matchingRound;
+                        const roundIndex = localRounds.findIndex(r => r.name === matchingRound.name);
+                        selectRound(matchingRound, roundIndex);
+                    } else if (localRounds.length > 0) {
+                        // Fallback to first round if none are currently running
+                        roundToSelect = localRounds[0];
+                        selectRound(localRounds[0], 0);
+                    }
+                }
+
+                if (!roundToSelect) {
+                    alert(`ไม่พบรอบการตรวจสำหรับจุดตรวจนี้`);
+                    localStorage.removeItem('nfc_target_checkpoint');
+                    return;
+                }
+
+                // Directly select the checkpoint with autoVerify = true, bypassing QR scanner and NFC popups
+                proceedToSelectCheckpoint(checkpoint, true);
+
+                // Instantly bypass QR Code scan
+                isQrVerified = true;
+                isScanningActive = false;
+                
+                stopCameraStream();
+
+                const laser = document.getElementById('scanner-laser');
+                if (laser) {
+                    laser.classList.add('hidden');
+                }
+
+                updateQrVerificationUI();
+                playBeepSound();
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top',
+                    icon: 'success',
+                    title: 'แตะสแกน NFC สำเร็จ!',
+                    text: 'กรุณาถ่ายรูปการตรวจให้ครบ 3 รูป',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+
+                localStorage.removeItem('nfc_target_checkpoint');
+            } catch (e) {
+                console.error("Error in processPendingNfcCheckpoint:", e);
+                localStorage.removeItem('nfc_target_checkpoint');
             }
         }
 
@@ -729,6 +832,9 @@
                     renderCheckpointsList();
                 }
 
+                // Process pending NFC checkpoint scan if any
+                processPendingNfcCheckpoint();
+
             } catch (e) {
                 console.error("Fetch error in fetchRoundsAndCheckpoints:", e);
             }
@@ -1023,6 +1129,39 @@
                     return;
                 }
             }
+
+            // If it's an NFC checkpoint and clicked manually in the app menu
+            if (checkpoint.code.toLowerCase().startsWith('nfc')) {
+                Swal.fire({
+                    title: 'จุดตรวจระบบ NFC',
+                    html: `จุดตรวจนี้กำหนดเป็นระบบ <b>NFC</b><br><br>` +
+                          `• <b>วิธีที่แนะนำ:</b> นำโทรศัพท์ไปแตะทาบที่เหรียญ NFC ณ จุดตรวจโดยตรงได้เลยค่ะ (ไม่ต้องเปิดเมนูกล้องในแอปไว้)<br>` +
+                          `• <b>วิธีสำรอง:</b> หากมีรหัส QR Code สำรองอยู่บนเหรียญ สามารถกดเปิดกล้องเพื่อสแกน QR ได้ค่ะ`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'เปิดกล้องสแกน QR สำรอง',
+                    cancelButtonText: 'ย้อนกลับ (ไปแตะ NFC)',
+                    confirmButtonColor: '#0f172a',
+                    cancelButtonColor: '#64748b',
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        title: 'text-sm font-extrabold text-slate-800',
+                        confirmButton: 'rounded-xl text-[10.5px] px-4 py-2.5 font-bold',
+                        cancelButton: 'rounded-xl text-[10.5px] px-4 py-2.5 font-bold',
+                        htmlContainer: 'text-[11px] text-slate-650 font-medium text-left leading-relaxed'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        proceedToSelectCheckpoint(checkpoint, false);
+                    }
+                });
+                return;
+            }
+
+            proceedToSelectCheckpoint(checkpoint, false);
+        }
+
+        function proceedToSelectCheckpoint(checkpoint, autoVerify = false) {
             currentCheckpoint = checkpoint;
             document.getElementById('selected-checkpoint-title').innerText = checkpoint.name;
             document.getElementById('selected-checkpoint-code').innerText = `ID: ${checkpoint.code} | พิกัด GPS: ${checkpoint.gps}`;
@@ -1030,12 +1169,16 @@
             // Clear captures, note, and QR verification status
             capturedPhotos = [null, null, null];
             activeSlotIndex = 0;
-            isQrVerified = false;
+            isQrVerified = autoVerify;
             
-            // Show the laser line again for scanning the new checkpoint
+            // Show/hide the laser line based on verification status
             const laser = document.getElementById('scanner-laser');
             if (laser) {
-                laser.classList.remove('hidden');
+                if (autoVerify) {
+                    laser.classList.add('hidden');
+                } else {
+                    laser.classList.remove('hidden');
+                }
             }
 
             updatePhotoSlotsUI();
@@ -1044,7 +1187,11 @@
             document.getElementById('scan-note-input').value = "ตรวจเดินลาดตระเวนปกติ";
             
             showScreen('scanner');
-            startCameraStream();
+            if (autoVerify) {
+                stopCameraStream();
+            } else {
+                startCameraStream();
+            }
         }
 
         // --- 6. 3-PHOTOS SLOTS SYSTEM ---
