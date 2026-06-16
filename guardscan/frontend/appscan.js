@@ -1187,11 +1187,7 @@
             document.getElementById('scan-note-input').value = "ตรวจเดินลาดตระเวนปกติ";
             
             showScreen('scanner');
-            if (autoVerify) {
-                stopCameraStream();
-            } else {
-                startCameraStream();
-            }
+            startCameraStream();
         }
 
         // --- 6. 3-PHOTOS SLOTS SYSTEM ---
