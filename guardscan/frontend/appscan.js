@@ -720,6 +720,15 @@
 
                 renderRoundsList();
 
+                // If user is currently looking at this round's checkpoints, refresh them too
+                if (currentRound && currentRoundIndex !== null) {
+                    const updatedRound = localRounds[currentRoundIndex];
+                    if (updatedRound) {
+                        currentRound = updatedRound;
+                    }
+                    renderCheckpointsList();
+                }
+
             } catch (e) {
                 console.error("Fetch error in fetchRoundsAndCheckpoints:", e);
             }
@@ -1702,12 +1711,12 @@
             }
             
             try {
-                // 1. Fetch Rounds (descending order to show newest first)
+                // 1. Fetch Rounds (ascending order: Round 1-2-3-4...)
                 const { data: dbRounds } = await supabaseClient
                     .from('patrol_rounds')
                     .select('*')
                     .eq('site_name', targetSite)
-                    .order('start_time', { ascending: false });
+                    .order('start_time', { ascending: true });
                 
                 // 2. Fetch Checkpoints for total count and detail displaying
                 const { data: dbCheckpoints } = await supabaseClient
@@ -1727,14 +1736,17 @@
                     
                 if (logError) throw logError;
 
-                // Create dates array
+                // Create dates array using local timezone components to prevent UTC date-shifting
                 const datesArray = [];
                 let currDate = new Date(`${startDateVal}T00:00:00`);
                 const lastDate = new Date(`${endDateVal}T00:00:00`);
                 // safety limit for arbitrary ranges
                 let loopCount = 0;
                 while (currDate <= lastDate && loopCount < 365) {
-                    datesArray.push(currDate.toISOString().split('T')[0]);
+                    const y = currDate.getFullYear();
+                    const m = String(currDate.getMonth() + 1).padStart(2, '0');
+                    const d = String(currDate.getDate()).padStart(2, '0');
+                    datesArray.push(`${y}-${m}-${d}`);
                     currDate.setDate(currDate.getDate() + 1);
                     loopCount++;
                 }
