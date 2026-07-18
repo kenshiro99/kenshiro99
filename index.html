@@ -646,7 +646,37 @@
 
                 setTimeout(() => {
                     const level = (data.level || '').toLowerCase();
-                    if (level === 'admin' || level === 'manager' || level === 'owner') {
+                    if (level === 'client' || level === 'employer') {
+                        // ตรวจสอบประเภทอุปกรณ์ (มือถือ vs คอมพิวเตอร์)
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        
+                        if (isMobile) {
+                            // 📱 โหมดมือถือ: แสดงปุ่มกดเพื่อให้สอดคล้องกับข้อกำหนดการสัมผัสของมือถือ (User Gesture) ป้องกันการบล็อกนำทาง
+                            document.getElementById('loginCard').style.display = 'none';
+                            
+                            typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารหน่วยงานคุณ <b>${fullName}</b><br>ระบบเตรียม Dashboard สำหรับหน่วยงานของคุณเรียบร้อยแล้ว โปรดกดปุ่มด้านล่างเพื่อเข้าชมค่ะ`);
+                            
+                            // แสดงปุ่มทางเลือกสำหรับระดับผู้ว่าจ้าง
+                            const aiChoices = document.getElementById('aiChoices');
+                            aiChoices.innerHTML = `
+                                <button class="ai-choice-btn flex items-center justify-between col-span-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]" onclick="postLoginRedirect('client_dashboard', '${level}')">
+                                    <span><i class="fas fa-chart-pie mr-2 text-emerald-400 animate-pulse"></i> เข้าสู่หน้าจอ Dashboard ผู้ว่าจ้าง</span>
+                                    <i class="fas fa-chevron-right text-emerald-400"></i>
+                                </button>
+                            `;
+                            aiChoices.style.setProperty('display', 'grid', 'important');
+                            aiChoices.classList.add('animate-bounce-short');
+                        } else {
+                            // 💻 โหมดคอมพิวเตอร์/โน้ตบุ๊ก: วิ่งตรงเข้า Dashboard ทันทีแบบอัตโนมัติ ไม่ต้องคลิกปุ่ม!
+                            document.getElementById('loginCard').style.display = 'none';
+                            
+                            typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">ยืนยันตัวตนสำเร็จ!</span><br>สวัสดีครับผู้บริหารหน่วยงานคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่หน้าจอ Dashboard อัตโนมัติค่ะ...`);
+                            
+                            setTimeout(() => {
+                                window.location.href = 'Frontend/client_dashboard.html';
+                            }, 1800);
+                        }
+                    } else if (level === 'admin' || level === 'manager' || level === 'owner') {
                         // ตรวจสอบประเภทอุปกรณ์ (มือถือ vs คอมพิวเตอร์)
                         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                         
@@ -725,6 +755,11 @@
                 typeText(aiText, "กำลังเปิดหน้าจอ <b>แดชบอร์ดผู้บริหาร (Dashboard)</b>...");
                 // นำทางโดยตรงทันทีเพื่อรักษาความถูกต้องของสิทธิ์การกดของผู้ใช้ (User Gesture)
                 window.location.href = 'Backend/dashboard.html';
+            } else if (mode === 'client_dashboard') {
+                typeText(aiText, "กำลังเปิดหน้าจอ <b>แดชบอร์ดผู้ว่าจ้าง (Client Dashboard)</b>...");
+                setTimeout(() => {
+                    window.location.href = 'Frontend/client_dashboard.html';
+                }, 1200);
             } else if (mode === 'checkin') {
                 typeText(aiText, "รับทราบครับ! กำลังเปิดหน้าจอ <b>ลงเวลาเข้า-ออกหน่วยงาน</b>...");
                 setTimeout(() => {
@@ -832,6 +867,15 @@
                             const level = (data.level || '').toLowerCase();
                             
                             document.getElementById('loginCard').style.display = 'none';
+                            
+                            if (level === 'client' || level === 'employer') {
+                                typeText(aiText, `<span class="text-emerald-400 font-bold text-lg">เข้าสู่ระบบสำเร็จ!</span><br>สวัสดีครับผู้บริหารหน่วยงานคุณ <b>${fullName}</b><br>ระบบกำลังนำคุณเข้าสู่แดชบอร์ดอัตโนมัติค่ะ...`);
+                                setTimeout(() => {
+                                    window.location.href = 'Frontend/client_dashboard.html';
+                                }, 1800);
+                                return;
+                            }
+                            
                             typeText(aiText, `<span class="text-sky-400 font-bold text-lg">เข้าสู่ระบบสำเร็จ!</span><br>สวัสดีครับคุณ <b>${fullName}</b><br>วันนี้ต้องการเข้าใช้งานในส่วนใดดีครับ?`);
                             
                             const aiChoices = document.getElementById('aiChoices');
